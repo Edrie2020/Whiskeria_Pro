@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="night">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Accesos - Whiskeria 2000</title>
+    <style>
+        .neon-yellow { text-shadow: 0 0 10px #facc15; color: #facc15; }
+        .card-user { background: rgba(24, 24, 27, 0.6); border: 1px solid rgba(250, 204, 21, 0.2); }
+    </style>
+</head>
+<body class="bg-[#020202] text-white p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <!-- HEADER -->
+        <div class="flex justify-between items-center mb-10 border-b border-zinc-800 pb-6">
+            <h1 class="text-4xl font-black text-yellow-500 uppercase italic tracking-tighter neon-yellow">Control de Accesos</h1>
+            <a href="/" class="btn btn-outline btn-warning rounded-full font-black px-8">← VOLVER</a>
+        </div>
+
+        <!-- FORMULARIO: CREAR NUEVO USUARIO -->
+        <div class="bg-zinc-900/50 p-6 rounded-[35px] border border-yellow-500/30 mb-10 shadow-2xl">
+            <h2 class="text-xs font-black text-zinc-500 uppercase mb-4 tracking-[3px]">➕ Registrar Nuevo Usuario</h2>
+            <form action="/usuarios/crear" method="post" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input name="username" placeholder="NOMBRE DE USUARIO" class="input input-bordered bg-black uppercase font-bold border-zinc-700" required>
+                <input name="password" type="password" placeholder="CONTRASEÑA" class="input input-bordered bg-black border-zinc-700" required>
+                <select name="rol" class="select select-bordered bg-black font-black uppercase text-xs">
+                    <option value="garzon">Garzón (Vendedor)</option>
+                    <option value="cajera">Cajera (Poder Total)</option>
+                    <option value="admin">Administrador (Poder Total)</option>
+                    <option value="jefe">Dueño / Jefe (Poder Total)</option>
+                </select>
+                <button type="submit" class="btn btn-warning font-black shadow-lg shadow-yellow-500/20">CREAR ACCESO</button>
+            </form>
+        </div>
+
+        <!-- LISTA DE USUARIOS -->
+        <h2 class="text-xs font-black text-zinc-500 uppercase mb-4 tracking-[3px]">👥 Usuarios en el Sistema</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for u in usuarios %}
+            <div class="card-user p-5 rounded-[25px] flex justify-between items-center shadow-xl">
+                <div>
+                    <h3 class="font-black text-xl uppercase text-white tracking-tight">{{ u.username }}</h3>
+                    <div class="badge badge-warning badge-outline font-black text-[9px] uppercase mt-1">{{ u.rol }}</div>
+                </div>
+                <div class="flex gap-2">
+                    <!-- BOTÓN CAMBIAR CLAVE -->
+                    <button onclick="pedirNuevaClave('{{ u.id }}', '{{ u.username }}')" class="btn btn-circle btn-sm btn-ghost border border-zinc-700 hover:bg-yellow-500 hover:text-black">🔑</button>
+                    
+                    <!-- BOTÓN ELIMINAR (Protegemos al admin maestro) -->
+                    {% if u.username != 'admin' %}
+                    <form action="/usuarios/eliminar/{{ u.id }}" method="post" onsubmit="return confirm('¿ESTÁ SEGURO DE ELIMINAR EL ACCESO A ESTE USUARIO?')">
+                        <button class="btn btn-circle btn-sm btn-error btn-outline">✕</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- LÓGICA PARA CAMBIAR CLAVE SIN SALIR DE LA PÁGINA -->
+    <script>
+        function pedirNuevaClave(id, nombre) {
+            let nueva = prompt("Ingrese la nueva contraseña para " + nombre.toUpperCase() + ":");
+            if (nueva && nueva.length >= 4) {
+                let f = document.createElement('form');
+                f.method = 'POST'; f.action = '/usuarios/cambiar_password/' + id;
+                let i = document.createElement('input');
+                i.type = 'hidden'; i.name = 'nueva_clave'; i.value = nueva;
+                f.appendChild(i); document.body.appendChild(f);
+                f.submit();
+            } else if (nueva) {
+                alert("La clave debe tener al menos 4 caracteres.");
+            }
+        }
+    </script>
+</body>
+</html>

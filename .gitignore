@@ -1,0 +1,19 @@
+# Python temporales
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Base de datos local (¡Súper importante para que no se suba tu DB de pruebas!)
+*.db
+*.sqlite3
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# IDEs
+.vscode/
+.idea/

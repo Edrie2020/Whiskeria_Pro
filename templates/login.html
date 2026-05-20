@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="night">
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" />
+    <title>Whiskeria 2000 - Acceso</title>
+</head>
+<body class="bg-[#020202] min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-zinc-900 p-10 rounded-[40px] border-2 border-pink-500 shadow-2xl text-center">
+        <img src="/static/logo.png" class="w-32 mx-auto mb-6 rounded-full border-4 border-yellow-500 shadow-lg">
+        <h1 class="text-3xl font-black text-white uppercase italic mb-8 tracking-tighter">Acceso al Sistema</h1>
+        
+        <form action="/login" method="post" class="space-y-4">
+            <input name="username" type="text" placeholder="USUARIO" class="input input-bordered w-full bg-black text-center font-bold border-zinc-700 focus:border-pink-500" required>
+            <input name="password" type="password" placeholder="CONTRASEÑA" class="input input-bordered w-full bg-black text-center font-bold border-zinc-700 focus:border-pink-500" required>
+            
+            <button type="submit" class="btn btn-secondary w-full font-black text-xl shadow-xl uppercase">Entrar</button>
+        </form>
+        
+        <p class="text-zinc-600 text-[10px] mt-6 uppercase font-bold tracking-widest">Whiskeria 2000 Pro v2.0</p>
+    </div>
+</body>
+</html>

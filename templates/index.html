@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="night">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Whiskeria 2000 Pro</title>
+    <style>
+        .neon-pink { text-shadow: 0 0 10px #ec4899; color: #ec4899; }
+        .gold-lamp { border: 4px solid #facc15; box-shadow: 0 0 20px #facc15, 0 0 40px rgba(250, 204, 21, 0.4), inset 0 0 15px rgba(250, 204, 21, 0.5); }
+        .icon-circle { width: 4.8rem; height: 4.8rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.1); transition: all 0.2s ease; background: #0a0a0a; }
+        .icon-circle:active { transform: scale(0.9); }
+        .glow-pink { border-color: #ec4899; color: #ec4899; }
+        .glow-green { border-color: #22c55e; color: #22c55e; }
+        .glow-purple { border-color: #a855f7; color: #a855f7; }
+        .glow-yellow { border-color: #eab308; color: #eab308; }
+        .glow-blue { border-color: #3b82f6; color: #3b82f6; }
+        .glow-cyan { border-color: #06b6d4; color: #06b6d4; }
+        .status-bar { background: rgba(20, 20, 20, 0.4); backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .thermometer-gradient { background: linear-gradient(90deg, #6366f1 0%, #ec4899 50%, #ef4444 100%); transition: width 2s ease-in-out; }
+        .locked { opacity: 0.1; pointer-events: none; filter: grayscale(1); }
+    </style>
+</head>
+<body class="bg-[#020202] min-h-screen text-white font-sans overflow-x-hidden">
+
+    <!-- BARRA ESTADO -->
+<!-- BARRA ESTADO -->
+<div class="status-bar w-full py-3 px-4 md:px-10 flex justify-between items-center sticky top-0 z-[60] shadow-2xl">
+    
+    <!-- Lado Izquierdo: Estado del Club -->
+    <div class="flex items-center gap-3">
+        <div class="w-3 h-3 rounded-full {% if estado_club == 'ABIERTO' %} bg-green-400 animate-pulse {% else %} bg-red-500 {% endif %}"></div>
+        <p class="text-xs md:text-sm font-black uppercase tracking-widest">
+            {% if estado_club == 'ABIERTO' %} ABIERTO | {{ turno }} {% else %} CERRADO {% endif %}
+        </p>
+    </div>
+
+    <!-- Lado Derecho: Grupo de Botones (ABRIR TURNO, SALIR, ACCESOS) -->
+    <div class="flex items-center gap-2">
+        
+        <!-- 1. GESTIÓN DE TURNO (Solo Roles de Mando) -->
+        {% if role in ['jefe', 'admin', 'cajera'] %}
+        <button onclick="document.getElementById('modal_turno_fijo').showModal()" 
+                class="btn btn-xs md:btn-sm rounded-full {% if estado_club == 'ABIERTO' %} btn-error {% else %} btn-success {% endif %} font-black uppercase px-4 shadow-lg">
+            {{ 'CERRAR TURNO' if estado_club == 'ABIERTO' else 'ABRIR TURNO' }}
+        </button>
+        {% endif %}
+
+        <!-- 2. BOTÓN SALIR (Visible para todos) -->
+        <a href="/logout" class="btn btn-xs md:btn-sm btn-outline btn-error rounded-full font-black px-4">SALIR</a>
+
+        <!-- 3. BOTÓN ACCESOS (Solo Roles de Mando) -->
+        {% if role in ['jefe', 'admin', 'cajera'] %}
+        <a href="/usuarios" class="btn btn-xs md:btn-sm btn-warning rounded-full font-black px-4 shadow-lg text-black uppercase">
+            ACCESOS
+        </a>
+        {% endif %}
+
+    </div>
+</div>
+
+    <!-- CABECERA -->
+    <header class="bg-zinc-900/30 border-b border-zinc-800 py-4 px-4">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-5">
+                <div class="w-24 h-24 rounded-full overflow-hidden gold-lamp bg-black flex-none">
+                    <img src="/static/logo.png" class="w-full h-full object-cover">
+                </div>
+                <h1 class="text-2xl font-black italic tracking-tighter neon-pink uppercase">WHISKERIA 2000</h1>
+            </div>
+            <div class="grid grid-cols-3 md:flex gap-4 md:gap-6">
+                <a href="/admin_personal" class="flex flex-col items-center gap-1 {% if role not in ['jefe', 'admin' ,  'cajera'] %} locked {% endif %}">
+                    <div class="icon-circle glow-pink text-4xl">👥</div>
+                    <span class="text-[9px] font-black uppercase text-pink-500">Damas</span>
+                </a>
+                <a href="/asistencia" class="flex flex-col items-center gap-1 {% if role not in ['jefe', 'admin' ,  'cajera'] %} locked {% endif %}">
+                    <div class="icon-circle glow-green text-4xl">📋</div>
+                    <span class="text-[9px] font-black uppercase text-green-500">Asistencias</span>
+                </a>
+                {% if turno == 'Turno 1' %}
+    <button onclick="document.getElementById('modal_bailarinas_pro').showModal()" class="flex flex-col items-center gap-1 {% if role not in ['jefe', 'admin', 'cajera'] %} locked {% endif %}">
+        <div class="icon-circle glow-purple text-4xl">💃</div>
+        <span class="text-[9px] font-black uppercase text-purple-500">Bailarinas</span>
+    </button>
+    {% endif %}
+                <a href="/contabilidad" class="flex flex-col items-center gap-1 {% if role not in ['jefe', 'admin', 'cajera'] %} locked {% endif %}">
+                    <div class="icon-circle glow-yellow text-4xl">📊</div>
+                    <span class="text-[9px] font-black uppercase text-yellow-500">Reportes</span>
+                </a>
+                <a href="/stock" class="flex flex-col items-center gap-1 {% if role not in ['jefe', 'admin', 'cajera'] %} locked {% endif %}">
+    <div class="icon-circle glow-blue text-4xl">📦</div>
+    <span class="text-[9px] font-black uppercase text-blue-400">Stock</span>
+</a>
+
+                <button onclick="document.getElementById('modal_garzones').showModal()" class="flex flex-col items-center gap-1 {% if role not in ['jefe', 'admin', 'cajera'] %} locked {% endif %}">
+                    <div class="icon-circle glow-cyan text-4xl">🤵</div>
+                    <span class="text-[9px] font-black uppercase text-cyan-400">Garzones</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto p-4 md:p-6">
+        <!-- DASHBOARD -->
+        <div id="dashboard_ventas_container" class="bg-zinc-900 border border-pink-500/20 rounded-[35px] p-6 mb-8 shadow-2xl">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 px-4">
+                <div class="flex-1">
+                    <p class="text-pink-500 font-black uppercase text-[10px]">Ventas del {{ turno }}</p>
+                    <h2 class="text-5xl md:text-7xl font-black text-white">${{ "{:,.0f}".format(actual).replace(",", ".") }}</h2>
+                </div>
+
+            </div>
+            <div class="relative w-full h-10 bg-black rounded-full p-1 border-2 border-white/5 overflow-hidden">
+                <div class="h-full rounded-full thermometer-gradient" style="width: {{porcentaje}}%;"></div>
+            </div>
+        </div>
+
+        {% if estado_club == 'ABIERTO' %}
+<div id="damas_salon_grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-2">
+            <div onclick="document.getElementById('modal_cliente').showModal()" class="flex flex-col items-center cursor-pointer transition-all hover:scale-110">
+                <div class="w-20 h-20 md:w-28 md:h-28 rounded-full p-1 border-4 glow-cyan flex items-center justify-center">
+                    <span class="text-4xl md:text-5xl">👔</span>
+                </div>
+                <h3 class="mt-2 text-[10px] font-black uppercase text-cyan-400">Clientes</h3>
+            </div>
+            <div onclick="abrirModalMesas()" class="flex flex-col items-center cursor-pointer transition-all hover:scale-110">
+                <div class="w-20 h-20 md:w-28 md:h-28 rounded-full p-1 border-4 glow-purple flex items-center justify-center">
+                    <span class="text-4xl md:text-5xl">🥂</span>
+                </div>
+                <h3 class="mt-2 text-[10px] font-black uppercase text-purple-400">Mesas</h3>
+            </div>
+            {% for dama in damas %}
+            <div onclick="abrirVenta('{{ dama.id }}', '{{ dama.nombre_artistico }}')" class="flex flex-col items-center text-center cursor-pointer transition-all hover:scale-110">
+                <div class="w-20 h-20 md:w-28 md:h-28 rounded-full p-1 border-4 border-green-500 shadow-2xl">
+        <img src="{{ dama.foto_url }}" class="w-full h-full object-cover rounded-full" />
+    </div>
+                <h3 class="mt-2 text-[10px] font-black uppercase text-white leading-none">
+        {{ dama.nombre_artistico }} 
+        {% if dict_bailando.get(dama.id) %} 
+            <span class="text-purple-500">💃</span> 
+        {% endif %}
+    </h3>
+
+</div>
+{% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-20 bg-zinc-900/20 rounded-[40px] border border-dashed border-zinc-800">
+            <p class="text-zinc-600 font-black text-2xl uppercase italic">Esperando apertura...</p>
+        </div>
+        {% endif %}
+    </div>
+
+<!-- MODAL VENTA INDIVIDUAL (CORREGIDO) -->
+<dialog id="modal_venta" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box bg-zinc-950 border-2 border-pink-500 p-8 text-center rounded-[40px] max-w-lg">
+        <form id="form_registro_venta" action="/registrar_venta" method="post" class="space-y-6">
+            
+            <h3 id="modal_titulo" class="font-black text-3xl text-pink-500 uppercase italic tracking-tighter"></h3>
+            
+            <input type="hidden" name="dama_id" id="input_dama_id">
+            <input type="hidden" name="producto_id" id="input_individual_producto_id">
+            <input type="hidden" name="tier_precio" id="input_individual_tier_precio">
+            <input type="hidden" name="extra_tipo" id="input_individual_extra_tipo">
+
+            <div id="individual_paso_datos" class="space-y-6">
+                <select name="mesero" id="individual_mesero_select" class="select select-bordered w-full bg-black text-white font-black border-zinc-800" required>
+                    <option value="" disabled selected>👤 SELECCIONE GARZÓN</option>
+                    {% for g in garzones %}<option>{{ g.nombre }}</option>{% endfor %}
+                </select>
+
+                <div class="relative w-full" id="containerDropTragoInd">
+                    <input type="text" id="buscTragoInd" onkeyup="filtrarTragosInd()" onfocus="mostrarMenuTragosInd()" placeholder="🔍 ESCRIBIR NOMBRE TRAGO..." class="input input-bordered input-sm w-full bg-black border-zinc-700 text-center uppercase font-black text-pink-400">
+                    <div id="menuTragosInd" class="hidden absolute bottom-full left-0 w-full mb-2 bg-zinc-900 border-2 border-zinc-700 rounded-2xl shadow-2xl z-[100] max-h-48 overflow-y-auto">
+                        <div onclick="seleccionarTragoInd(this, '0', 'TRAGO BÁSICO')" class="trago-ind-item p-3 hover:bg-pink-600 cursor-pointer border-b border-white/5 font-black text-xs uppercase text-zinc-400" data-nombre="TRAGO BÁSICO">TRAGO BÁSICO</div>
+                        {% for p in productos_cooler %}<div onclick="seleccionarTragoInd(this, '{{p.id}}', '{{p.nombre}}')" class="trago-ind-item p-3 hover:bg-pink-600 cursor-pointer border-b border-white/5 font-black text-xs uppercase text-white" data-nombre="{{p.nombre}}">{{ p.nombre }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btn_ind_extra_vip" onclick="toggleExtraInd('VIP')" class="btn btn-xs btn-outline btn-secondary font-black">✨ + VIP (50K)</button>
+                    <button type="button" id="btn_ind_extra_priv" onclick="toggleExtraInd('PRIVADO')" class="btn btn-xs btn-outline btn-accent font-black">🔒 + PRIVADO (200K)</button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-2 border-b border-white/5 pb-4">
+                    <button type="button" onclick="preConfirmarInd('25000')" class="btn btn-outline border-zinc-700 font-black text-lg h-14">T-25</button>
+                    <button type="button" onclick="preConfirmarInd('35000')" class="btn btn-outline border-zinc-700 font-black text-lg h-14">T-35</button>
+                    <button type="button" onclick="preConfirmarInd('50000')" class="btn btn-outline border-zinc-700 font-black text-lg h-14">T-50</button>
+                    <button type="button" onclick="preConfirmarInd('100000')" class="btn btn-outline border-zinc-700 font-black text-lg h-14">T-100</button>
+                </div>
+
+                <!-- SECCIÓN SALIDA (Restaurada) -->
+                <div class="space-y-4 bg-zinc-900/50 p-4 rounded-3xl border border-orange-500/20">
+                    <h4 class="text-orange-500 font-black uppercase italic text-[10px]">Configuración de Salida</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-control">
+                            <label class="label"><span class="label-text text-[9px] font-bold text-zinc-500">CASA</span></label>
+                            <input type="number" name="monto_casa_manual" id="ind_casa_manual" value="150000" class="input input-bordered input-sm bg-black text-center font-black">
+                        </div>
+                        <div class="form-control">
+                            <label class="label"><span class="label-text text-[9px] font-bold text-zinc-500">DAMA</span></label>
+                            <input type="number" name="monto_chica_manual" id="ind_chica_manual" value="0" class="input input-bordered input-sm bg-black text-center font-black text-pink-500">
+                        </div>
+                    </div>
+                    <button type="button" onclick="preConfirmarInd('0')" class="btn btn-sm btn-warning w-full font-black text-black">CONFIRMAR SALIDA</button>
+                </div>
+            </div>
+
+            <!-- PASO 2: PAGO -->
+            <div id="individual_resumen_confirmacion" class="hidden space-y-6">
+                <div class="bg-pink-500/10 p-6 rounded-[30px] border-2 border-pink-500/30">
+                    <p id="ind_resumen_texto" class="text-2xl font-black text-pink-500 uppercase italic"></p>
+                    <p id="ind_resumen_total" class="text-4xl font-black text-white mt-2"></p>
+                </div>
+                <div id="botones_pago_ind" class="grid grid-cols-2 gap-3">
+                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+                    <button type="button" onclick="abrirSeccionCuentaInd()" class="btn btn-lg bg-zinc-700 text-white font-black italic">📔 CUENTA</button>
+                </div>
+                <div id="seccion_nombre_ind_deuda" class="hidden space-y-4">
+                    <input type="text" name="cliente_nombre" id="input_nombre_ind_deuda" placeholder="NOMBRE DEUDOR" class="input input-bordered w-full bg-black text-yellow-500 font-bold border-yellow-500">
+                    <button type="button" onclick="validarYConfirmarDeudaInd()" class="btn btn-warning w-full font-black text-black">CONFIRMAR VENTA DEUDA</button>
+                </div>
+                <button type="button" onclick="volverAEditarInd()" class="btn btn-ghost w-full font-bold text-xs uppercase">← Volver a precios</button>
+            </div>
+
+            <!-- BOTÓN CANCELAR AL FINAL (Punto 1) -->
+            <div class="mt-4 pt-4 border-t border-white/5">
+                <button type="button" onclick="document.getElementById('modal_venta').close()" class="btn btn-ghost btn-xs w-full text-zinc-600 font-black uppercase">← CANCELAR Y SALIR</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- MODAL MESAS-->
+<dialog id="modal_mesas" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box bg-zinc-950 border-2 border-purple-500 p-8 max-w-2xl rounded-[35px] text-center">
+        <form id="form_mesa" action="/registrar_ronda_mesa" method="post" class="space-y-6">
+            <h3 class="font-black text-3xl text-purple-500 uppercase mb-6 italic tracking-tighter">Ronda de Mesa</h3>
+            
+            <div id="mesa_paso_datos">
+                <!-- SELECCIÓN GARZÓN -->
+                <select name="mesero" id="mesa_mesero_select" class="select select-bordered w-full bg-black text-white font-black mb-6">
+                    <option value="" disabled selected>👤 SELECCIONE GARZÓN</option>
+                    {% for g in garzones %}<option>{{ g.nombre }}</option>{% endfor %}
+                </select>
+
+                <!-- 1. SECCIÓN DAMAS (Buscador + Grid) -->
+                <div class="space-y-2 mb-6 text-left">
+                    <p class="text-[10px] font-black text-zinc-500 uppercase italic ml-2">1. Seleccione las Damas:</p>
+                    <input type="text" id="buscChicaMesa" onkeyup="filtrarChicasMesa()" 
+                           placeholder="🔍 BUSCAR DAMA..." 
+                           class="input input-bordered input-sm w-full bg-zinc-900 border-purple-500/30 text-center font-bold uppercase mb-2">
+                    
+                    <div id="contenedor_chicas_mesa" class="grid grid-cols-4 gap-3 max-h-40 overflow-y-auto p-4 bg-black/40 rounded-3xl border border-white/5">
+                        {% for dama in damas %}
+                        <div onclick="toggleFichaMesa(this, '{{ dama.id }}', '{{ dama.nombre_artistico }}')" 
+                             class="dama-mesa-item cursor-pointer flex flex-col items-center opacity-40 transition-all" 
+                             data-nombre="{{ dama.nombre_artistico }}">
+                            <img src="{{ dama.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-transparent">
+                            <span class="text-[8px] font-bold mt-1 uppercase text-white">{{ dama.nombre_artistico }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 2. SECCIÓN PRODUCTOS (Buscador con Lista Flotante) -->
+                <div class="space-y-2 mb-8 text-left relative">
+                    <p class="text-[10px] font-black text-zinc-500 uppercase italic ml-2">2. Seleccione Producto:</p>
+                    
+                    <div class="relative w-full" id="containerDropTrago">
+                        <input type="text" id="buscTragoMesa" onkeyup="filtrarTragosMesa()" 
+                               onfocus="mostrarMenuTragos()"
+                               placeholder="🔍 ESCRIBIR NOMBRE TRAGO..." 
+                               class="input input-bordered input-sm w-full bg-black border-zinc-700 text-center uppercase font-black text-purple-400">
+                        
+                        <!-- Lista Flotante (Se muestra al escribir o hacer foco) -->
+                        <div id="menuTragosMesa" class="hidden absolute bottom-full left-0 w-full mb-2 bg-zinc-900 border-2 border-zinc-700 rounded-2xl shadow-2xl z-[100] max-h-48 overflow-y-auto animate-fade-in">
+                            <!-- Opción Neutra -->
+                            <div onclick="seleccionarTragoMesaDirecto(this, '0', 'TRAGO BÁSICO')" 
+                                 class="trago-mesa-item p-3 hover:bg-purple-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-zinc-400"
+                                 data-nombre="TRAGO BÁSICO">
+                                TRAGO BÁSICO
+                            </div>
+
+                            {% for p in productos_cooler %}
+                            <div onclick="seleccionarTragoMesaDirecto(this, '{{p.id}}', '{{p.nombre}}')" 
+                                 class="trago-mesa-item p-3 hover:bg-purple-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-white"
+                                 data-nombre="{{p.nombre}}">
+                                {{ p.nombre }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INPUTS OCULTOS (Eliminado el duplicado de producto_id) -->
+                <div id="ids_mesa_input_container"></div>
+                <input type="hidden" name="tier_precio" id="input_mesa_tier_precio">
+                <input type="hidden" name="extra_tipo" id="input_mesa_extra_tipo" value="">
+                <input type="hidden" name="producto_id" id="input_mesa_producto_id">
+
+                <!-- EXTRAS PARA MESA (AÑADIR ESTO ARRIBA DE LOS BOTONES T-25) -->
+<div class="grid grid-cols-2 gap-2 mb-4">
+    <button type="button" id="btn_mesa_extra_vip" onclick="toggleExtraMesa('VIP')" class="btn btn-xs btn-outline btn-secondary font-black">✨ + VIP (50K)</button>
+    <button type="button" id="btn_mesa_extra_priv" onclick="toggleExtraMesa('PRIVADO')" class="btn btn-xs btn-outline btn-accent font-black">🔒 + PRIVADO (200K)</button>
+</div>
+
+                <!-- BOTONES DE PRECIO -->
+                <div id="mesa_botones_principales" class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="preConfirmarMesa('T25')" class="btn btn-outline border-zinc-700 font-black">T-25</button>
+                    <button type="button" onclick="preConfirmarMesa('T35')" class="btn btn-outline border-zinc-700 font-black">T-35</button>
+                    <button type="button" onclick="preConfirmarMesa('T50')" class="btn btn-outline border-zinc-700 font-black">T-50</button>
+                    <button type="button" onclick="preConfirmarMesa('T100')" class="btn btn-outline border-zinc-700 font-black">T-100</button>
+                </div>
+                
+                <button type="button" onclick="document.getElementById('modal_mesas').close()" class="btn btn-ghost btn-xs mt-6 uppercase">← Cancelar</button>
+            </div>
+
+            <!-- PASO 2: CONFIRMACIÓN Y PAGO -->
+            <div id="mesa_resumen_confirmacion" class="hidden space-y-6">
+                <div class="bg-purple-500/10 p-6 rounded-[30px] border-2 border-purple-500/30">
+                    <h4 class="text-white font-black uppercase text-xl mb-4">Confirmar Ronda</h4>
+                    <p id="resumen_texto_servicio" class="text-2xl font-black text-purple-400 uppercase italic mb-2"></p>
+                    <div id="resumen_chicas_lista" class="flex flex-wrap justify-center gap-2 mb-4"></div>
+                    <p id="resumen_total_mesa" class="text-sm font-bold text-zinc-400 mb-4"></p>
+                </div>
+
+                <div id="botones_pago_mesa" class="grid grid-cols-2 gap-3">
+                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+                    <button type="button" onclick="abrirSeccionCuentaMesa()" class="btn btn-lg bg-zinc-700 text-white font-black italic">📔 CUENTA</button>
+                </div>
+
+                <div id="seccion_nombre_mesa_deuda" class="hidden space-y-4">
+                    <input type="text" name="cliente_nombre" id="input_nombre_mesa_deuda" placeholder="NOMBRE DEL CLIENTE (DEUDOR)" class="input input-bordered w-full bg-black text-yellow-500 font-bold border-yellow-500 uppercase">
+                    <button type="button" onclick="validarYConfirmarDeudaMesa()" class="btn btn-warning w-full font-black text-black">CONFIRMAR DEUDA MESA</button>
+                </div>
+
+                <button type="button" onclick="volverAEditarMesa()" class="btn btn-ghost w-full font-bold">← VOLVER A EDITAR</button>
+            </div>
+        </form> 
+    </div>
+</dialog>
+
+    <!-- OTROS MODALES -->
+
+    <dialog id="modal_garzones" class="modal">
+        <div class="modal-box bg-zinc-900 border-2 border-cyan-500">
+            <h3 class="font-black text-2xl text-cyan-400 uppercase text-center mb-6">Garzones de Turno</h3>
+            <div id="lista_garzones_js" class="flex flex-wrap gap-2 mb-6">
+                {% for g in garzones %}
+                <div id="garzon-badge-{{ g.id }}" class="badge badge-lg bg-black border-zinc-700 text-white font-black py-4 gap-2 uppercase">
+                    {{ g.nombre }} <button onclick="borrarGarzonJS('{{ g.id }}')" class="text-red-500 ml-1">✕</button>
+                </div>
+                {% endfor %}
+            </div>
+            <form id="form_garzon_ajax" class="flex gap-2">
+    <input id="nombre_garzon_input" name="nombre" type="text" placeholder="Nombre..." class="input input-bordered flex-1 bg-black uppercase font-bold" required>
+    <!-- Asegúrate de que el botón sea type="submit" -->
+    <button type="submit" class="btn btn-info font-black">Añadir</button>
+</form>
+            <div class="modal-action"><form method="dialog"><button class="btn btn-ghost" onclick="window.location.reload()">LISTO</button></form></div>
+        </div>
+    </dialog>
+ 
+<!-- MODAL CLIENTE -->
+<dialog id="modal_cliente" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box bg-zinc-950 border-2 border-cyan-500 p-8 text-center rounded-[40px] max-w-lg">
+        <form id="form_venta_cliente" action="/registrar_venta_cliente" method="post" class="space-y-6">
+            <h3 class="font-black text-3xl text-cyan-400 uppercase tracking-tighter italic">Trago Cliente Solo</h3>
+            
+            <!-- PASO 1: DATOS -->
+            <div id="cliente_paso_1" class="space-y-6">
+                <!-- 1. GARZÓN -->
+                <select name="mesero" id="cliente_mesero" class="select select-bordered w-full bg-black text-white font-black border-zinc-800">
+                    <option value="" disabled selected>👤 ¿QUIÉN VENDE?</option>
+                    {% for g in garzones %}<option>{{ g.nombre }}</option>{% endfor %}
+                </select>
+
+                <!-- 2. MONTO -->
+                <div class="space-y-1">
+                    <p class="text-[10px] font-black text-zinc-500 uppercase italic text-left ml-2">Monto de la Venta:</p>
+                    <input name="monto" id="cliente_monto" type="number" placeholder="$ 0" 
+                           class="input input-bordered w-full bg-black text-cyan-400 text-3xl font-black text-center" required />
+                </div>
+
+                <!-- 3. BUSCADOR FLOTANTE -->
+                <div class="space-y-2 text-left relative">
+                    <p class="text-[10px] font-black text-zinc-500 uppercase italic ml-2">¿Qué producto es?</p>
+                    <div class="relative w-full" id="containerDropCliente">
+                        <input type="text" id="buscTragoCliente" onkeyup="filtrarTragosCliente()" 
+                               onfocus="mostrarMenuTragosCliente()"
+                               placeholder="🔍 BUSCAR TRAGO O BOTELLA..." 
+                               class="input input-bordered input-sm w-full bg-black border-zinc-700 text-center uppercase font-black text-cyan-400">
+                        
+                        <div id="menuTragosCliente" class="hidden absolute bottom-full left-0 w-full mb-2 bg-zinc-900 border-2 border-zinc-700 rounded-2xl shadow-2xl z-[100] max-h-48 overflow-y-auto animate-fade-in">
+                            {% for p in productos_todos %}
+                            <div onclick="seleccionarTragoCliente(this, '{{p.id}}', '{{p.nombre}}')" 
+                                 class="trago-cliente-item p-3 hover:bg-cyan-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-white"
+                                 data-nombre="{{p.nombre}}">
+                                {{ p.nombre }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ESTOS SON LOS INPUTS QUE FALTABAN O TENÍAN IDS DIFERENTES -->
+                <input type="hidden" name="trago" id="input_cliente_trago">
+                <input type="hidden" name="producto_id" id="input_cliente_producto_id">
+                
+                <div class="flex flex-col gap-2">
+                    <button type="button" onclick="irAPagoCliente()" class="btn btn-info w-full font-black text-lg">CONTINUAR →</button>
+                    <button type="button" onclick="document.getElementById('modal_cliente').close()" class="btn btn-ghost btn-xs text-zinc-500 uppercase">← CANCELAR Y SALIR</button>
+                </div>
+            </div>
+
+            <!-- PASO 2: RESUMEN Y PAGO -->
+            <div id="cliente_paso_pago" class="hidden space-y-6 animate-fade-in">
+                <div class="bg-cyan-500/10 p-6 rounded-[30px] border-2 border-cyan-500/30">
+                    <p id="resumen_cliente_texto" class="text-xs font-black text-zinc-400 uppercase mb-2"></p>
+                    <p id="resumen_cliente_monto" class="text-5xl font-black text-white italic"></p>
+                </div>
+
+                <div id="botones_pago_cliente_div" class="grid grid-cols-2 gap-3">
+                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+                    <button type="button" onclick="activarDeudaCliente()" class="btn btn-lg bg-zinc-700 text-white font-black italic">📔 CUENTA</button>
+                </div>
+
+                <div id="campo_nombre_cliente" class="hidden space-y-4 animate-fade-in">
+                    <input type="text" name="cliente_nombre" id="input_cliente_cuenta" 
+                           placeholder="NOMBRE DEL CLIENTE (DEUDOR)" 
+                           class="input input-bordered w-full bg-black text-yellow-500 font-bold border-yellow-500 uppercase">
+                    
+                    <button type="button" onclick="validarYConfirmarDeudaCliente()" class="btn btn-warning w-full font-black text-black">
+                        CONFIRMAR DEUDA Y REGISTRAR
+                    </button>
+                </div>
+
+                <button type="button" onclick="volverAEditarCliente()" class="btn btn-ghost w-full font-bold text-xs">← VOLVER ATRÁS</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<script>
+// ==========================================
+// 1. GARZONES (AJAX) 
+// ==========================================
+async function borrarGarzonJS(id) {
+    if (!confirm("¿Eliminar Garzón?")) return;
+    const response = await fetch(`/eliminar_garzon/${id}`);
+    if (response.ok) { document.getElementById(`garzon-badge-${id}`).remove(); }
+}
+
+const fG = document.getElementById('form_garzon_ajax');
+if (fG) {
+    fG.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('nombre_garzon_input');
+        const fD = new FormData(); fD.append('nombre', input.value);
+        const res = await fetch('/agregar_garzon', { method: 'POST', body: fD });
+        const data = await res.json();
+        if (data.status === 'success') {
+            const html = `<div id="garzon-badge-${data.id}" class="badge badge-lg bg-black border-zinc-700 text-white font-black py-4 gap-2 uppercase">${data.nombre} <button onclick="borrarGarzonJS('${data.id}')" class="text-red-500 ml-1">✕</button></div>`;
+            document.getElementById('lista_garzones_js').insertAdjacentHTML('beforeend', html);
+            input.value = ''; input.focus();
+        }
+    });
+}
+
+// ==========================================
+// 2. VENTAS INDIVIDUALES
+// ==========================================
+let ventaIndActual = { idDama: '', nombreDama: '', productoId: null, productoNombre: 'TRAGO BÁSICO', extra: '', montoTier: 0 };
+
+function filtrarProductosModal() {
+    let filter = document.getElementById("buscadorProdModal").value.toUpperCase();
+    let btns = document.querySelectorAll(".btn-producto-modal");
+    btns.forEach(btn => {
+        btn.hidden = !btn.innerText.toUpperCase().includes(filter);
+    });
+}
+
+function abrirVenta(id, nombre) {
+    ventaIndActual = { idDama: id, nombreDama: nombre, productoId: null, productoNombre: 'TRAGO BÁSICO', extra: '', montoTier: 0 };
+    
+    // Estos IDs son seguros
+    document.getElementById('input_dama_id').value = id;
+    document.getElementById('modal_titulo').innerText = nombre;
+    
+    const meseroSelect = document.getElementById('individual_mesero_select');
+    if(meseroSelect) meseroSelect.selectedIndex = 0;
+
+    document.getElementById('buscTragoInd').value = "";
+    document.getElementById('input_individual_extra_tipo').value = "";
+    
+    // Cambiamos classList por este modo más seguro:
+    const buscTrago = document.getElementById('buscTragoInd');
+    if (buscTrago) {
+        buscTrago.classList.remove('border-pink-500');
+        buscTrago.classList.add('border-zinc-700');
+    }
+    
+    // Mostrar/Ocultar secciones (con validación de existencia)
+    const pasoDatos = document.getElementById('individual_paso_datos');
+    const resumen = document.getElementById('individual_resumen_confirmacion');
+    const salidaManual = document.getElementById('seccion_salida_manual');
+    const menuTragos = document.getElementById('menuTragosInd');
+
+    if(pasoDatos) pasoDatos.classList.remove('hidden');
+    if(resumen) resumen.classList.add('hidden');
+    if(salidaManual) salidaManual.classList.add('hidden');
+    if(menuTragos) menuTragos.classList.add('hidden');
+    
+    // Reset visual de botones (con validación)
+    const btnVip = document.getElementById('btn_ind_extra_vip');
+    const btnPriv = document.getElementById('btn_ind_extra_priv');
+
+    if(btnVip) { btnVip.classList.remove('btn-secondary'); btnVip.classList.add('btn-outline'); }
+    if(btnPriv) { btnPriv.classList.remove('btn-accent'); btnPriv.classList.add('btn-outline'); }
+
+    document.getElementById('modal_venta').showModal();
+}
+
+function seleccionarFlujo(f) {
+    ventaActual.tipo = f;
+    document.getElementById('seccion_inicio').classList.add('hidden');
+    if (f === 'T25') {
+        ventaActual.montoTier = 25000;
+        ventaActual.productoNombre = 'TRAGO BÁSICO';
+        irAPago();
+    } else if (f === 'PRODUCTOS') {
+        document.getElementById('seccion_productos').classList.remove('hidden');
+    } else if (f === 'ESPECIAL') {
+        document.getElementById('seccion_especiales').classList.remove('hidden');
+    }
+}
+
+function fijarProducto(id, nombre) {
+    ventaActual.productoId = id;
+    ventaActual.productoNombre = nombre;
+    document.getElementById('input_producto_id').value = id;
+    document.querySelectorAll('.btn-producto-modal').forEach(b => b.classList.replace('btn-info', 'btn-outline'));
+    document.getElementById('btn_prod_' + id).classList.replace('btn-outline', 'btn-info');
+    document.getElementById('seccion_precios').classList.remove('hidden');
+}
+
+function toggleExtra(tipo) {
+    ventaActual.extra = (ventaActual.extra === tipo) ? '' : tipo;
+    document.getElementById('btn_extra_vip').classList.toggle('btn-secondary', ventaActual.extra === 'VIP');
+    document.getElementById('btn_extra_vip').classList.toggle('btn-outline', ventaActual.extra !== 'VIP');
+    document.getElementById('btn_extra_priv').classList.toggle('btn-accent', ventaActual.extra === 'PRIVADO');
+    document.getElementById('btn_extra_priv').classList.toggle('btn-outline', ventaActual.extra !== 'PRIVADO');
+}
+
+function fijarPrecio(valorString) {
+    const precios = { 'T25': 25000, 'T35': 35000, 'T50': 50000, 'T100': 100000 };
+    ventaActual.montoTier = precios[valorString];
+    irAPago();
+}
+
+function irAPago() {
+    const m = document.getElementById('individual_mesero_select').value;
+    if (!m) { alert("⚠️ SELECCIONE GARZÓN"); return; }
+    document.getElementById('input_tier_precio').value = ventaActual.montoTier;
+    document.getElementById('input_extra_tipo').value = ventaActual.extra;
+    document.getElementById('flujo_ventas').classList.add('hidden');
+    let texto = ventaActual.productoNombre;
+    if(ventaActual.extra) texto += " + " + ventaActual.extra;
+    document.getElementById('resumen_final_texto').innerText = texto.toUpperCase();
+    let total = ventaActual.montoTier;
+    if(ventaActual.extra === 'VIP') total += 50000;
+    if(ventaActual.extra === 'PRIVADO') total += 200000;
+    document.getElementById('resumen_valor_texto').innerText = "$" + total.toLocaleString('es-CL');
+    document.getElementById('individual_resumen_confirmacion').classList.remove('hidden');
+}
+
+function irAPagoCliente() {
+    const m = document.getElementById('cliente_monto').value;
+    const g = document.getElementById('cliente_mesero').value;
+    const p = document.getElementById('input_cliente_trago').value; // Usar el ID correcto
+
+    if (!m || !g || !p) {
+        alert("⚠️ SELECCIONE GARZÓN, INGRESE MONTO Y BUSQUE EL PRODUCTO");
+        return;
+    }
+
+    document.getElementById('resumen_cliente_texto').innerText = "VENTA CLIENTE: " + p.toUpperCase();
+    document.getElementById('resumen_cliente_monto').innerText = "$" + parseInt(m).toLocaleString('es-CL');
+
+    document.getElementById('cliente_paso_1').classList.add('hidden');
+    document.getElementById('cliente_paso_pago').classList.remove('hidden');
+}
+
+
+function abrirSeccionCuentaInd() {
+    document.getElementById('botones_pago_ind').classList.add('hidden');
+    document.getElementById('seccion_nombre_ind_deuda').classList.remove('hidden');
+}
+
+// Cierre de menú al clickear fuera
+document.addEventListener('click', function(e) {
+    const container = document.getElementById('containerDropTragoInd');
+    if (container && !container.contains(e.target)) {
+        document.getElementById('menuTragosInd').classList.add('hidden');
+    }
+});
+
+function validarYConfirmarDeudaInd() {
+    const nombre = document.getElementById('input_nombre_ind_deuda').value.trim();
+    if (nombre.length < 3) { alert("⚠️ INGRESE NOMBRE DEUDOR"); return; }
+    const form = document.getElementById('form_registro_venta');
+    const inputMetodo = document.createElement("input");
+    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "CUENTA";
+    form.appendChild(inputMetodo);
+    form.submit();
+}
+
+function validarYConfirmarDeudaCliente() {
+    const nombre = document.getElementById('input_cliente_cuenta').value.trim();
+    if (nombre.length < 3) {
+        alert("⚠️ INGRESE EL NOMBRE DEL CLIENTE");
+        return;
+    }
+    const form = document.getElementById('form_venta_cliente');
+    const inputMetodo = document.createElement("input");
+    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "CUENTA";
+    form.appendChild(inputMetodo);
+    form.submit();
+}
+
+// ==========================================
+// 3. VENTAS MESA
+// ==========================================
+let mesaActual = { ids: [], nombres: [], montoTier: 0, extra: '', productoId: null, productoNombre: 'TRAGO BÁSICO' };
+
+function abrirModalMesas() {
+    mesaActual = { ids: [], nombres: [], montoTier: 0, extra: '', productoId: null, productoNombre: 'TRAGO BÁSICO' };
+    
+    // Reset Chicas visual
+    document.querySelectorAll('.dama-mesa-item').forEach(el => { 
+        el.classList.add('opacity-40'); 
+        el.style.display = "flex"; 
+        el.querySelector('img').style.borderColor = 'transparent'; 
+    });
+
+    document.getElementById('btn_mesa_extra_vip').classList.replace('btn-secondary', 'btn-outline');
+    document.getElementById('btn_mesa_extra_priv').classList.replace('btn-accent', 'btn-outline');
+    document.getElementById('input_mesa_extra_tipo').value = '';
+    
+    // Reset Buscadores
+    document.getElementById("buscChicaMesa").value = "";
+    document.getElementById("buscTragoMesa").value = "";
+    document.getElementById("buscTragoMesa").classList.replace('border-purple-500', 'border-zinc-700');
+    document.getElementById('input_mesa_producto_id').value = '';
+    
+    // Reset de vistas
+    document.getElementById('mesa_paso_datos').classList.remove('hidden');
+    document.getElementById('mesa_resumen_confirmacion').classList.add('hidden');
+    document.getElementById('menuTragosMesa').classList.add('hidden');
+    
+    document.getElementById('modal_mesas').showModal();
+}
+
+function toggleFichaMesa(el, id, n) {
+    id = parseInt(id);
+    const i = mesaActual.ids.indexOf(id);
+    if (i > -1) { 
+        mesaActual.ids.splice(i, 1); mesaActual.nombres.splice(mesaActual.nombres.indexOf(n), 1); 
+        el.classList.add('opacity-40'); el.querySelector('img').style.borderColor = 'transparent'; 
+    } else { 
+        mesaActual.ids.push(id); mesaActual.nombres.push(n); 
+        el.classList.remove('opacity-40'); el.querySelector('img').style.borderColor = '#a855f7'; 
+    }
+}
+
+function filtrarChicasMesa() {
+    const input = document.getElementById("buscChicaMesa").value.toUpperCase();
+    const chicas = document.querySelectorAll(".dama-mesa-item");
+    chicas.forEach(chica => {
+        const nombre = chica.getAttribute("data-nombre").toUpperCase();
+        chica.style.display = nombre.includes(input) ? "flex" : "none";
+    });
+}
+
+function mostrarMenuTragosCliente() {
+    document.getElementById('menuTragosCliente').classList.remove('hidden');
+}
+
+function mostrarMenuTragos() {
+    document.getElementById('menuTragosMesa').classList.remove('hidden');
+}
+
+function mostrarMenuTragosInd() { document.getElementById('menuTragosInd').classList.remove('hidden'); }
+
+function seleccionarProductoMesa(val) {
+    const parts = val.split('|');
+    mesaActual.productoId = parts[0] === '0' ? null : parts[0];
+    mesaActual.productoNombre = parts[1];
+}
+
+let masterListaTragos = [];
+
+function filtrarTragosMesa() {
+    const menu = document.getElementById('menuTragosMesa');
+    const input = document.getElementById("buscTragoMesa").value.toUpperCase();
+    const items = document.querySelectorAll(".trago-mesa-item");
+    
+    menu.classList.remove('hidden'); // Asegurar que se vea al escribir
+    
+    items.forEach(item => {
+        const nombre = item.getAttribute("data-nombre").toUpperCase();
+        item.style.display = nombre.includes(input) ? "block" : "none";
+    });
+}
+function filtrarTragosInd() {
+    const input = document.getElementById("buscTragoInd").value.toUpperCase();
+    const items = document.querySelectorAll(".trago-ind-item");
+    document.getElementById('menuTragosInd').classList.remove('hidden');
+    items.forEach(item => {
+        const nombre = item.getAttribute("data-nombre").toUpperCase();
+        item.style.display = nombre.includes(input) ? "block" : "none";
+    });
+}
+
+function filtrarTragosCliente() {
+    const menu = document.getElementById('menuTragosCliente');
+    const input = document.getElementById("buscTragoCliente").value.toUpperCase();
+    const items = document.querySelectorAll(".trago-cliente-item");
+    
+    // Aseguramos que el menú se despliegue al escribir
+    menu.classList.remove('hidden'); 
+    
+    items.forEach(item => {
+        const nombre = item.getAttribute("data-nombre").toUpperCase();
+        // Si el nombre coincide con lo escrito, lo muestra. Si no, lo oculta.
+        item.style.display = nombre.includes(input) ? "block" : "none";
+    });
+}
+
+function seleccionarTragoCliente(el, id, nombre) {
+    // 1. Guardar el nombre y el ID en los campos ocultos
+    const inputTrago = document.getElementById('input_cliente_trago');
+    const inputProdId = document.getElementById('input_cliente_producto_id');
+    const buscadorVisual = document.getElementById('buscTragoCliente');
+
+    if (inputTrago) inputTrago.value = nombre;
+    if (inputProdId) inputProdId.value = id;
+    
+    // 2. Actualizar el buscador visual
+    if (buscadorVisual) {
+        buscadorVisual.value = nombre;
+        buscadorVisual.classList.replace('border-zinc-700', 'border-cyan-500');
+    }
+    
+    // 3. Cerrar el menú flotante
+    document.getElementById('menuTragosCliente').classList.add('hidden');
+}
+
+function seleccionarTragoInd(el, id, nombre) {
+    ventaIndActual.productoId = (id === '0') ? null : id;
+    ventaIndActual.productoNombre = nombre;
+    document.getElementById('buscTragoInd').value = nombre;
+    document.getElementById('input_individual_producto_id').value = ventaIndActual.productoId || '';
+    document.getElementById('menuTragosInd').classList.add('hidden');
+    document.getElementById('buscTragoInd').classList.replace('border-zinc-700', 'border-pink-500');
+}
+
+function seleccionarTragoMesaDirecto(elemento, id, nombre) {
+    // 1. Guardar datos
+    mesaActual.productoId = (id === '0') ? null : id;
+    mesaActual.productoNombre = nombre;
+    
+    // 2. Actualizar el input de búsqueda con el nombre seleccionado
+    const buscador = document.getElementById('buscTragoMesa');
+    buscador.value = nombre;
+    
+    // 3. Actualizar el input hidden real
+    document.getElementById('input_mesa_producto_id').value = mesaActual.productoId || '';
+    
+    // 4. Ocultar el menú flotante
+    document.getElementById('menuTragosMesa').classList.add('hidden');
+    
+    // 5. Feedback visual al buscador
+    buscador.classList.replace('border-zinc-700', 'border-purple-500');
+}
+// Cerrar el menú flotante si el usuario hace click fuera
+document.addEventListener('click', function(event) {
+    const container = document.getElementById('containerDropTrago');
+    const menu = document.getElementById('menuTragosMesa');
+    if (container && !container.contains(event.target)) {
+        menu.classList.add('hidden');
+    }
+});
+    
+function toggleExtraMesa(tipo) {
+    // Si ya estaba seleccionado, lo apaga. Si no, lo enciende.
+    mesaActual.extra = (mesaActual.extra === tipo) ? '' : tipo;
+    
+    // Guardamos el valor en el input oculto que va al servidor
+    document.getElementById('input_mesa_extra_tipo').value = mesaActual.extra;
+    
+    // Cambios visuales de los botones
+    document.getElementById('btn_mesa_extra_vip').classList.toggle('btn-secondary', mesaActual.extra === 'VIP');
+    document.getElementById('btn_mesa_extra_vip').classList.toggle('btn-outline', mesaActual.extra !== 'VIP');
+    document.getElementById('btn_mesa_extra_priv').classList.toggle('btn-accent', mesaActual.extra === 'PRIVADO');
+    document.getElementById('btn_mesa_extra_priv').classList.toggle('btn-outline', mesaActual.extra !== 'PRIVADO');
+}
+function toggleExtraInd(tipo) {
+    ventaIndActual.extra = (ventaIndActual.extra === tipo) ? '' : tipo;
+    document.getElementById('input_individual_extra_tipo').value = ventaIndActual.extra;
+    
+    document.getElementById('btn_ind_extra_vip').classList.toggle('btn-secondary', ventaIndActual.extra === 'VIP');
+    document.getElementById('btn_ind_extra_vip').classList.toggle('btn-outline', ventaIndActual.extra !== 'VIP');
+    document.getElementById('btn_ind_extra_priv').classList.toggle('btn-accent', ventaIndActual.extra === 'PRIVADO');
+    document.getElementById('btn_ind_extra_priv').classList.toggle('btn-outline', ventaIndActual.extra !== 'PRIVADO');
+}
+
+function preConfirmarMesa(tier) {
+    const garzon = document.getElementById('mesa_mesero_select').value;
+    if (!garzon) { alert("⚠️ SELECCIONE GARZÓN"); return; }
+    if (mesaActual.ids.length === 0) { alert("⚠️ SELECCIONE CHICAS"); return; }
+    if (tier !== 'T25' && (!mesaActual.productoId || mesaActual.productoId === "0")) {
+        alert("⚠️ SELECCIONE UN PRODUCTO DE STOCK"); return;
+    }
+    const precios = { 'T25': 25000, 'T35': 35000, 'T50': 50000, 'T100': 100000 };
+    mesaActual.montoTier = precios[tier];
+    const container = document.getElementById('ids_mesa_input_container');
+    container.innerHTML = '';
+    mesaActual.ids.forEach(id => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = 'ids_chicas'; inp.value = id;
+        container.appendChild(inp);
+    });
+    document.getElementById('input_mesa_tier_precio').value = mesaActual.montoTier;
+    document.getElementById('input_mesa_extra_tipo').value = mesaActual.extra;
+    document.getElementById('input_mesa_producto_id').value = mesaActual.productoId || '';
+    let texto = (mesaActual.productoNombre || "TRAGO") + " " + tier;
+    if (mesaActual.extra) texto += " + " + mesaActual.extra;
+    document.getElementById('resumen_texto_servicio').innerText = texto.toUpperCase();
+    document.getElementById('resumen_chicas_lista').innerHTML = mesaActual.nombres.map(n => `<span class="badge badge-secondary font-black">${n}</span>`).join('');
+    let unitario = mesaActual.montoTier;
+    if(mesaActual.extra === 'VIP') unitario += 50000;
+    if(mesaActual.extra === 'PRIVADO') unitario += 200000;
+    document.getElementById('resumen_total_mesa').innerText = `TOTAL RONDA: $${(unitario * mesaActual.ids.length).toLocaleString('es-CL')}`;
+    document.getElementById('mesa_paso_datos').classList.add('hidden');
+    document.getElementById('mesa_resumen_confirmacion').classList.remove('hidden');
+}
+
+function preConfirmarInd(monto) {
+    const garzon = document.getElementById('individual_mesero_select').value;
+    if (!garzon) { alert("⚠️ SELECCIONE GARZÓN"); return; }
+
+    let total = 0;
+    let textoResumen = "";
+
+    if (monto === '0') {
+        // Lógica para Salida Manual
+        const casa = parseInt(document.getElementById('ind_casa_manual').value) || 0;
+        const chica = parseInt(document.getElementById('ind_chica_manual').value) || 0;
+        total = casa + chica;
+        textoResumen = "SALIDA MANUAL";
+        document.getElementById('input_individual_tier_precio').value = 0;
+    } else {
+        // Lógica para Tragos Normales
+        const tragoId = document.getElementById('input_individual_producto_id').value;
+        if (parseInt(monto) >= 35000 && (!tragoId || tragoId === "0" || tragoId === "")) {
+            alert("⚠️ PARA VENTAS DE $35.000 O MÁS, ES OBLIGATORIO SELECCIONAR UN TRAGO");
+            return;
+        }
+        total = parseInt(monto);
+        if (ventaIndActual.extra === 'VIP') total += 50000;
+        if (ventaIndActual.extra === 'PRIVADO') total += 200000;
+        textoResumen = ventaIndActual.productoNombre;
+        document.getElementById('input_individual_tier_precio').value = monto;
+    }
+    
+    document.getElementById('ind_resumen_total').innerText = "$" + total.toLocaleString('es-CL');
+    document.getElementById('ind_resumen_texto').innerText = textoResumen;
+
+    document.getElementById('individual_paso_datos').classList.add('hidden');
+    document.getElementById('individual_resumen_confirmacion').classList.remove('hidden');
+}
+
+function abrirSeccionCuentaMesa() {
+    document.getElementById('botones_pago_mesa').classList.add('hidden');
+    document.getElementById('seccion_nombre_mesa_deuda').classList.remove('hidden');
+}
+
+function mostrarSeccionSalidaManual() {
+    document.getElementById('individual_paso_datos').classList.add('hidden');
+    document.getElementById('seccion_salida_manual').classList.remove('hidden');
+}
+
+function validarYConfirmarDeudaMesa() {
+    const nombre = document.getElementById('input_nombre_mesa_deuda').value.trim();
+    if (nombre.length < 3) { alert("⚠️ INGRESE NOMBRE CLIENTE"); return; }
+    const form = document.getElementById('form_mesa');
+    const inputMetodo = document.createElement("input");
+    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "CUENTA";
+    form.appendChild(inputMetodo);
+    form.submit();
+}
+
+function volverAEditarMesa() {
+    document.getElementById('mesa_paso_datos').classList.remove('hidden');
+    document.getElementById('mesa_resumen_confirmacion').classList.add('hidden');
+}
+
+function volverAEditarCliente() {
+    document.getElementById('cliente_paso_1').classList.remove('hidden');
+    document.getElementById('cliente_paso_pago').classList.add('hidden');
+    
+    // Reset de la sección de deuda por si acaso
+    document.getElementById('campo_nombre_cliente').classList.add('hidden');
+    document.getElementById('botones_pago_cliente_div').classList.remove('hidden');
+}
+
+function volverAEditarInd() {
+    const paso1 = document.getElementById('individual_paso_datos');
+    const paso2 = document.getElementById('individual_resumen_confirmacion');
+    const seccionDeuda = document.getElementById('seccion_nombre_ind_deuda');
+    const botonesPago = document.getElementById('botones_pago_ind');
+
+    if (paso1) paso1.classList.remove('hidden');
+    if (paso2) paso2.classList.add('hidden');
+    if (seccionDeuda) seccionDeuda.classList.add('hidden');
+    if (botonesPago) botonesPago.classList.remove('hidden');
+}
+
+function activarDeudaCliente() {
+    // Ocultamos los botones de pago normales
+    document.getElementById('botones_pago_cliente_div').classList.add('hidden');
+    // Mostramos el campo de nombre y el botón de confirmar deuda
+    document.getElementById('campo_nombre_cliente').classList.remove('hidden');
+    document.getElementById('input_cliente_cuenta').focus();
+}
+
+// Cerrar menú cliente al clickear fuera
+document.addEventListener('click', function(e) {
+    const container = document.getElementById('containerDropCliente');
+    if (container && !container.contains(e.target)) {
+        document.getElementById('menuTragosCliente').classList.add('hidden');
+    }
+});
+
+function abrirModalCliente() {
+    // 👤 Resetear selección de mesero
+    const meseroSel = document.getElementById('cliente_mesero');
+    if (meseroSel) meseroSel.selectedIndex = 0;
+
+    // 💰 Limpiar monto
+    const montoInput = document.getElementById('cliente_monto');
+    if (montoInput) montoInput.value = "";
+
+    // 🔍 Limpiar y resetear buscador visual del trago
+    const buscador = document.getElementById('buscTragoCliente');
+    if (buscador) {
+        buscador.value = "";
+        buscador.classList.replace('border-cyan-500', 'border-zinc-700');
+    }
+
+    // 📦 Resetear inputs ocultos reales
+    const inputTrago = document.getElementById('input_cliente_trago');
+    const inputProdId = document.getElementById('input_cliente_producto_id');
+    if (inputTrago) inputTrago.value = "";
+    if (inputProdId) inputProdId.value = "";
+    
+    // Ocultar menús flotantes e intercambiar paneles
+    const menuTragos = document.getElementById('menuTragosCliente');
+    if (menuTragos) menuTragos.classList.add('hidden');
+    
+    document.getElementById('cliente_paso_1').classList.remove('hidden');
+    document.getElementById('cliente_paso_pago').classList.add('hidden');
+    
+    document.getElementById('modal_cliente').showModal();
+}
+
+// Función para guardar sin que parezca que salimos del modal
+async function guardarYMantenerModal(event, form) {
+    event.preventDefault(); // Evita que la página se recargue normal
+    
+    const formData = new FormData(form);
+    
+    // Enviamos los datos al servidor en segundo plano
+    await fetch(form.action, {
+        method: 'POST',
+        body: formData
+    });
+
+    // Recargamos la página pero añadimos una "marca" en la URL
+    window.location.href = window.location.pathname + "?keep_open=bailarinas";
+}
+
+// Al cargar la página, revisamos si tiene la "marca" para abrir el modal
+window.addEventListener('load', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('keep_open') === 'bailarinas') {
+        document.getElementById('modal_bailarinas_pro').showModal();
+        // Limpiamos la URL para que no se abra siempre
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+});
+   
+// Al cargar la página, revisamos si dejamos el modal "abierto"
+window.addEventListener('load', () => {
+    if (sessionStorage.getItem('modal_estado') === 'abierto') {
+        const modal = document.getElementById('modal_bailarinas_pro');
+        if (modal) {
+            modal.showModal();
+            // Muy importante: Limpiamos la memoria para que no se abra solo la próxima vez que entre a la web
+            sessionStorage.removeItem('modal_estado');
+        }
+    }
+});
+
+// 💡 FUNCIÓN DE FONDO PARA ACTUALIZAR LA PISTA SIN RECARGAR LA PÁGINA
+async function ejecutarAccionBailarina(event, form) {
+    event.preventDefault(); // Evita que la página se desvíe o se ponga en blanco
+    const formData = new FormData(form);
+    
+    try {
+        // 1. Enviar la petición al backend en segundo plano
+        await fetch(form.action, {
+            method: 'POST',
+            body: formData
+        });
+        
+        // 2. Traer el HTML fresco de la página de inicio sin recargar la pestaña entera
+        const response = await fetch("/");
+        const htmlText = await response.text();
+        
+        // 3. Parsear el HTML nuevo obtenido
+        const parser = new DOMParser();
+        const newDoc = parser.parseFromString(htmlText, 'text/html');
+        
+        // 4. Actualizar dinámicamente los contenedores clave (incluido el interior del modal)
+        const idsParaActualizar = ['modal_bailarinas_inner_box', 'dashboard_ventas_container', 'damas_salon_grid'];
+        
+        idsParaActualizar.forEach(id => {
+            const elViejo = document.getElementById(id);
+            const elNuevo = newDoc.getElementById(id);
+            if (elViejo && elNuevo) {
+                elViejo.innerHTML = elNuevo.innerHTML;
+            }
+        });
+        
+    } catch (error) {
+        console.error("Error al actualizar la pista de bailarinas:", error);
+        alert("❌ Ocurrió un error al procesar la acción.");
+    }
+}
+
+// Muestra la confirmación leyendo y formateando el precio dinámicamente
+    function mostrarConfirmacionTarjeta(btn) {
+        const form = btn.closest('form');
+        
+        // 💰 1. Leer el monto ingresado en este formulario
+        const montoInput = form.querySelector('input[name="monto_total"]');
+        const monto = parseInt(montoInput.value) || 0;
+        const montoFormateado = monto.toLocaleString('es-CL');
+        
+        // 📝 2. Actualizar el mensaje con el valor ingresado
+        const textoSpan = form.querySelector('.confirm-text');
+        if (textoSpan) {
+            textoSpan.innerText = `¿CONFIRMAR SUBIR POR $${montoFormateado}?`;
+        }
+        
+        // 🔄 3. Realizar transición visual
+        form.querySelector('.normal-state').classList.add('hidden');
+        form.querySelector('.confirm-state').classList.remove('hidden');
+    }
+
+    // Regresa la tarjeta a su estado original
+    function cancelarConfirmacionTarjeta(btn) {
+        const form = btn.closest('form');
+        form.querySelector('.confirm-state').classList.add('hidden');
+        form.querySelector('.normal-state').classList.remove('hidden');
+    }
+
+
+</script>
+<dialog id="modal_turno_fijo" class="modal">
+    <div class="modal-box bg-zinc-900 border-2 {% if estado_club == 'ABIERTO' %} border-red-500 {% else %} border-pink-500 {% endif %} p-8 text-center text-white">
+        
+        <h3 class="font-black text-2xl {% if estado_club == 'ABIERTO' %} text-red-500 {% else %} text-pink-500 {% endif %} uppercase mb-6 italic">
+            {{ 'FINALIZAR TURNO' if estado_club == 'ABIERTO' else 'GESTIÓN DE TURNO' }}
+        </h3>
+        
+        <form action="/gestionar_club" method="post" class="space-y-6">
+            {% if estado_club == 'ABIERTO' %}
+                <!-- VISTA PARA CERRAR -->
+                <input type="hidden" name="accion" value="CERRAR">
+                
+                <p class="text-lg">¿Estás seguro que deseas cerrar el <strong>{{ turno }}</strong>?</p>
+                <p class="text-zinc-500 text-xs uppercase">Esta acción quedará registrada en el sistema.</p>
+
+                <button type="submit" class="btn btn-error w-full font-black text-lg shadow-lg">
+                    SÍ, CERRAR TURNO AHORA
+                </button>
+            {% else %}
+                <!-- VISTA PARA ABRIR -->
+                <input type="hidden" name="accion" value="ABRIR">
+                
+                <div class="form-control">
+                    <label class="label"><span class="label-text text-zinc-400">Seleccione el Turno:</span></label>
+                    <select name="turno" class="select select-bordered w-full bg-black text-white font-bold">
+                        <option value="Turno 1">Turno 1 (Tarde/Noche)</option>
+                        <option value="Turno 2">Turno 2 (Madrugada)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-success w-full font-black text-lg shadow-lg">
+                    ABRIR CLUB AHORA
+                </button>
+            {% endif %}
+        </form>
+        
+        <div class="modal-action">
+            <button class="btn btn-ghost" onclick="document.getElementById('modal_turno_fijo').close()">CANCELAR</button>
+        </div>
+    </div>
+</dialog>
+<!-- MODAL DE BAILARINAS PROFESIONAL -->
+<dialog id="modal_bailarinas_pro" class="modal">
+    <div id="modal_bailarinas_inner_box" class="modal-box bg-zinc-950 border-2 border-purple-500 max-w-4xl p-0 overflow-hidden flex flex-col">
+        
+        <!-- CABECERA FIJA -->
+        <div class="sticky top-0 z-50 bg-zinc-950 border-b border-purple-500/30 p-6 flex justify-between items-center">
+            <div>
+                <h3 class="font-black text-2xl text-purple-500 uppercase italic tracking-tighter">Control de Pista</h3>
+                <p class="text-[9px] font-bold text-zinc-500 uppercase">Gestión en tiempo real</p>
+            </div>
+            <button class="btn btn-error btn-outline btn-sm rounded-full font-black px-6" 
+                    onclick="document.getElementById('modal_bailarinas_pro').close()">
+                ✕ Salón 
+            </button>
+        </div>
+
+        <div class="p-6 space-y-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            
+            <!-- 1. EN PISTA / CON SHOWS -->
+            {% if bailando_hoy %}
+            <div>
+                <h4 class="text-[10px] font-black text-purple-400 uppercase tracking-[4px] mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-purple-500 animate-ping"></span> 💃 EN PISTA
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for b in bailando_hoy %}
+                    <div class="bg-purple-500/10 p-4 rounded-[30px] border border-purple-500/40 flex items-center justify-between shadow-lg">
+                        <div class="flex items-center gap-4">
+                            <img src="{{ b.foto_url }}" class="w-14 h-14 rounded-full object-cover border-2 border-purple-500">
+                            <span class="font-black text-white uppercase text-sm italic">{{ b.nombre }}</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-3">
+                            <!-- Formulario de Monto -->
+                            <form onsubmit="event.preventDefault(); const monto = parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL'); if(confirm('¿Está seguro de subir a la pista a {{ b.nombre }} cobrando un show de $' + monto + '?')) { ejecutarAccionBailarina(event, this); }" action="/registrar_pago_show" method="post" class="flex items-center gap-3">
+                                <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
+                                <div class="flex gap-1">
+                                    <input type="number" name="monto_total" value="{{ b.monto_shows|int }}" 
+                                           class="input input-bordered input-xs w-24 bg-black text-center font-black text-purple-400">
+                                    <button type="submit" class="btn btn-xs btn-secondary font-black">✔</button>
+                                </div>
+                            </form>
+
+                            <!-- BOTÓN QUITAR DE PISTA (NUEVO) -->
+                            <form onsubmit="ejecutarAccionBailarina(event, this)" action="/registrar_pago_show" method="post">
+                                <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
+                                <input type="hidden" name="monto_total" value="0">
+                                <button type="submit" class="btn btn-circle btn-xs btn-error btn-outline" title="Quitar de pista">✕</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+<!-- 2. DISPONIBLES EN ESPERA (CON INPUT DE COBRO INTEGRADO EN EL MODAL) -->
+            <div>
+                <h4 class="text-[10px] font-black text-green-500 uppercase tracking-[4px] mb-4 italic">● DISPONIBLES</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for b in en_espera %}
+                    <div class="bg-zinc-900/80 p-4 rounded-[35px] border border-green-500/20 flex items-center justify-between shadow-lg">
+                        <div class="flex items-center gap-4">
+                            <img src="{{ b.foto_url }}" class="w-14 h-14 rounded-full object-cover border-2 border-green-500 shadow-md">
+                            <span class="font-black text-white uppercase text-sm italic">{{ b.nombre }}</span>
+                        </div>
+                        
+                        <!-- 💡 Formulario dinámico con confirmación integrada en la tarjeta -->
+                        <form onsubmit="ejecutarAccionBailarina(event, this)" action="/registrar_pago_show" method="post" class="flex items-center gap-3">
+                            <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
+                            
+                            <!-- Contenedor Estado Normal -->
+                            <div class="flex items-center gap-3 normal-state">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[8px] text-zinc-500 mb-1 uppercase font-bold">Monto Show</span>
+                                    <input name="monto_total" type="number" value="30000" required
+                                           class="input input-bordered input-xs w-20 bg-black text-center text-green-400 font-black">
+                                </div>
+                                <button type="button" onclick="mostrarConfirmacionTarjeta(this)" class="btn btn-xs btn-success font-black uppercase text-[9px] px-4 rounded-full h-8 mt-4">
+                                    SUBIR
+                                </button>
+                            </div>
+
+                            <!-- Contenedor 2: Estado de Confirmación (Oculto al inicio) -->
+                            <div class="hidden flex flex-col items-end gap-1 confirm-state">
+                                <span class="text-[9px] font-black text-yellow-500 uppercase block tracking-wider confirm-text">¿Confirmas subir?</span>
+                                <div class="flex gap-1">
+                                    <button type="button" onclick="cancelarConfirmacionTarjeta(this)" class="btn btn-xs btn-outline btn-error font-black px-2 rounded-lg">✕</button>
+                                    <button type="submit" class="btn btn-xs btn-success font-black px-4 rounded-lg">✔ SÍ</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- 3. AUSENTES -->
+            <div>
+                <h4 class="text-[10px] font-black text-zinc-700 uppercase tracking-[4px] mb-4 italic">○ NO HAN LLEGADO</h4>
+                <div class="flex flex-wrap gap-3 opacity-40">
+                    {% for b in ausentes_b %}
+                    <div class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">
+                        <img src="{{ b.foto_url }}" class="w-8 h-8 rounded-full grayscale object-cover">
+                        <span class="text-[9px] font-bold uppercase text-zinc-500">{{ b.nombre }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</dialog>
+</body>
+</html>

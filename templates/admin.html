@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="night">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Gestión de Damas - Whiskeria 2000</title>
+    <style>
+        .neon-pink { text-shadow: 0 0 10px #ec4899; color: #ec4899; }
+        .tab-lg { font-size: 1.2rem !important; height: 3.8rem !important; font-weight: 900 !important; }
+        
+        /* MODAL DE DETALLES PREMIUM */
+        .modal-box-detail { 
+            border: 1px solid rgba(236, 72, 153, 0.3); 
+            background-color: #080808; 
+            box-shadow: 0 0 50px rgba(0,0,0,1);
+            padding: 0 !important;
+            overflow: hidden;
+            max-width: 450px;
+        }
+        .detail-header { padding: 30px 20px; background: linear-gradient(to bottom, #111, #080808); text-align: center; }
+        .detail-body { padding: 0 40px 30px 40px; }
+        .info-group { border-bottom: 1px solid #1a1a1a; padding: 12px 0; }
+        .info-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: #555; font-weight: 900; }
+        .info-value { font-size: 1.3rem; color: #eee; font-weight: 700; text-transform: uppercase; }
+
+        /* MODAL EDITAR COMPACTO (SIN SCROLL) */
+        .modal-edit-compact {
+            max-width: 420px !important;
+            padding: 1.5rem !important;
+            border: 2px solid #3b82f6; 
+            background-color: #0a0a0a;
+            overflow: hidden !important;
+        }
+    </style>
+</head>
+<body class="bg-[#020202] text-white p-4 font-sans">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- HEADER -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-zinc-800 pb-6 gap-4">
+            <h1 class="text-3xl md:text-4xl font-black text-pink-500 uppercase italic tracking-tighter text-center md:text-left">
+                Gestión de Damas
+            </h1>
+            <a href="/" class="btn btn-sm md:btn-md btn-outline btn-secondary rounded-full font-black border-2 px-8 w-full md:w-auto">
+                ← VOLVER AL SALÓN
+            </a>
+        </div>
+
+        <div role="tablist" class="tabs tabs-lifted">
+            
+            <!-- 1. DAMAS ACTIVAS -->
+            <input type="radio" name="tabs_personal" role="tab" 
+                   class="tab h-16 text-[10px] md:text-sm font-black uppercase whitespace-nowrap" 
+                   aria-label="Activas" checked />
+            <div role="tabpanel" class="tab-content bg-zinc-900/20 border-zinc-800 p-4 md:p-6 rounded-box">
+
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-4">
+                    {% for dama in activas %}
+
+                    <div class="bg-zinc-900/80 border border-zinc-800 p-4 rounded-[35px] flex flex-col items-center relative shadow-2xl">
+                        <form action="/eliminar_dama/{{ dama.id }}" method="post" class="absolute top-4 right-4">
+                            <button type="submit" class="btn btn-circle btn-xs btn-error btn-outline" onclick="return confirm('¿Eliminar ficha?')">✕</button>
+                        </form>
+                        <img src="{{ dama.foto_url }}" class="w-24 h-24 rounded-full object-cover border-4 border-pink-500 cursor-pointer" 
+                             onclick="mostrarDetalles('{{ dama.nombre_real }}', '{{ dama.rut }}', '{{ dama.whatsapp }}', '{{ dama.nombre_artistico }}', '{{ dama.es_bailarina }}', '{{ dama.foto_url }}')">
+                        
+                        <h3 class="font-black uppercase text-2xl mt-4 text-white tracking-tighter text-center">
+                            {{ dama.nombre_artistico }} {% if dama.es_bailarina %} 💃 {% endif %}
+                        </h3>
+                        
+                        <div class="bg-black/60 px-4 py-1.5 rounded-full mt-3 flex gap-4 border border-zinc-800 font-bold">
+                            <span class="text-xs font-black text-pink-400">T1: {{ dama.dias_t1 }}</span>
+                            <span class="text-xs font-black text-blue-400">T2: {{ dama.dias_t2 }}</span>
+                        </div>
+                        <button onclick="prepararEdicion('{{ dama.id }}', '{{ dama.nombre_artistico }}', '{{ dama.nombre_real }}', '{{ dama.rut }}', '{{ dama.whatsapp }}', '{{ dama.es_bailarina }}')" 
+                                class="btn btn-secondary btn-xs w-full mt-5 rounded-xl font-black uppercase tracking-widest">Editar Ficha</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 2. NUEVA FICHA -->
+            <input type="radio" name="tabs_personal" role="tab" 
+                   class="tab h-16 text-[10px] md:text-sm font-black uppercase whitespace-nowrap" 
+                   aria-label="Nueva Ficha" />
+            <div role="tabpanel" class="tab-content bg-zinc-900/20 border-zinc-800 p-4 md:p-10 rounded-box text-center">
+
+                <div class="max-w-md mx-auto bg-zinc-900 p-8 rounded-[40px] border-2 border-pink-500/20 shadow-2xl">
+                    <h2 class="text-2xl font-black text-pink-500 text-center mb-8 uppercase italic tracking-widest">Ingresar Datos</h2>
+                    <form action="/agregar_dama" method="post" enctype="multipart/form-data" class="space-y-4">
+                        <input name="nombre_artistico" placeholder="NOMBRE ARTÍSTICO" class="input input-bordered w-full bg-black border-zinc-700 font-black text-pink-500 text-lg uppercase" required />
+                        <input name="nombre_real" placeholder="NOMBRE REAL COMPLETO" class="input input-bordered w-full bg-black border-zinc-700 font-bold uppercase text-xs" required />
+                        <div class="grid grid-cols-3 gap-2">
+                            <select name="tipo_documento" class="select select-bordered bg-black border-zinc-700 text-xs font-black"><option>RUT</option><option>PASAPORTE</option></select>
+                            <input name="rut" placeholder="NÚMERO" class="input input-bordered bg-black border-zinc-700 text-sm font-bold col-span-2" required />
+                        </div>
+                        <input name="whatsapp" placeholder="WHATSAPP +56 9..." class="input input-bordered w-full bg-black border-zinc-700 font-bold" required />
+                        <label class="label cursor-pointer bg-black/60 p-4 rounded-2xl border border-zinc-800">
+                            <span class="label-text text-zinc-300 font-black uppercase text-xs">💃 ¿Es Bailarina Profesional?</span> 
+                            <input type="checkbox" name="es_bailarina" value="on" class="checkbox checkbox-secondary" />
+                        </label>
+                        <input name="foto" type="file" class="file-input file-input-bordered file-input-secondary file-input-sm w-full bg-black" accept="image/*" required />
+                        <div class="flex gap-3 pt-2">
+                            <button type="button" onclick="window.location.reload()" class="btn btn-ghost border border-zinc-800 flex-1 font-bold">CANCELAR</button>
+                            <button type="submit" class="btn btn-secondary flex-[2] font-black text-xl shadow-xl">GUARDAR DAMA</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 3. INACTIVAS -->
+            <input type="radio" name="tabs_personal" role="tab" 
+                   class="tab h-16 text-[10px] md:text-sm font-black uppercase whitespace-nowrap" 
+                   aria-label="Inactivas (30D)" />
+            <div role="tabpanel" class="tab-content bg-zinc-900/20 border-zinc-800 p-4 md:p-8 rounded-box">
+                
+                {% for dama in inactivas %}
+                <div class="bg-black/80 p-5 rounded-[30px] flex justify-between items-center border border-red-500/30 mb-2">
+                    <div class="flex items-center gap-5">
+                        <img src="{{ dama.foto_url }}" class="w-16 h-16 rounded-full grayscale opacity-50 object-cover">
+                        <span class="font-black text-xl uppercase text-zinc-500 italic">{{ dama.nombre_artistico }}</span>
+                    </div>
+                    <form action="/reactivar_dama/{{ dama.id }}" method="post"><button class="btn btn-success btn-sm font-black rounded-full px-8">REACTIVAR</button></form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETALLES -->
+    <dialog id="modal_detalles" class="modal">
+        <div class="modal-box modal-box-detail">
+            <div class="detail-header">
+                <img id="det_foto" src="" class="w-32 h-32 rounded-full mx-auto border-4 border-pink-500 mb-6 object-cover shadow-2xl" />
+                <h3 id="det_artista" class="font-black text-5xl text-white uppercase italic tracking-tighter neon-pink"></h3>
+            </div>
+            <div class="detail-body">
+                <div class="info-group"><p class="info-label">Nombre Real</p><p id="det_real" class="info-value"></p></div>
+                <div class="info-group"><p class="info-label">Documento</p><p id="det_rut" class="info-value"></p></div>
+                <div class="info-group" style="border:none"><p class="info-label">WhatsApp</p><p id="det_wsp" class="info-value text-pink-500"></p></div>
+            </div>
+            <div class="bg-[#111] p-6 flex justify-center border-t border-zinc-800">
+                <form method="dialog"><button class="btn btn-ghost font-black uppercase tracking-widest text-zinc-500">CERRAR FICHA</button></form>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- MODAL EDITAR (CORREGIDO SIN SCROLL Y BOTONES ALINEADOS) -->
+    <dialog id="modal_editar" class="modal">
+        <div class="modal-box modal-edit-compact">
+            <h3 class="font-black text-2xl text-blue-400 uppercase text-center mb-6 italic tracking-tighter">Editar Ficha</h3>
+            <form id="form_editar" method="post" class="space-y-3">
+                <input name="nombre_artistico" id="edit_artista" class="input input-bordered w-full bg-black border-zinc-800 font-bold text-blue-400" placeholder="Artístico" required />
+                <input name="nombre_real" id="edit_real" class="input input-bordered w-full bg-black border-zinc-800 text-sm" placeholder="Nombre Real" required />
+                <input name="rut" id="edit_rut" class="input input-bordered w-full bg-black border-zinc-800 text-sm font-mono" placeholder="RUT/Pasaporte" required />
+                <input name="whatsapp" id="edit_wsp" class="input input-bordered w-full bg-black border-zinc-800 text-sm" placeholder="WhatsApp" required />
+                
+                <label class="label cursor-pointer bg-black/60 px-4 py-3 rounded-xl border border-zinc-800 mt-2">
+                    <span class="label-text text-zinc-300 font-black uppercase text-[10px]">💃 Bailarina Profesional</span> 
+                    <input type="checkbox" name="es_bailarina" id="edit_baile" class="checkbox checkbox-primary checkbox-sm" />
+                </label>
+                
+                <!-- BOTONES ALINEADOS CORRECTAMENTE -->
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="document.getElementById('modal_editar').close()" class="btn btn-ghost border border-zinc-800 flex-1 font-bold text-xs uppercase">Cancelar</button>
+                    <button type="submit" class="btn btn-primary flex-[2] font-black uppercase italic">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <script>
+        function mostrarDetalles(real, rut, wsp, artista, es_baile, foto) {
+            document.getElementById('det_artista').innerText = artista;
+            document.getElementById('det_real').innerText = real;
+            document.getElementById('det_rut').innerText = rut;
+            document.getElementById('det_wsp').innerText = wsp;
+            document.getElementById('det_foto').src = foto;
+            document.getElementById('modal_detalles').showModal();
+        }
+        function prepararEdicion(id, artista, real, rut, wsp, es_baile) {
+            document.getElementById('form_editar').action = "/editar_dama/" + id;
+            document.getElementById('edit_artista').value = artista;
+            document.getElementById('edit_real').value = real;
+            document.getElementById('edit_rut').value = rut;
+            document.getElementById('edit_wsp').value = wsp;
+            document.getElementById('edit_baile').checked = (es_baile === 'True' || es_baile === true);
+            document.getElementById('modal_editar').showModal();
+        }
+    </script>
+</body>
+</html>

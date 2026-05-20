@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="night">
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" />
+    <title>Gestión de Shows</title>
+</head>
+<body class="bg-black min-h-screen p-4 text-white">
+    <div class="flex items-center gap-4 mb-8">
+        <a href="/" class="btn btn-ghost btn-sm">← VOLVER</a>
+        <h2 class="text-xl font-black text-purple-500 uppercase italic">Control de Pista</h2>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4">
+        {% for registro in asistencias_hoy %}
+        <div class="bg-zinc-900 p-4 rounded-3xl border border-purple-500/20 flex justify-between items-center shadow-xl">
+            <div class="flex items-center gap-4">
+                <div class="avatar online">
+                    <div class="w-14 rounded-full border-2 border-purple-500">
+                        <img src="{{ registro.foto_url }}" />
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-black text-sm uppercase text-purple-300">{{ registro.nombre }}</h3>
+                    <div class="badge badge-outline border-zinc-700 text-[9px] uppercase">{{ registro.turno }}</div>
+                </div>
+            </div>
+
+            <!-- FORMULARIO PARA ACTIVAR EL BAILE -->
+            <form action="/activar_baile" method="post" class="flex items-center gap-4">
+                <input type="hidden" name="asistencia_id" value="{{ registro.asistencia_id }}">
+                
+                <div class="flex flex-col items-center">
+                    <span class="text-[9px] text-zinc-500 mb-1 uppercase font-bold">Cant. Shows</span>
+                    <input name="cantidad" type="number" value="{{ registro.cantidad_shows }}" class="input input-bordered input-sm w-16 bg-black text-center text-white" />
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <span class="text-[9px] text-zinc-500 mb-1 uppercase font-bold">¿Baila Hoy?</span>
+                    <input name="baila" type="checkbox" class="toggle toggle-secondary" {% if registro.bailando %}checked{% endif %} />
+                </div>
+
+                <button type="submit" class="btn btn-secondary btn-sm font-black shadow-lg shadow-pink-500/20">ACTUALIZAR</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

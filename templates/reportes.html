@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="night">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>CONTABILIDAD W2000</title>
+    <style>
+    .neon-gold { text-shadow: 0 0 15px #facc15; color: #facc15; }
+    .card-btn { transition: all 0.3s; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+
+    /* Ocultar bloque de contador por defecto en pantalla */
+    .bloque-contador { display: none; }
+
+    /* --- CONFIGURACIÓN DE IMPRESIÓN INTELIGENTE --- */
+    @media print {
+        body { background: white !important; color: black !important; padding: 20px; font-family: sans-serif; }
+        .no-print { display: none !important; }
+        
+        /* Ajuste de colores planos en papel */
+        .bg-zinc-900, .bg-zinc-950, .bg-black, .bg-emerald-500\/10, .bg-blue-500\/10, .bg-purple-500\/10, .bg-zinc-800 { 
+            background: white !important; 
+            border: 1px solid #ddd !important; 
+            color: black !important;
+            box-shadow: none !important;
+        }
+        .text-white, .text-zinc-300, .text-zinc-200 { color: black !important; }
+        .collapse-content { display: block !important; }
+
+        /* 💡 1. MODO CONTADOR (Impresión Formal de Tarjetas) */
+        body:not(.modo-jefe) #dashboard-completo-jefe {
+            display: none !important; /* Oculta todo el panel negro/neón */
+        }
+        body:not(.modo-jefe) .bloque-contador {
+            display: block !important; /* Muestra solo el informe limpio de tarjetas */
+            color: black !important;
+        }
+        body:not(.modo-jefe) .seccion-garzones, 
+        body:not(.modo-jefe) .seccion-auditoria { 
+            display: none !important; /* Oculta garzones y auditorías en modo contador */
+        }
+
+        /* 💡 2. MODO JEFE (Impresión Full) */
+        body.modo-jefe .bloque-contador {
+            display: none !important; /* El jefe no ve el bloque resumido */
+        }
+        body.modo-jefe #dashboard-completo-jefe {
+            display: block !important;
+        }
+        body.modo-jefe .metodo-privado, 
+        body.modo-jefe .seccion-garzones, 
+        body.modo-jefe .seccion-auditoria { 
+            display: block !important; /* Muestra garzones, efectivo, deudas y auditoría */
+        }
+        .seccion-auditoria .custom-scrollbar,
+        .seccion-auditoria div {
+            max-height: none !important;   /* Estira la caja al máximo para mostrar todos los registros */
+            overflow: visible !important;   /* Hace visible todo el contenido oculto */
+        }
+        
+        /* Oculta la barra de desplazamiento en el PDF */
+        .seccion-auditoria ::-webkit-scrollbar {
+            display: none !important;
+        }
+
+        /* Estiliza las filas de auditoría para que parezcan un informe formal en papel */
+        .seccion-auditoria .bg-red-500\/5 {
+            background: #f9f9f9 !important; /* Fondo gris claro limpio para hojas blancas */
+            border: 1px solid #ddd !important; /* Borde sutil */
+            color: black !important;
+            page-break-inside: avoid; /* Evita que una fila se corte por la mitad entre páginas */
+        }
+
+        .seccion-auditoria span, 
+        .seccion-auditoria div {
+            color: black !important; /* Forzar que todo el texto sea negro legible en papel */
+        }
+    }
+</style>
+
+</head>
+
+<body class="bg-[#020202] text-white min-h-screen p-4 md:p-8" id="reporte-jefe">
+
+<!-- HEADER -->
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-10 gap-6 border-b border-white/10 pb-6 no-print">
+    <div class="flex items-center gap-4">
+        <a href="/?user={{ role }}" class="btn btn-circle btn-outline btn-warning">←</a>
+        <h1 class="text-4xl font-black text-yellow-500 uppercase italic neon-gold">Panel Contable</h1>
+    </div>
+    
+    <div class="flex flex-wrap gap-2 justify-center bg-zinc-900 p-3 rounded-2xl border border-white/5 no-print">
+    <!-- BOTÓN JEFE: IMPRIME TODO -->
+    <button type="button" onclick="imprimirJefe()" class="btn btn-sm btn-secondary font-black rounded-full px-6 italic">
+        IMPRIMIR FULL (JEFE) 👑
+    </button>
+
+    <!-- BOTÓN CONTADOR: IMPRIME SOLO LO FORMAL -->
+    <button type="button" onclick="window.print()" class="btn btn-sm btn-error font-black rounded-full px-6 italic">
+        IMPRIMIR CONTADOR 📄
+    </button>
+</div>
+
+        <form action="/contabilidad" method="get" class="flex gap-2">
+            <input type="hidden" name="user" value="{{ role }}">
+            <input type="date" name="fecha" value="{{ fecha_filtro }}" onchange="this.form.submit()" class="input input-sm bg-black font-bold border-zinc-700">
+            <select name="turno" onchange="this.form.submit()" class="select select-sm bg-black font-bold border-zinc-700">
+                <option value="Turno 1" {% if turno_filtro == 'Turno 1' %}selected{% endif %}>Turno 1</option>
+                <option value="Turno 2" {% if turno_filtro == 'Turno 2' %}selected{% endif %}>Turno 2</option>
+            </select>
+        </form>
+        
+        <div class="flex gap-2">
+            <button type="button" onclick="document.getElementById('modal_global_pendientes').showModal()" class="btn btn-sm btn-outline btn-secondary rounded-full font-black text-[10px]">⚠️ LIQUIDACIONES</button>
+            <button type="button" onclick="document.getElementById('modal_global_deudas').showModal()" class="btn btn-sm btn-outline btn-warning rounded-full font-black text-[10px]">📔 DEUDAS</button>
+        </div>
+    </div>
+</div>
+
+    <!-- ======================================================================= -->
+    <!-- 1. DASHBOARD COMPLETO (SÓLO PARA VISTA EN PANTALLA E IMPRESIÓN JEFE)     -->
+    <!-- ======================================================================= -->
+    <div class="max-w-7xl mx-auto space-y-6" id="dashboard-completo-jefe">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div class="bg-zinc-900 p-6 rounded-[35px] border border-white/5 shadow-xl">
+                <p class="text-zinc-500 font-bold text-xs uppercase">Caja Bruta</p>
+                <h2 class="text-4xl font-black text-white">${{ "{:,.0f}".format(resumen.bruto).replace(",", ".") }}</h2>
+            </div>
+            <div onclick="document.getElementById('modal_liq_damas').showModal()" class="card-btn bg-zinc-900 p-6 rounded-[35px] border-pink-500/30 shadow-xl">
+                <p class="text-pink-500 font-bold text-xs uppercase">Liquidación Damas ⓘ</p>
+                <h2 class="text-4xl font-black text-pink-500">${{ "{:,.0f}".format(resumen.pagos_damas).replace(",", ".") }}</h2>
+            </div>
+            <div class="bg-yellow-500 p-6 rounded-[35px] text-black shadow-xl">
+                <p class="font-bold text-xs uppercase">Utilidad Casa</p>
+                <h2 class="text-4xl font-black italic">${{ "{:,.0f}".format(resumen.neto).replace(",", ".") }}</h2>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-emerald-500/10 p-4 rounded-2xl text-center border border-emerald-500/20 metodo-privado">
+                <span class="block text-[10px] font-black text-zinc-500 uppercase">EFECTIVO</span>
+                <span class="text-xl font-black text-emerald-500">${{ "{:,.0f}".format(resumen.efectivo).replace(",", ".") }}</span>
+            </div>
+            <div class="bg-blue-500/10 p-4 rounded-2xl text-center border border-blue-500/20">
+                <span class="block text-[10px] font-black text-zinc-500 uppercase">TARJETA</span>
+                <span class="text-xl font-black text-blue-500">${{ "{:,.0f}".format(resumen.tarjeta).replace(",", ".") }}</span>
+            </div>
+            <div class="bg-purple-500/10 p-4 rounded-2xl text-center border border-purple-500/20 metodo-privado">
+                <span class="block text-[10px] font-black text-zinc-500 uppercase">TRANSFERENCIA</span>
+                <span class="text-xl font-black text-purple-400">${{ "{:,.0f}".format(resumen.transferencia).replace(",", ".") }}</span>
+            </div>
+            <div onclick="document.getElementById('modal_global_deudas').showModal()" class="card-btn bg-zinc-800 p-4 rounded-2xl text-center border-2 border-yellow-500/20 metodo-privado">
+                <span class="block text-[10px] font-black text-zinc-500 uppercase">Cartera Total Deudores 📔</span>
+                <span class="text-xl font-black text-yellow-500">${{ "{:,.0f}".format(monto_deudas_total).replace(",", ".") }}</span>
+                <span class="block text-[9px] text-zinc-600 uppercase mt-1">Clic para ver detalle histórico</span>
+            </div>
+        </div>
+    </div> <!-- Aquí termina el Dashboard del Jefe -->
+
+
+  <!-- ======================================================================= -->
+    <!-- 2. BLOQUE EXCLUSIVO PARA IMPRESIÓN DEL CONTADOR (Oculto en pantalla - Neutralizado) -->
+    <!-- ======================================================================= -->
+    <div class="bloque-contador" style="color: black; font-family: Arial, sans-serif;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-size: 26px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Reporte Contable Formal</h1>
+            <p style="font-size: 14px; margin: 0; color: #555;">Documento de Cuadraturas del Turno</p>
+        </div>
+        
+        <div style="margin-bottom: 30px; font-size: 14px; line-height: 1.6; border-bottom: 2px solid #000; padding-bottom: 15px;">
+            <p style="margin: 3px 0;"><strong>Fecha del Turno:</strong> {{ fecha_filtro }}</p>
+            <p style="margin: 3px 0;"><strong>Jornada Operativa:</strong> {{ turno_filtro }}</p>
+            <p style="margin: 3px 0;"><strong>Tipo de Registro:</strong> Cuadratura Resumida de Caja</p>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px; font-size: 16px;">
+            <tbody>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 12px 10px; font-weight: bold; text-transform: uppercase;">Total Ventas Formales:</td>
+                    <td style="padding: 12px 10px; text-align: right; font-weight: bold; font-size: 18px;">${{ "{:,.0f}".format(resumen.tarjeta).replace(",", ".") }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd; color: #b91c1c;">
+                    <td style="padding: 12px 10px; font-weight: bold; text-transform: uppercase;">(-) Descuento Liquidación Personal:</td>
+                    <td style="padding: 12px 10px; text-align: right; font-weight: bold; font-size: 18px;">-${{ "{:,.0f}".format(resumen.pagos_damas).replace(",", ".") }}</td>
+                </tr>
+                <tr style="border-bottom: 3px double #000; font-size: 20px; background-color: #f9f9f9;">
+                    <td style="padding: 15px 10px; font-weight: 900; text-transform: uppercase;">Saldo Neto Formal:</td>
+                    <td style="padding: 15px 10px; text-align: right; font-weight: 900; text-decoration: underline;">
+                        ${{ "{:,.0f}".format(resumen.tarjeta - resumen.pagos_damas).replace(",", ".") }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 80px; text-align: center; font-size: 11px; color: #666; border-top: 1px dashed #ccc; padding-top: 15px;">
+            <p>Este reporte contiene el resumen formal de las cuadraturas registradas del turno.</p>
+        </div>
+    </div>
+
+<!-- 3. VENTAS POR GARZONES (BLOQUE INDEPENDIENTE) -->
+        <div class="pt-8 w-full block seccion-garzones">
+            <h3 class="text-[10px] font-black mb-4 uppercase text-zinc-600 tracking-[3px] text-center italic">● Control de Ventas por Garzón ●</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {% for garzon, data in detalle_garzones.items() %}
+                <div class="collapse collapse-plus bg-zinc-900/50 border border-white/5 rounded-2xl">
+                    <input type="checkbox" /> 
+                    <div class="collapse-title flex justify-between items-center py-3 px-5 min-h-0">
+                        <span class="text-sm font-bold uppercase text-zinc-300">🤵 {{ garzon }}</span>
+                        <span class="text-sm font-black text-cyan-400">${{ "{:,.0f}".format(data.total).replace(",", ".") }}</span>
+                    </div>
+                    <div class="collapse-content px-4 pb-4">
+                        <table class="table table-xs w-full bg-black/20 rounded-xl">
+                            <thead class="text-zinc-500 uppercase text-[9px]">
+                                <tr>
+                                    <th>Hora</th>
+                                    <th>Servicio</th>
+                                    <th>Destino</th>
+                                    <th class="text-right">Monto</th>
+                                    <th class="text-right no-print">Acción</th> <!-- 💡 Nueva Columna -->
+                                </tr>
+                            </thead>
+                            <tbody class="text-[10px]">
+                                {% for v in data.lista %}
+                                <tr class="border-b border-white/5">
+                                    <td>{{ v.hora }}</td>
+                                    <td>{{ v.servicio }}</td>
+                                    <td class="text-pink-500 uppercase">{{ v.destino }}</td>
+                                    <td class="text-right font-bold text-zinc-200">${{ "{:,.0f}".format(v.monto).replace(",", ".") }}</td>
+                                    <!-- 💡 Botón Eliminar Venta -->
+                                    <td class="text-right no-print">
+                                        <button type="button" onclick="prepararBorrado('{{ v.id }}', '{{ v.servicio }}')" class="btn btn-circle btn-xs btn-error btn-outline" title="Eliminar Venta">
+                                            ✕
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if not detalle_garzones %}
+                <p class="text-center text-zinc-700 text-[10px] uppercase font-bold py-4">Sin ventas registradas</p>
+            {% endif %}
+        </div>
+
+        <!-- SECCIÓN AUDITORÍA DE CONTROL -->
+<div class="mt-12 w-full seccion-auditoria">
+    <div class="bg-zinc-900/80 border border-red-500/20 rounded-[40px] p-8 shadow-2xl">
+        <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+            <h3 class="text-xs font-black uppercase text-red-500 tracking-[5px] italic">
+                ● Registro de Auditoría y Control ●
+            </h3>
+            <span class="text-[10px] text-zinc-500 font-bold uppercase italic">Solo acciones administrativas</span>
+        </div>
+
+        <div class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+            {% for log in logs %}
+            <div class="flex items-center gap-4 bg-red-500/5 p-3 rounded-2xl border border-white/5">
+                <div class="text-[10px] font-mono text-zinc-500">{{ log.fecha.strftime('%H:%M:%S') }}</div>
+                <div class="shrink-0"><span class="text-[10px] font-black text-red-400 uppercase">[{{ log.usuario }}]</span></div>
+                <div class="text-[11px] text-zinc-300 font-bold uppercase tracking-tight">{{ log.accion }}</div>
+            </div>
+            {% endfor %}
+
+            {% if not logs %}
+            <div class="text-center py-6 opacity-20">
+                <p class="text-sm font-bold uppercase italic">Sin eventos de control en este turno</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+    <!-- MODAL LIQUIDACIÓN DAMAS -->
+    <dialog id="modal_liq_damas" class="modal">
+        <div class="modal-box max-w-5xl bg-zinc-950 border border-pink-500">
+            <h3 class="text-2xl font-black text-pink-500 uppercase italic mb-4">Liquidaciones Personal</h3>
+            
+            <!-- 🔍 BUSCADOR DE DAMAS EN EL MODAL -->
+            <div class="mb-6">
+                <input type="text" id="buscadorDamaModal" onkeyup="filtrarDamasModal()" 
+                       placeholder="🔍 ESCRIBE EL NOMBRE DE LA DAMA PARA BUSCAR..." 
+                       class="input input-bordered input-sm w-full bg-black border-pink-500/40 text-center font-bold uppercase focus:border-pink-500">
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="table w-full bg-black/40">
+                    <thead class="text-zinc-500 text-[10px] uppercase">
+                        <tr>
+                            <th>Dama</th>
+                            <th>Detalle</th>
+                            <th>Bono/Baile</th> <!-- Unificado para ahorrar espacio -->
+                            <th>Resid.</th>
+                            <th class="text-right">Total</th>
+                            <th>Ficha</th> <!-- NUEVA COLUMNA -->
+                            <th>Check</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-white font-bold text-xs uppercase">
+                        {% for d in detalle_damas %}
+                        {% if d %}
+                        <!-- 💡 Añadimos clase 'fila-dama-modal' y bajamos la opacidad si ya está pagada -->
+                        <tr class="border-b border-white/5 fila-dama-modal {% if d.liquidada %} opacity-50 bg-pink-950/10 {% endif %}">
+                            <td class="text-pink-400 nombre-dama-modal">
+                                {{ d.nombre }} 
+                                {% if d.liquidada %}<span class="text-green-400 text-[9px] block">✔ PAGADA</span>{% endif %}
+                            </td>
+                            <td><button onclick="abrirDetalleDama('{{ d.dama_id }}', '{{ d.liquidada }}')" class="btn btn-xs btn-ghost btn-outline text-[9px]">Ver consumos</button></td>
+                            <td>
+                                <div class="text-[9px]">
+                                    <p class="text-green-500">Asis: +{{ "{:,.0f}".format(d.monto_bono) }}</p>
+                                    {% if d.es_bailarina %}
+                                    <p class="text-purple-400">Baile: +{{ "{:,.0f}".format(d.ganancia_bailes) }}</p>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-red-500">-{{ "{:,.0f}".format(d.residencia) }}</td>
+                            <td class="text-right text-lg text-pink-500 font-black">${{ "{:,.0f}".format(d.total_pagar).replace(",", ".") }}</td>
+                            
+                            <!-- BOTÓN PARA ENVIAR WHATSAPP -->
+                            <td>
+                                <a href="{{ d.link_wa }}" target="_blank" class="btn btn-xs btn-success gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.891 11.893-11.891 3.181 0 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.335 11.892-11.893 11.892-1.99 0-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.658 3.844 1.908 5.404l-1.047 3.816 3.628-.953z"/></svg>
+                                    ENVIAR
+                                </a>
+                            </td>
+
+                            <td>
+                                {% if d.liquidada %}
+                                <input type="checkbox" checked disabled class="checkbox checkbox-success border-2 opacity-50 cursor-not-allowed">
+                                {% else %}
+                                <input type="checkbox" onchange="confirmarPagoDama(this, '{{d.dama_id}}', '{{d.nombre}}', '{{ d.total_pagar }}', '{{ d.fecha }}')" class="checkbox checkbox-success border-2">
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-action"><form method="dialog"><button class="btn">CERRAR</button></form></div>
+        </div>
+    </dialog>
+
+    <!-- MODALES DETALLE DAMA -->
+    {% for d in detalle_damas %}
+    {% if d %}
+    <dialog id="modal_dama_det_{{ d.dama_id }}_{{ d.liquidada }}" class="modal">
+        <div class="modal-box bg-zinc-900 border border-pink-500/50">
+            <h3 class="text-xl font-black text-pink-500 mb-4 uppercase">{{ d.nombre }} - Detalle</h3>
+
+            <div class="space-y-2 max-h-80 overflow-y-auto">
+                {% for c in d.consumos %}
+                <div class="flex justify-between bg-black/40 p-2 rounded-lg text-xs border border-white/5">
+                    <span>{{ c.hora }} - {{ c.serv }} <br><small class="text-zinc-500 uppercase">Garzón: {{ c.garzon }}</small></span>
+                    <span class="font-black text-white">+${{ "{:,.0f}".format(c.ganancia).replace(",", ".") }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="modal-action"><form method="dialog"><button class="btn btn-sm">CERRAR</button></form></div>
+        </div>
+    </dialog>
+    {% endif %}
+    {% endfor %}
+
+    <!-- MODAL GLOBAL DEUDAS -->
+<dialog id="modal_global_deudas" class="modal">
+    <div class="modal-box max-w-4xl bg-zinc-950 border border-yellow-500 p-6">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-2xl font-black text-yellow-500 uppercase italic">Seguimiento de Cuentas</h3>
+                <p class="text-[10px] text-zinc-500 uppercase font-bold">Listado de deudas pendientes históricas</p>
+            </div>
+            <div class="badge badge-warning p-4 font-black">TOTAL: ${{ "{:,.0f}".format(monto_deudas_total).replace(",", ".") }}</div>
+        </div>
+        
+        <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+            {% for d in deudas_global %}
+            <div class="bg-zinc-900/80 p-4 rounded-2xl border border-white/5 flex justify-between items-center shadow-lg">
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded font-mono">{{ d.fecha.strftime('%d/%m/%y %H:%M') }}</span>
+                        <span class="text-xs text-zinc-500 uppercase font-bold">Atendió: {{ d.mesero }}</span>
+                    </div>
+                    <!-- Nombre del Cliente -->
+                    <p class="font-black text-white text-lg uppercase tracking-tight">{{ d.cliente_nombre or 'CLIENTE SIN REGISTRO' }}</p>
+                    <p class="text-xs text-yellow-600 font-bold italic">{{ d.servicio }}</p>
+                </div>
+                
+                <div class="text-right">
+                    <p class="text-2xl font-black text-yellow-500">${{ "{:,.0f}".format(d.monto).replace(",", ".") }}</p>
+                    
+                    <div class="flex gap-2 mt-2">
+                        <!-- FORMULARIO DE COBRO -->
+                        <form action="/cobrar_deuda/{{ d.id }}" method="post" onsubmit="return confirm('¿CONFIRMAR PAGO DE {{ d.cliente_nombre }}?')">
+                            <button type="submit" name="metodo_pago_final" value="EFECTIVO" class="btn btn-xs btn-success font-black px-4">
+                                💵 COBRAR
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not deudas_global %}
+            <div class="text-center py-10 opacity-30">
+                <p class="text-xl font-black uppercase italic italic">No hay cuentas pendientes</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="modal-action">
+            <form method="dialog"><button class="btn btn-ghost font-black">CERRAR PANEL</button></form>
+        </div>
+    </div>
+</dialog>
+    <!-- MODAL GLOBAL PENDIENTES (HEADER) -->
+    <dialog id="modal_global_pendientes" class="modal">
+        <div class="modal-box max-w-4xl bg-zinc-950 border border-secondary">
+            <h3 class="text-2xl font-black text-secondary uppercase italic mb-6">Liquidaciones Días Anteriores</h3>
+            <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                {% for p in pendientes_global %}
+                <div class="bg-zinc-900 p-4 rounded-3xl border border-white/5 flex justify-between items-center">
+                    <div>
+    <p class="text-[10px] text-zinc-500 font-bold uppercase">{{ p.fecha }} | {{ p.turno }}</p>
+    <div class="flex items-center gap-3">
+        <p class="font-black text-white text-xl uppercase">{{ p.nombre }}</p>
+        
+        <!-- BOTÓN WHATSAPP HISTÓRICO (NUEVO) -->
+        <a href="{{ p.link_wa }}" target="_blank" class="btn btn-circle btn-xs btn-success gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.891 11.893-11.891 3.181 0 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.335 11.892-11.893 11.892-1.99 0-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.658 3.844 1.908 5.404l-1.047 3.816 3.628-.953z"/></svg>
+        </a>
+    </div>
+</div>
+                    <div class="text-right">
+                        <p class="text-2xl font-black text-white">${{ "{:,.0f}".format(p.total_pagar).replace(",", ".") }}</p>
+                        <input type="checkbox" onchange="confirmarPagoDama(this, '{{p.dama_id}}', '{{p.nombre}}', '{{ p.total_pagar }}', '{{ p.fecha }}')" class="checkbox checkbox-success border-2 mt-2">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="modal-action"><form method="dialog"><button class="btn btn-ghost">CERRAR</button></form></div>
+        </div>
+    </dialog>
+
+    <!-- MODAL MOTIVO BORRADO -->
+    <dialog id="modal_borrar_venta" class="modal">
+        <div class="modal-box bg-zinc-950 border border-red-500">
+            <h3 class="font-black text-red-500 uppercase mb-4">¿Eliminar Venta?</h3>
+            <form id="form_borrar" method="post">
+                <input type="text" name="motivo" placeholder="Motivo..." class="input input-bordered w-full bg-black mb-4 uppercase text-xs" required>
+                <div class="flex gap-2">
+                    <button type="button" onclick="document.getElementById('modal_borrar_venta').close()" class="btn btn-ghost flex-1">CANCELAR</button>
+                    <button type="submit" class="btn btn-error flex-1 font-black">ELIMINAR</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <script>
+        function generarPDFJefe() {
+            const elemento = document.getElementById('reporte-jefe');
+            const opciones = {
+                margin: 0.2,
+                filename: 'Reporte_Jefe_{{ fecha_filtro }}_{{ turno_filtro }}.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, backgroundColor: '#020202', useCORS: true },
+                jsPDF: { unit: 'in', format: 'a3', orientation: 'portrait' }
+            };
+            // Ocultar temporalmente para la captura
+            const botones = document.querySelectorAll('.no-print');
+            botones.forEach(b => b.style.display = 'none');
+            html2pdf().set(opciones).from(elemento).save().then(() => {
+                botones.forEach(b => b.style.display = 'flex');
+            });
+        }
+        function imprimirJefe() {
+    // 1. Añadimos la clase para que el CSS sepa que debe mostrar TODO
+    document.body.classList.add('modo-jefe');
+    
+    // 2. Ejecutamos la impresión
+    window.print();
+    
+    // 3. Limpiamos la clase después de imprimir para que el panel vuelva a ser neón en pantalla
+    setTimeout(() => {
+        document.body.classList.remove('modo-jefe');
+    }, 1000);
+}
+
+        async function confirmarPagoDama(checkbox, damaId, nombre, monto, fecha) {
+            if (confirm(`¿CONFIRMAR PAGO A: ${nombre}?\nMONTO: $${monto}\nFECHA: ${fecha}`)) {
+                const fD = new FormData();
+                fD.append('fecha', fecha); 
+                fD.append('turno', '{{ turno_filtro }}');
+                
+                try {
+                    const res = await fetch('/registrar_pago_dama/' + damaId, { method: 'POST', body: fD });
+                    
+                    if (res.ok) {
+                        // Si todo salió bien (HTTP 200)
+                        checkbox.disabled = true; 
+                        window.location.reload(); 
+                    } else {
+                        // Si el servidor respondió con un error (ej: HTTP 403)
+                        const errorData = await res.json();
+                        // Mostramos el mensaje de error que definimos en el "detail" de FastAPI
+                        alert(`❌ ERROR: ${errorData.detail || "No autorizado para esta acción"}`);
+                        checkbox.checked = false; // Desmarcamos la casilla en la pantalla
+                    }
+                } catch (error) {
+                    // En caso de que se caiga la conexión a internet o el servidor esté apagado
+                    alert("❌ Error de red: No se pudo conectar con el servidor.");
+                    checkbox.checked = false;
+                }
+            } else { 
+                checkbox.checked = false; 
+            }
+        }
+
+       function filtrarDamas() {
+            let val = document.getElementById('buscDama').value.toUpperCase();
+            let filas = document.getElementsByClassName('fila-dama');
+            for(let f of filas) {
+                let nombre = f.getElementsByClassName('nombre-dama')[0].innerText.toUpperCase();
+                f.style.display = nombre.includes(val) ? "" : "none";
+            }
+        }
+
+        // 💡 NUEVO FILTRO PARA EL BUSCADOR INTERNO DEL MODAL LIQUIDACIONES
+        function filtrarDamasModal() {
+            let val = document.getElementById('buscadorDamaModal').value.toUpperCase();
+            let filas = document.querySelectorAll('.fila-dama-modal');
+            filas.forEach(f => {
+                let nombre = f.querySelector('.nombre-dama-modal').innerText.toUpperCase();
+                f.style.display = nombre.includes(val) ? "" : "none";
+            });
+        }
+        function abrirDetalleDama(damaId, liquidada) {
+            let modalId = 'modal_dama_det_' + damaId + '_' + liquidada;
+            let modal = document.getElementById(modalId);
+            if (modal) {
+                modal.showModal();
+            }
+        }
+
+        function prepararBorrado(id, serv) {
+            document.getElementById('form_borrar').action = "/eliminar_venta/" + id + "?user={{ role }}";
+            document.getElementById('modal_borrar_venta').showModal();
+        }
+    </script>
+</body>
+</html>
