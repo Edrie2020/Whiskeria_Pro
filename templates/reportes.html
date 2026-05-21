@@ -118,45 +118,86 @@
     </div>
 </div>
 
-    <!-- ======================================================================= -->
-    <!-- 1. DASHBOARD COMPLETO (SÓLO PARA VISTA EN PANTALLA E IMPRESIÓN JEFE)     -->
-    <!-- ======================================================================= -->
-    <div class="max-w-7xl mx-auto space-y-6" id="dashboard-completo-jefe">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-            <div class="bg-zinc-900 p-6 rounded-[35px] border border-white/5 shadow-xl">
-                <p class="text-zinc-500 font-bold text-xs uppercase">Caja Bruta</p>
-                <h2 class="text-4xl font-black text-white">${{ "{:,.0f}".format(resumen.bruto).replace(",", ".") }}</h2>
+    <!-- DASHBOARD PREMIUM REDISEÑADO (REEMPLAZA SOLO ESTE BLOQUE) -->
+    <div class="max-w-7xl mx-auto space-y-4 px-2" id="dashboard-completo-jefe">
+        
+        <!-- Fila 1: Métricas Principales (Se apilan como cartas grandes en móvil para legibilidad de lujo) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            
+            <!-- Caja Bruta -->
+            <div class="bg-gradient-to-br from-zinc-900 to-black p-5 rounded-[28px] border border-white/5 shadow-2xl flex flex-col justify-center h-28 relative overflow-hidden">
+                <span class="absolute top-3 right-4 text-2xl opacity-10">💰</span>
+                <p class="text-zinc-500 font-bold text-[10px] tracking-wider uppercase">Caja Bruta</p>
+                <h2 class="text-3xl sm:text-4xl font-black text-white mt-1">
+                    ${{ "{:,.0f}".format(resumen.bruto).replace(",", ".") }}
+                </h2>
             </div>
-            <div onclick="document.getElementById('modal_liq_damas').showModal()" class="card-btn bg-zinc-900 p-6 rounded-[35px] border-pink-500/30 shadow-xl">
-                <p class="text-pink-500 font-bold text-xs uppercase">Liquidación Damas ⓘ</p>
-                <h2 class="text-4xl font-black text-pink-500">${{ "{:,.0f}".format(resumen.pagos_damas).replace(",", ".") }}</h2>
+            
+            <!-- Liquidación Damas -->
+            <div onclick="document.getElementById('modal_liq_damas').showModal()" 
+                 class="card-btn bg-gradient-to-br from-zinc-900 to-black p-5 rounded-[28px] border-pink-500/20 shadow-2xl flex flex-col justify-center h-28 relative overflow-hidden active:scale-95 transition-all">
+                <span class="absolute top-3 right-4 text-2xl opacity-10">💃</span>
+                <p class="text-pink-500 font-bold text-[10px] tracking-wider uppercase flex items-center justify-center gap-1">
+                    Liquidación Damas <span class="badge badge-pink badge-xs text-[8px] bg-pink-500/20 border-pink-500 text-pink-400">ⓘ</span>
+                </p>
+                <h2 class="text-3xl sm:text-4xl font-black text-pink-500 mt-1">
+                    ${{ "{:,.0f}".format(resumen.pagos_damas).replace(",", ".") }}
+                </h2>
             </div>
-            <div class="bg-yellow-500 p-6 rounded-[35px] text-black shadow-xl">
-                <p class="font-bold text-xs uppercase">Utilidad Casa</p>
-                <h2 class="text-4xl font-black italic">${{ "{:,.0f}".format(resumen.neto).replace(",", ".") }}</h2>
+            
+            <!-- Utilidad Casa -->
+            <div class="bg-gradient-to-br from-yellow-500 to-amber-600 p-5 rounded-[28px] text-black shadow-2xl flex flex-col justify-center h-28 relative overflow-hidden">
+                <span class="absolute top-3 right-4 text-2xl opacity-30">👑</span>
+                <p class="font-black text-[10px] tracking-wider uppercase text-black/60">Utilidad Casa</p>
+                <h2 class="text-3xl sm:text-4xl font-black italic mt-1 text-black">
+                    ${{ "{:,.0f}".format(resumen.neto).replace(",", ".") }}
+                </h2>
             </div>
+
         </div>
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-emerald-500/10 p-4 rounded-2xl text-center border border-emerald-500/20 metodo-privado">
-                <span class="block text-[10px] font-black text-zinc-500 uppercase">EFECTIVO</span>
-                <span class="text-xl font-black text-emerald-500">${{ "{:,.0f}".format(resumen.efectivo).replace(",", ".") }}</span>
+        <!-- Fila 2: Métodos de Pago (Cuadrícula de 2x2 súper cómoda en móvil) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            
+            <!-- Efectivo -->
+            <div class="bg-emerald-500/5 p-4 rounded-[22px] text-center border border-emerald-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
+                <span class="absolute -bottom-1 -right-1 text-2xl opacity-5">💵</span>
+                <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">EFECTIVO</span>
+                <span class="text-lg sm:text-xl font-black text-emerald-400 mt-1">
+                    ${{ "{:,.0f}".format(resumen.efectivo).replace(",", ".") }}
+                </span>
             </div>
-            <div class="bg-blue-500/10 p-4 rounded-2xl text-center border border-blue-500/20">
-                <span class="block text-[10px] font-black text-zinc-500 uppercase">TARJETA</span>
-                <span class="text-xl font-black text-blue-500">${{ "{:,.0f}".format(resumen.tarjeta).replace(",", ".") }}</span>
+            
+            <!-- Tarjeta -->
+            <div class="bg-blue-500/5 p-4 rounded-[22px] text-center border border-blue-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
+                <span class="absolute -bottom-1 -right-1 text-2xl opacity-5">💳</span>
+                <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TARJETA</span>
+                <span class="text-lg sm:text-xl font-black text-blue-400 mt-1">
+                    ${{ "{:,.0f}".format(resumen.tarjeta).replace(",", ".") }}
+                </span>
             </div>
-            <div class="bg-purple-500/10 p-4 rounded-2xl text-center border border-purple-500/20 metodo-privado">
-                <span class="block text-[10px] font-black text-zinc-500 uppercase">TRANSFERENCIA</span>
-                <span class="text-xl font-black text-purple-400">${{ "{:,.0f}".format(resumen.transferencia).replace(",", ".") }}</span>
+            
+            <!-- Transferencia -->
+            <div class="bg-purple-500/5 p-4 rounded-[22px] text-center border border-purple-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
+                <span class="absolute -bottom-1 -right-1 text-2xl opacity-5">📱</span>
+                <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TRANSFERENCIA</span>
+                <span class="text-lg sm:text-xl font-black text-purple-400 mt-1">
+                    ${{ "{:,.0f}".format(resumen.transferencia).replace(",", ".") }}
+                </span>
             </div>
-            <div onclick="document.getElementById('modal_global_deudas').showModal()" class="card-btn bg-zinc-800 p-4 rounded-2xl text-center border-2 border-yellow-500/20 metodo-privado">
-                <span class="block text-[10px] font-black text-zinc-500 uppercase">Cartera Total Deudores 📔</span>
-                <span class="text-xl font-black text-yellow-500">${{ "{:,.0f}".format(monto_deudas_total).replace(",", ".") }}</span>
-                <span class="block text-[9px] text-zinc-600 uppercase mt-1">Clic para ver detalle histórico</span>
+            
+            <!-- Cartera Total Deudores -->
+            <div onclick="document.getElementById('modal_global_deudas').showModal()" 
+                 class="card-btn bg-zinc-900/80 p-4 rounded-[22px] text-center border border-yellow-500/20 flex flex-col justify-center h-20 relative overflow-hidden active:scale-95 transition-all col-span-2 sm:col-span-1">
+                <span class="absolute -bottom-1 -right-1 text-2xl opacity-10">📔</span>
+                <span class="block text-[8px] sm:text-[9px] font-black text-yellow-500/80 uppercase tracking-widest">Deudores Históricos</span>
+                <span class="text-lg sm:text-xl font-black text-yellow-500 mt-1">
+                    ${{ "{:,.0f}".format(monto_deudas_total).replace(",", ".") }}
+                </span>
             </div>
+
         </div>
-    </div> <!-- Aquí termina el Dashboard del Jefe -->
+    </div> 
 
 
   <!-- ======================================================================= -->
