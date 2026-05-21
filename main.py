@@ -485,7 +485,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
             msg_f1_pend = (
                 f"⭐ *DETALLE DE LIQUIDACIÓN - {dama.nombre_artistico} (FICHA 1)* ⭐\n"
                 f"📅 *Fecha:* {asis.fecha} | 🕒 *Turno:* {asis.turno}\n"
-                f"-----------------------------------------\n"
+                f"--------------------------------\n"
                 f"💼 *COMISIONES DE TRAGOS:*\n{tragos_det_f1_pend}"
                 f"-----------------------------------------\n"
                 f"➕ *BONOS / ADICIONALES:*\n"
@@ -556,34 +556,56 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     # 🔒 7. BÚSQUEDA GLOBAL DE LIQUIDACIONES PENDIENTES (OPTIMIZADA SIN N+1)
     # =========================================================================
     
-    # Consulta 1: Obtenemos todas las asistencias no liquidadas de la historia
-    asistencias_pendientes = db.query(models.Asistencia).filter(
+    # A. Obtenemos todas las asistencias no liquidadas de la historia (Ficha 1 pendientes)
+    asis_no_liq = db.query(models.Asistencia).filter(
         models.Asistencia.liquidada == False
-    ).order_by(models.Asistencia.fecha.desc()).all()
+    ).all()
+
+    # B. Obtenemos todas las ventas no liquidadas de una sola vez
+    ventas_pendientes_raw = db.query(models.Venta).filter(
+        models.Venta.liquidada == False
+    ).all()
+
+    # Agrupamos las ventas en memoria por una clave única: (dama_id, fecha, turno)
+    # Esto nos permite buscar ventas asociadas en tiempo récord O(1)
+    ventas_agrupadas = {}
+    claves_ventas_pendientes = set()
+    for v in ventas_pendientes_raw:
+        if not v.fecha:
+            continue
+        clave = (v.dama_id, v.fecha.strftime("%Y-%m-%d"), v.turno)
+        if clave not in ventas_agrupadas:
+            ventas_agrupadas[clave] = []
+        ventas_agrupadas[clave].append(v)
+        claves_ventas_pendientes.add((v.dama_id, v.fecha.strftime("%Y-%m-%d"), v.turno))
+
+    # C. Obtenemos las asistencias ya pagadas (liquidada == True) pero que tienen ventas pendientes (Ficha 2+)
+    asis_fichas_extras = []
+    if claves_ventas_pendientes:
+        from sqlalchemy import or_
+        condiciones = [
+            (models.Asistencia.dama_id == cid) & 
+            (models.Asistencia.fecha == cfec) & 
+            (models.Asistencia.turno == ctur)
+            for cid, cfec, ctur in claves_ventas_pendientes
+        ]
+        if condiciones:
+            asis_fichas_extras = db.query(models.Asistencia).filter(
+                models.Asistencia.liquidada == True,
+                or_(*condiciones)
+            ).all()
+
+    # D. Combinamos ambas listas de asistencias y ordenamos por fecha descendente
+    asistencias_pendientes = asis_no_liq + asis_fichas_extras
+    asistencias_pendientes.sort(key=lambda x: x.fecha, reverse=True)
 
     pendientes_global = []
 
     if asistencias_pendientes:
-        # Consulta 2: Obtenemos todas las Damas de una sola vez y las indexamos por ID
+        # Obtenemos todas las Damas para indexarlas por ID
         damas_dict = {d.id: d for d in db.query(models.Dama).all()}
 
-        # Consulta 3: Obtenemos todas las ventas no liquidadas de una sola vez
-        ventas_pendientes_raw = db.query(models.Venta).filter(
-            models.Venta.liquidada == False
-        ).all()
-
-        # Agrupamos las ventas en memoria por una clave única: (dama_id, fecha, turno)
-        # Esto nos permite buscar ventas asociadas en tiempo récord O(1)
-        ventas_agrupadas = {}
-        for v in ventas_pendientes_raw:
-            if not v.fecha:
-                continue
-            clave = (v.dama_id, v.fecha.strftime("%Y-%m-%d"), v.turno)
-            if clave not in ventas_agrupadas:
-                ventas_agrupadas[clave] = []
-            ventas_agrupadas[clave].append(v)
-
-        # 🔄 Procesamos la lista en memoria (Cero consultas adicionales dentro de este bucle)
+        # 🔄 Procesamos la lista unificada en memoria (Cero consultas adicionales dentro de este bucle)
         for asis_p in asistencias_pendientes:
             dama_p = damas_dict.get(asis_p.dama_id)
             if not dama_p: 
@@ -595,19 +617,29 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
             
             total_comis_p = sum(v.comision_chica for v in ventas_p)
 
-            monto_bono_p = 0
-            costo_residencia_p = 0
-            if asis_p.turno == "Turno 1":
-                if (asis_p.tipo_llegada == "Residente" and asis_p.hora_libro <= "22:35") or \
-                   (asis_p.tipo_llegada == "Externa" and asis_p.hora_libro <= "23:05"):
-                    monto_bono_p = 10000
-            if asis_p.tipo_llegada == "Residente":
-                costo_residencia_p = 5000
+            # Lógica dinámica: Si la asistencia ya está liquidada, es una Ficha 2
+            if asis_p.liquidada:
+                # Los bonos, shows iniciales y el descuento de residencia ya fueron aplicados en la Ficha 1
+                monto_bono_p = 0
+                costo_residencia_p = 0
+                ganancia_bailes_p = 0
+                nombre_ficha_label = f"{dama_p.nombre_artistico} (FICHA 2)"
+            else:
+                monto_bono_p = 0
+                costo_residencia_p = 0
+                if asis_p.turno == "Turno 1":
+                    if (asis_p.tipo_llegada == "Residente" and asis_p.hora_libro <= "22:35") or \
+                       (asis_p.tipo_llegada == "Externa" and asis_p.hora_libro <= "23:05"):
+                        monto_bono_p = 10000
+                if asis_p.tipo_llegada == "Residente":
+                    costo_residencia_p = 5000
+                ganancia_bailes_p = asis_p.bono_show
+                nombre_ficha_label = f"{dama_p.nombre_artistico} (FICHA 1)"
                 
-            total_chica_p = (total_comis_p + monto_bono_p + asis_p.bono_show) - costo_residencia_p
+            total_chica_p = (total_comis_p + monto_bono_p + ganancia_bailes_p) - costo_residencia_p
 
             if total_chica_p > 0:
-                # Construcción del desglose (MODO ROBUSTO CON SALTO DE LÍNEA NATURAL)
+                # Construcción del desglose
                 tragos_detalle_p = ""
                 for v_p in ventas_p:
                     tragos_detalle_p += f"• {v_p.fecha.strftime('%H:%M')} - {v_p.servicio} (+${v_p.comision_chica:,.0f}) [Garzón: {v_p.mesero}]\n"
@@ -615,37 +647,58 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 if not tragos_detalle_p:
                     tragos_detalle_p = "• Sin consumos.\n"
 
-                msg_p = (
-                    f"⭐ *LIQUIDACIÓN PENDIENTE - {dama_p.nombre_artistico}* ⭐\n"
-                    f"📅 *Fecha:* {asis_p.fecha} | 🕒 *Turno:* {asis_p.turno}\n"
-                    f"-----------------------------------------\n"
-                    f"💼 *COMISIONES DE TRAGOS:*\n"
-                    f"{tragos_detalle_p}"
-                    f"-----------------------------------------\n"
-                    f"➕ *BONOS:*\n"
-                    f"• Bono de Asistencia: +${monto_bono_p:,.0f}\n"
-                )
-                if dama_p.es_bailarina:
-                    msg_p += f"• Ganancia de Bailes: +${asis_p.bono_show:,.0f}\n"
-                msg_p += (
-                    f"-----------------------------------------\n"
-                    f"➖ *DESCUENTOS:*\n"
-                    f"• Descuento Residencia: -${costo_residencia_p:,.0f}\n"
-                    f"-----------------------------------------\n"
-                    f"💵 *TOTAL NETO A RECIBIR:*\n"
-                    f"👉 *${total_chica_p:,.0f}*\n"
-                    f"-----------------------------------------\n"
-                    f"_¡Muchas gracias!_ 🌸"
-                )
+                # Mensaje personalizado según el estado de la ficha (Ficha 1 o Ficha 2)
+                if asis_p.liquidada:
+                    msg_p = (
+                        f"⭐ *LIQUIDACIÓN PENDIENTE - {nombre_ficha_label}* ⭐\n"
+                        f"📅 *Fecha:* {asis_p.fecha} | 🕒 *Turno:* {asis_p.turno}\n"
+                        f"-----------------------------------------\n"
+                        f"💼 *COMISIONES DE TRAGOS:*\n"
+                        f"{tragos_detalle_p}"
+                        f"-----------------------------------------\n"
+                        f"➕ *BONOS:*\n"
+                        f"• Bono de Asistencia: +$0 (Ya pagado en Ficha 1)\n"
+                        f"-----------------------------------------\n"
+                        f"➖ *DESCUENTOS:*\n"
+                        f"• Descuento Residencia: -$0 (Ya deducido en Ficha 1)\n"
+                        f"-----------------------------------------\n"
+                        f"💵 *TOTAL NETO A RECIBIR (FICHA 2):*\n"
+                        f"👉 *${total_chica_p:,.0f}*\n"
+                        f"-----------------------------------------\n"
+                        f"_¡Muchas gracias!_ 🌸"
+                    )
+                else:
+                    msg_p = (
+                        f"⭐ *LIQUIDACIÓN PENDIENTE - {nombre_ficha_label}* ⭐\n"
+                        f"📅 *Fecha:* {asis_p.fecha} | 🕒 *Turno:* {asis_p.turno}\n"
+                        f"-----------------------------------------\n"
+                        f"💼 *COMISIONES DE TRAGOS:*\n"
+                        f"{tragos_detalle_p}"
+                        f"-----------------------------------------\n"
+                        f"➕ *BONOS:*\n"
+                        f"• Bono de Asistencia: +${monto_bono_p:,.0f}\n"
+                    )
+                    if dama_p.es_bailarina:
+                        msg_p += f"• Ganancia de Bailes: +${ganancia_bailes_p:,.0f}\n"
+                    msg_p += (
+                        f"-----------------------------------------\n"
+                        f"➖ *DESCUENTOS:*\n"
+                        f"• Descuento Residencia: -${costo_residencia_p:,.0f}\n"
+                        f"-----------------------------------------\n"
+                        f"💵 *TOTAL NETO A RECIBIR:*\n"
+                        f"👉 *${total_chica_p:,.0f}*\n"
+                        f"-----------------------------------------\n"
+                        f"_¡Muchas gracias!_ 🌸"
+                    )
 
-                # Sanitizar número del WhatsApp Pendiente (eliminar espacios/guiones)
+                # Sanitizar número de WhatsApp
                 whatsapp_p_limpio = "".join(c for c in dama_p.whatsapp if c.isdigit()) if dama_p.whatsapp else ""
                 msg_p_encoded = urllib.parse.quote(msg_p)
                 link_wa_p = f"https://wa.me/{whatsapp_p_limpio}?text={msg_p_encoded}"
 
                 pendientes_global.append({
                     "dama_id": dama_p.id,
-                    "nombre": dama_p.nombre_artistico,
+                    "nombre": nombre_ficha_label,
                     "fecha": asis_p.fecha,
                     "turno": asis_p.turno,
                     "total_pagar": total_chica_p,

@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="night">
 <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        .evitar-salto { page-break-inside: avoid; }
+    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" />
@@ -23,6 +27,11 @@
                     </select>
                     <button type="submit" class="btn btn-xs btn-info font-black h-7 min-h-0 text-[10px]">FILTRAR</button>
                 </form>
+
+                <!-- 📥 BOTÓN DE DESCARGA PDF AGREGADO -->
+                <button type="button" onclick="descargarPDFStock()" class="btn btn-xs btn-secondary font-black h-8 rounded-full px-4 text-[10px] uppercase tracking-wider">
+                    📥 Descargar PDF
+                </button>
 
                 <!-- BOTÓN SALÓN HOMOLOGADO -->
                 <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider">
@@ -231,6 +240,138 @@
                 }
             });
         }
+        function descargarPDFStock() {
+            const elemento = document.getElementById('reporte-pdf-stock');
+            
+            // Hacemos el elemento visible temporalmente para que html2pdf lo pueda procesar
+            elemento.classList.remove('hidden');
+
+            const fecha = "{{ fecha_filtro }}";
+            const turno = "{{ turno_filtro }}";
+
+            const opciones = {
+                margin: 0.4,
+                filename: `Reporte_Stock_${fecha}_${turno.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            html2pdf().set(opciones).from(elemento).save().then(() => {
+                // Volvemos a ocultar el elemento después de generar el PDF
+                elemento.classList.add('hidden');
+            }).catch(err => {
+                console.error("Error al generar PDF de Stock:", err);
+                elemento.classList.add('hidden');
+            });
+        }
     </script>
 </body>
+<!-- CONTENEDOR OCULTO PARA EL REPORTE PDF PROFESIONAL -->
+    <div id="reporte-pdf-stock" class="hidden p-8 text-black bg-white" style="font-family: Arial, sans-serif; color: #000000 !important; background-color: #ffffff !important;">
+        <!-- Encabezado del Reporte -->
+        <div style="text-align: center; border-bottom: 2px solid #000000; padding-bottom: 12px; margin-bottom: 20px;">
+            <h1 style="font-size: 22px; font-weight: bold; text-transform: uppercase; margin: 0;">REPORTE DE INVENTARIO Y CUADRATURA</h1>
+            <p style="font-size: 11px; margin: 4px 0 0 0; color: #555;">Whiskeria 2000 Pro</p>
+            <div style="margin-top: 8px; font-size: 12px; font-weight: bold;">
+                <span style="margin-right: 20px;">FECHA OPERATIVA: {{ fecha_filtro }}</span>
+                <span>JORNADA: {{ turno_filtro }}</span>
+            </div>
+        </div>
+
+        <!-- Tabla 1: Productos Cooler -->
+        <div style="margin-bottom: 25px;" class="evitar-salto">
+            <h2 style="font-size: 13px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 8px; text-transform: uppercase;">
+                📦 Productos Cooler (Cervezas / Jugos)
+            </h2>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #000; font-weight: bold; text-align: left; background-color: #f2f2f2;">
+                        <th style="padding: 6px; border: 1px solid #ddd;">Producto</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: center;">Reposiciones</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: center;">Ventas</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: center;">Faltantes</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: right;">Saldo Final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in inventario_productos %}
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; text-transform: uppercase;">{{ p.nombre }}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">+{{ p.reposicion }}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{ p.salida }}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{ p.faltante }}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-weight: bold;">{{ p.saldo }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tabla 2: Botellas Barra -->
+        <div style="margin-bottom: 25px;" class="evitar-salto">
+            <h2 style="font-size: 13px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 8px; text-transform: uppercase;">
+                🍾 Botellas Barra (Licores)
+            </h2>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #000; font-weight: bold; text-align: left; background-color: #f2f2f2;">
+                        <th style="padding: 6px; border: 1px solid #ddd;">Producto</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: center;">Reposiciones</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: center;">Ventas</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: center;">Faltantes</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: right;">Saldo Final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in inventario_botellas %}
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; text-transform: uppercase;">{{ b.nombre }}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">+{{ b.reposicion }}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{ b.salida }}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{ b.faltante }}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-weight: bold;">{{ b.saldo }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tabla 3: Auditoría de Acciones -->
+        <div class="evitar-salto">
+            <h2 style="font-size: 13px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 8px; text-transform: uppercase;">
+                ⏱️ Auditoría de Movimientos y Ajustes
+            </h2>
+            <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #000; font-weight: bold; text-align: left; background-color: #f2f2f2;">
+                        <th style="padding: 5px; border: 1px solid #ddd;">Hora</th>
+                        <th style="padding: 5px; border: 1px solid #ddd;">Producto</th>
+                        <th style="padding: 5px; border: 1px solid #ddd;">Movimiento</th>
+                        <th style="padding: 5px; border: 1px solid #ddd;">Usuario</th>
+                        <th style="padding: 5px; border: 1px solid #ddd; text-align: right;">Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in auditoria %}
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 5px; border: 1px solid #ddd;">{{ log.hora }}</td>
+                        <td style="padding: 5px; border: 1px solid #ddd; font-weight: bold; text-transform: uppercase;">{{ log.nombre }}</td>
+                        <td style="padding: 5px; border: 1px solid #ddd; text-transform: uppercase;">{{ log.tipo }}</td>
+                        <td style="padding: 5px; border: 1px solid #ddd; text-transform: uppercase; color: #444;">{{ log.usuario }}</td>
+                        <td style="padding: 5px; border: 1px solid #ddd; text-align: right; font-weight: bold;">{{ log.cantidad }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not auditoria %}
+                    <tr>
+                        <td colspan="5" style="padding: 10px; border: 1px solid #ddd; text-align: center; color: #666; font-style: italic;">
+                            Sin movimientos ni ajustes de stock registrados en esta jornada.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </html>
