@@ -3,9 +3,10 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from database import SessionLocal
 import models
-from datetime import date  # <--- Esto es vital para la fecha
+from datetime import time, timedelta
 from services.asistencia_service import registrar_asistencia
 from services.config_service import obtener_config
+from services.time_service import obtener_ahora_local
 from database import get_db
 from services.auth_service import obtener_usuario_sesion
 
@@ -16,7 +17,7 @@ router = APIRouter()
 # ---------------------------------------------------------
 @router.post("/marcar_asistencia")
 async def marcar_asistencia(
-    request: Request, # <--- Seguridad añadida
+    request: Request,
     dama_id: int = Form(...),
     tipo_llegada: str = Form(None),
     hora_libro: str = Form(None),
@@ -41,13 +42,18 @@ async def marcar_asistencia(
 # ---------------------------------------------------------
 @router.post("/dar_salida/{dama_id}")
 async def dar_salida(request: Request, dama_id: int, db: Session = Depends(get_db)):
-    # 🔒 SEGURIDAD: Solo Jefes, Admin o Cajeras
     user_role = obtener_usuario_sesion(request)[1]
     if user_role not in ["jefe", "admin", "cajera"]:
         return RedirectResponse(url="/asistencia", status_code=303)
 
     conf = obtener_config(db)
-    hoy_str = date.today().strftime("%Y-%m-%d")
+    
+    # Calculamos la fecha operativa de Chile de manera segura
+    ahora = obtener_ahora_local()
+    if ahora.time() < time(6, 0):
+        hoy_str = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        hoy_str = ahora.strftime("%Y-%m-%d")
 
     # 1. Buscamos la asistencia de hoy
     asistencia = db.query(models.Asistencia).filter(

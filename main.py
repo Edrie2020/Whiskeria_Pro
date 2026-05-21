@@ -302,7 +302,8 @@ async def gestionar_club(request: Request, accion: str = Form(...), turno: str =
 @app.get("/asistencia", response_class=HTMLResponse)
 async def asistencia_page(request: Request, db: Session = Depends(get_db)):
     conf = obtener_config(db)
-    hoy = date.today().strftime("%Y-%m-%d")
+    hoy_dt = obtener_fecha_operativa()
+    hoy = hoy_dt.strftime("%Y-%m-%d")
 
     asistencias_hoy = db.query(models.Asistencia).filter(
         models.Asistencia.fecha == hoy,
