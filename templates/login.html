@@ -13,7 +13,7 @@
         .neon-pink { text-shadow: 0 0 15px #ec4899; color: #ec4899; }
         .border-glow {
             border: 2px solid #ec4899;
-            box-shadow: 0 0 25px rgba(236, 72, 153, 0.25);
+            box-shadow: 0 0 25px rgba(236, 72, 153, 0.2);
         }
         /* Estilo interactivo premium para inputs */
         .input-premium {
@@ -24,36 +24,29 @@
         .input-premium:focus {
             border-color: #ec4899 !important;
             outline: none;
-            box-shadow: 0 0 15px rgba(236, 72, 153, 0.2);
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.15);
         }
     </style>
 </head>
-<body class="bg-[#020202] min-h-screen flex items-center justify-center p-4 font-sans">
+<body class="bg-[#020202] min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-zinc-900/90 p-8 rounded-[40px] border border-glow shadow-2xl text-center animate-fade-in">
+        <img src="/static/logo.png" class="w-28 h-28 mx-auto mb-6 rounded-full border-4 border-yellow-500 shadow-lg object-cover">
+        <h1 class="text-2xl font-black text-white uppercase italic mb-8 tracking-tighter">Acceso al Sistema</h1>
+        
+        {% if error %}
+        <div class="bg-red-500/10 border border-red-500/30 p-3 rounded-2xl mb-6 text-red-500 text-xs font-bold uppercase tracking-wide">
+            ⚠️ {{ error }}
+        </div>
+        {% endif %}
 
-    <div class="max-w-md w-full bg-zinc-950 p-8 rounded-[40px] border-glow text-center">
-        <!-- Logotipo Redondo con Borde Dorado -->
-        <img src="/static/logo.png" class="w-28 h-28 mx-auto mb-6 rounded-full border-4 border-yellow-500 shadow-2xl object-cover">
-        
-        <h1 class="text-2xl sm:text-3xl font-black text-white uppercase italic mb-8 tracking-tighter">Acceso al Sistema</h1>
-        
-        <!-- Formulario Seguro hacia /login -->
         <form action="/login" method="post" class="space-y-4">
+            <input name="username" type="text" placeholder="USUARIO" class="input input-premium w-full text-center font-bold border-zinc-700 focus:border-pink-500 h-11 rounded-2xl text-sm" required>
+            <input name="password" type="password" placeholder="CONTRASEÑA" class="input input-premium w-full text-center font-bold border-zinc-700 focus:border-pink-500 h-11 rounded-2xl text-sm" required>
             
-            <div class="form-control">
-                <input name="username" type="text" placeholder="USUARIO" class="input input-premium w-full uppercase font-bold text-xs h-11 text-center rounded-2xl" required>
-            </div>
-            
-            <div class="form-control">
-                <input name="password" type="password" placeholder="CONTRASEÑA" class="input input-premium w-full font-bold text-xs h-11 text-center rounded-2xl" required>
-            </div>
-            
-            <button type="submit" class="btn btn-secondary w-full font-black text-sm h-11 min-h-0 rounded-2xl text-white uppercase tracking-wider shadow-lg shadow-pink-500/10 mt-2">
-                ENTRAR
-            </button>
+            <button type="submit" class="btn btn-secondary w-full font-black text-lg shadow-xl uppercase h-11 rounded-2xl bg-pink-600 hover:bg-pink-700 border-none">Entrar</button>
         </form>
         
-        <p class="text-zinc-600 text-[9px] mt-8 uppercase font-bold tracking-[2px]">Whiskeria 2000 Pro v2.0</p>
+        <p class="text-zinc-600 text-[9px] mt-6 uppercase font-bold tracking-widest">Whiskeria 2000 Pro v2.0</p>
     </div>
-
 </body>
 </html>
