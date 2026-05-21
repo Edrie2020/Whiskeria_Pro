@@ -4,12 +4,13 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import models
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from database import get_db
 
 # Importamos las herramientas de seguridad y tiempo local
 from services.time_service import obtener_ahora_local
 from services.auth_service import obtener_usuario_sesion
+from services.config_service import obtener_config
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -24,33 +25,41 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
     if not username:
         return RedirectResponse(url="/login", status_code=303)
 
-    hoy = obtener_ahora_local().strftime("%Y-%m-%d")
-    fecha_f = fecha if fecha else hoy
-    turno_f = turno if turno else "Turno 1"
+    # Calculamos la fecha operativa real de Chile para el control antifraude
+    ahora = obtener_ahora_local()
+    if ahora.time() < time(6, 0):
+        fecha_actual = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        fecha_actual = ahora.strftime("%Y-%m-%d")
+
+    conf = obtener_config(db)
+    turno_actual = conf.turno_activo
+    estado_club = conf.estado_club
+
+    fecha_f = fecha if fecha else fecha_actual
+    turno_f = turno if turno else turno_actual
 
     productos_db = db.query(models.Producto).all()
     inv_productos = []
     inv_botellas = []
     
     for p in productos_db:
-        # Buscamos el stock de inicio CONGELADO para este producto, fecha y turno
         inv_turno = db.query(models.InventarioTurno).filter(
             models.InventarioTurno.producto_id == p.id,
             models.InventarioTurno.fecha == fecha_f,
             models.InventarioTurno.turno == turno_f
         ).first()
         
-        # Respaldo en caso de que el producto se haya creado en medio de la jornada
         inicio_stock = inv_turno.inicio if inv_turno else p.inicio
         
-        # 1. SALIDAS: Contamos las ventas registradas
+        # 1. SALIDAS
         salida = db.query(func.count(models.Venta.id)).filter(
             models.Venta.producto_id == p.id,
             func.strftime("%Y-%m-%d", models.Venta.fecha) == fecha_f,
             models.Venta.turno == turno_f
         ).scalar() or 0
         
-        # 2. REPOSICIONES (Entradas manuales de este turno)
+        # 2. REPOSICIONES
         repos = db.query(func.sum(models.StockMovimiento.cantidad)).filter(
             models.StockMovimiento.producto_id == p.id,
             models.StockMovimiento.tipo_movimiento == 'REPOSICION',
@@ -58,7 +67,7 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
             models.StockMovimiento.turno == turno_f
         ).scalar() or 0
 
-        # 3. FALTANTES (Ajustes de merma/pérdida de este turno)
+        # 3. FALTANTES
         falts = db.query(func.sum(models.StockMovimiento.cantidad)).filter(
             models.StockMovimiento.producto_id == p.id,
             models.StockMovimiento.tipo_movimiento == 'FALTANTE',
@@ -66,7 +75,6 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
             models.StockMovimiento.turno == turno_f
         ).scalar() or 0
 
-        # FÓRMULA HISTÓRICA PERFECTA
         saldo = (inicio_stock + repos) - salida - falts
 
         datos = {
@@ -95,16 +103,16 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
 
     return templates.TemplateResponse(request=request, name="stock.html", context={
         "inventario_productos": inv_productos, "inventario_botellas": inv_botellas,
-        "auditoria": auditoria, "fecha_filtro": fecha_f, "turno_filtro": turno_f
+        "auditoria": auditoria, "fecha_filtro": fecha_f, "turno_filtro": turno_f,
+        "fecha_actual": fecha_actual, "turno_actual": turno_actual, "estado_club": estado_club
     })
 
 # ---------------------------------------------------------
-# 2. ACCIONES DE STOCK (SÓLO JEFE/ADMIN/CAJERA)
+# 2. ACCIONES DE STOCK (CON BLOQUEO ANTIFRAUDE)
 # ---------------------------------------------------------
 
 @router.post("/agregar_producto_stock")
 async def agregar_producto(request: Request, nombre: str = Form(...), tipo: str = Form(...), inicio: int = Form(...), db: Session = Depends(get_db)):
-    # 🔒 SEGURIDAD SEGURA CONTRA HACKERS
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["jefe", "admin", "cajera"]:
         return RedirectResponse(url="/stock", status_code=303)
@@ -114,15 +122,17 @@ async def agregar_producto(request: Request, nombre: str = Form(...), tipo: str 
     db.commit()
     db.refresh(nuevo)
     
-    # Si el club ya está abierto, le creamos su InventarioTurno actual usando la hora del país
-    from services.config_service import obtener_config
     conf = obtener_config(db)
     if conf.estado_club == "ABIERTO":
-        hoy = obtener_ahora_local().strftime("%Y-%m-%d")
+        ahora = obtener_ahora_local()
+        if ahora.time() < time(6, 0):
+            fecha_actual = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
+        else:
+            fecha_actual = ahora.strftime("%Y-%m-%d")
         
         nuevo_inv = models.InventarioTurno(
             producto_id=nuevo.id,
-            fecha=hoy,
+            fecha=fecha_actual,
             turno=conf.turno_activo,
             inicio=inicio
         )
@@ -141,14 +151,25 @@ async def registrar_mov(
     turno: str = Form(...), 
     db: Session = Depends(get_db)
 ):
-    # 🔒 SEGURIDAD SEGURA CONTRA HACKERS
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["jefe", "admin", "cajera"]:
         return RedirectResponse(url="/stock", status_code=303)
 
-    hora = obtener_ahora_local().strftime("%H:%M")
+    # 🔒 VALIDACIÓN DE SEGURIDAD ANTIFRAUDE (SERVER-SIDE)
+    ahora = obtener_ahora_local()
+    if ahora.time() < time(6, 0):
+        fecha_real = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        fecha_real = ahora.strftime("%Y-%m-%d")
+        
+    conf = obtener_config(db)
     
-    # Registro de Reposición
+    # Bloqueamos cualquier intento de meter datos en días pasados, futuros o turnos inactivos
+    if fecha != fecha_real or turno != conf.turno_activo or conf.estado_club != "ABIERTO":
+        return RedirectResponse(url=f"/stock?fecha={fecha_real}&turno={conf.turno_activo}", status_code=303)
+
+    hora = ahora.strftime("%H:%M")
+    
     if cantidad_repo > 0:
         mov = models.StockMovimiento(
             producto_id=producto_id, 
@@ -157,11 +178,10 @@ async def registrar_mov(
             usuario=username,
             fecha=fecha, 
             turno=turno, 
-            hora=hora  # <-- CORREGIDO: "hora=hora" en lugar de "ahora=hora"
+            hora=hora
         )
         db.add(mov)
     
-    # Registro de Faltante
     if cantidad_falt > 0:
         mov = models.StockMovimiento(
             producto_id=producto_id, 
@@ -170,26 +190,34 @@ async def registrar_mov(
             usuario=username,
             fecha=fecha, 
             turno=turno, 
-            hora=hora  # <-- CORREGIDO: "hora=hora" en lugar de "ahora=hora"
+            hora=hora
         )
         db.add(mov)
     
     db.commit()
     return RedirectResponse(url=f"/stock?fecha={fecha}&turno={turno}", status_code=303)
 
-# ELIMINAR PRODUCTO
 @router.post("/eliminar_producto/{id}")
 async def eliminar_prod(request: Request, id: int, fecha: str = Form(...), turno: str = Form(...), db: Session = Depends(get_db)):
-    # 🔒 SEGURIDAD SEGURA CONTRA HACKERS
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["jefe", "admin", "cajera"]:
         return RedirectResponse(url="/stock", status_code=303)
 
+    # 🔒 VALIDACIÓN DE SEGURIDAD ANTIFRAUDE (SERVER-SIDE)
+    ahora = obtener_ahora_local()
+    if ahora.time() < time(6, 0):
+        fecha_real = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        fecha_real = ahora.strftime("%Y-%m-%d")
+        
+    conf = obtener_config(db)
+    
+    if fecha != fecha_real or turno != conf.turno_activo or conf.estado_club != "ABIERTO":
+        return RedirectResponse(url=f"/stock?fecha={fecha_real}&turno={conf.turno_activo}", status_code=303)
+
     p = db.query(models.Producto).filter(models.Producto.id == id).first()
     if p:
-        ahora_hora = obtener_ahora_local().strftime("%H:%M")
-        
-        # Registrar en auditoría antes de borrarlo
+        ahora_hora = ahora.strftime("%H:%M")
         mov = models.StockMovimiento(
             producto_id=None, 
             nombre_respaldo=p.nombre, 

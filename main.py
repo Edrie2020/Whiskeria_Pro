@@ -331,17 +331,16 @@ async def asistencia_page(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/contabilidad", response_class=HTMLResponse)  
 async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
-    # 🔒 VERIFICACIÓN DE SEGURIDAD SEGURA CONTRA HACKERS
     username, user_role = obtener_usuario_sesion(request)
 
-    # Si no ha iniciado sesión o no es de rango alto, lo mandamos al login
     if not username or user_role not in ["jefe", "admin", "cajera"]:
         return RedirectResponse(url="/login?error=no_autorizado", status_code=303)
     
-    # --- LÓGICA DE FILTROS ---
-    fecha_param = request.query_params.get("fecha", date.today().strftime("%Y-%m-%d"))
+    # --- LÓGICA DE FILTROS SEGURA ---
+    hoy_dt = obtener_fecha_operativa()
+    fecha_param = request.query_params.get("fecha", hoy_dt.strftime("%Y-%m-%d"))
     turno_filter = request.query_params.get("turno", "Turno 1")
-
+    
     # Filtro de fecha para la base de datos (todo el día de 00:00 a 23:59)
     fecha_obj = datetime.strptime(fecha_param, "%Y-%m-%d")
     inicio_dia = datetime.combine(fecha_obj.date(), time.min)
@@ -443,21 +442,21 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 msg_f2 = (
                     f"⭐ *DETALLE DE LIQUIDACIÓN - {dama.nombre_artistico} (FICHA 2)* ⭐\n"
                     f"📅 *Fecha:* {asis.fecha} | 🕒 *Turno:* {asis.turno}\n"
-                    f"-----------------------------------------\n"
+                    f"--------------------------------\n"
                     f"💼 *COMISIONES DE TRAGOS:*\n{tragos_det_f2}"
-                    f"-----------------------------------------\n"
+                    f"--------------------------------\n"
                     f"➕ *BONOS / ADICIONALES:*\n"
                     f"• Bono de Asistencia: +$0 (Ya pagado en Ficha 1)\n"
                 )
                 if dama.es_bailarina:
                     msg_f2 += f"• Ganancia de Bailes: +$0 (Ya pagado en Ficha 1)\n"
                 msg_f2 += (
-                    f"-----------------------------------------\n"
+                    f"--------------------------------\n"
                     f"➖ *DESCUENTOS:*\n"
                     f"• Descuento Residencia: -$0 (Ya deducido en Ficha 1)\n"
-                    f"-----------------------------------------\n"
+                    f"--------------------------------\n"
                     f"💵 *TOTAL NETO PENDIENTE (FICHA 2):* *${total_ficha2:,.0f}*\n"
-                    f"-----------------------------------------\n"
+                    f"--------------------------------\n"
                     f"_¡Muchas gracias por tu trabajo de hoy!_ 🌸"
                 )
 
