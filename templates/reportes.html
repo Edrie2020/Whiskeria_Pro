@@ -2,6 +2,7 @@
 <html lang="es" data-theme="night">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -81,77 +82,81 @@
 
 </head>
 
-<body class="bg-[#020202] text-white min-h-screen p-4 md:p-8" id="reporte-jefe">
+<body class="bg-[#020202] text-white min-h-screen p-3 md:p-8" id="reporte-jefe">
 
-<!-- HEADER -->
-<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-10 gap-6 border-b border-white/10 pb-6 no-print">
-    <div class="flex items-center gap-4">
-        <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider">
-    ← SALÓN
-</a>
-        <h1 class="text-4xl font-black text-yellow-500 uppercase italic neon-gold">Panel Contable</h1>
-    </div>
+<!-- HEADER RESPONSIVE OPTIMIZADO -->
+<div class="max-w-7xl mx-auto flex flex-col gap-4 mb-6 border-b border-white/10 pb-4 no-print px-1">
     
-    <div class="flex flex-wrap gap-2 justify-center bg-zinc-900 p-3 rounded-2xl border border-white/5 no-print">
-    <!-- BOTÓN JEFE: IMPRIME TODO -->
-    <button type="button" onclick="imprimirJefe()" class="btn btn-sm btn-secondary font-black rounded-full px-6 italic">
-        IMPRIMIR FULL (JEFE) 👑
-    </button>
+    <!-- Fila 1: Botón Volver, Título y Modales de Acceso -->
+    <div class="flex justify-between items-center w-full">
+        <div class="flex items-center gap-2">
+            <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider">
+                ← SALÓN
+            </a>
+            <h1 class="text-xl sm:text-2xl font-black text-yellow-500 uppercase italic neon-gold">Panel Contable</h1>
+        </div>
+        
+        <div class="flex gap-1">
+            <button type="button" onclick="document.getElementById('modal_global_pendientes').showModal()" class="btn btn-xs btn-outline btn-secondary rounded-full font-black text-[9px] px-2.5 h-7 min-h-0">⚠️ LIQ</button>
+            <button type="button" onclick="document.getElementById('modal_global_deudas').showModal()" class="btn btn-xs btn-outline btn-warning rounded-full font-black text-[9px] px-2.5 h-7 min-h-0">📔 DEUDAS</button>
+        </div>
+    </div>
 
-    <!-- BOTÓN CONTADOR: IMPRIME SOLO LO FORMAL -->
-    <button type="button" onclick="window.print()" class="btn btn-sm btn-error font-black rounded-full px-6 italic">
-        IMPRIMIR CONTADOR 📄
-    </button>
-</div>
-
-        <form action="/contabilidad" method="get" class="flex gap-2">
-            <input type="hidden" name="user" value="{{ role }}">
-            <input type="date" name="fecha" value="{{ fecha_filtro }}" onchange="this.form.submit()" class="input input-sm bg-black font-bold border-zinc-700">
-            <select name="turno" onchange="this.form.submit()" class="select select-sm bg-black font-bold border-zinc-700">
+    <!-- Fila 2: Filtros de Fecha y Turno (¡Se ven gigantes y legibles en móvil, solucionando el truncado!) -->
+    <form action="/contabilidad" method="get" class="grid grid-cols-2 gap-3 bg-zinc-900/50 p-3 rounded-2xl border border-white/5">
+        <input type="hidden" name="user" value="{{ role }}">
+        <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[8px] font-bold text-zinc-500">FECHA JORNADA</span></label>
+            <input type="date" name="fecha" value="{{ fecha_filtro }}" onchange="this.form.submit()" class="input input-sm bg-black font-bold border-zinc-700 text-xs text-center h-9 rounded-xl focus:border-yellow-500">
+        </div>
+        <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[8px] font-bold text-zinc-500">TURNO ACTIVO</span></label>
+            <select name="turno" onchange="this.form.submit()" class="select select-sm bg-black border-zinc-700 font-bold text-xs h-9 min-h-0 text-center rounded-xl focus:border-yellow-500">
                 <option value="Turno 1" {% if turno_filtro == 'Turno 1' %}selected{% endif %}>Turno 1</option>
                 <option value="Turno 2" {% if turno_filtro == 'Turno 2' %}selected{% endif %}>Turno 2</option>
             </select>
-        </form>
-        
-        <div class="flex gap-2">
-            <button type="button" onclick="document.getElementById('modal_global_pendientes').showModal()" class="btn btn-sm btn-outline btn-secondary rounded-full font-black text-[10px]">⚠️ LIQUIDACIONES</button>
-            <button type="button" onclick="document.getElementById('modal_global_deudas').showModal()" class="btn btn-sm btn-outline btn-warning rounded-full font-black text-[10px]">📔 DEUDAS</button>
         </div>
+    </form>
+
+    <!-- Fila 3: Botones de Impresión en Móvil -->
+    <div class="grid grid-cols-2 gap-2">
+        <button type="button" onclick="imprimirJefe()" class="btn btn-xs sm:btn-sm btn-secondary font-black rounded-full h-8 min-h-0 text-[9px] uppercase italic">👑 Imprimir Full</button>
+        <button type="button" onclick="window.print()" class="btn btn-xs sm:btn-sm btn-error font-black rounded-full h-8 min-h-0 text-[9px] uppercase italic">📄 Imprimir Contador</button>
     </div>
 </div>
 
-    <!-- DASHBOARD PREMIUM REDISEÑADO (REEMPLAZA SOLO ESTE BLOQUE) -->
-    <div class="max-w-7xl mx-auto space-y-4 px-2" id="dashboard-completo-jefe">
+    <!-- DASHBOARD PREMIUM REDISEÑADO (Se apilan como cartas grandes de lujo en móvil) -->
+    <div class="max-w-7xl mx-auto space-y-4 px-1" id="dashboard-completo-jefe">
         
-        <!-- Fila 1: Métricas Principales (Se apilan como cartas grandes en móvil para legibilidad de lujo) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+        <!-- Fila 1: Métricas Principales (Se apilan en móvil para legibilidad de lujo) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             
             <!-- Caja Bruta -->
-            <div class="bg-gradient-to-br from-zinc-900 to-black p-5 rounded-[28px] border border-white/5 shadow-2xl flex flex-col justify-center h-28 relative overflow-hidden">
+            <div class="bg-gradient-to-br from-zinc-900 to-black p-5 rounded-[28px] border border-white/5 shadow-2xl flex flex-col justify-center h-24 relative overflow-hidden">
                 <span class="absolute top-3 right-4 text-2xl opacity-10">💰</span>
                 <p class="text-zinc-500 font-bold text-[10px] tracking-wider uppercase">Caja Bruta</p>
-                <h2 class="text-3xl sm:text-4xl font-black text-white mt-1">
+                <h2 class="text-2xl sm:text-3xl font-black text-white mt-1">
                     ${{ "{:,.0f}".format(resumen.bruto).replace(",", ".") }}
                 </h2>
             </div>
             
             <!-- Liquidación Damas -->
             <div onclick="document.getElementById('modal_liq_damas').showModal()" 
-                 class="card-btn bg-gradient-to-br from-zinc-900 to-black p-5 rounded-[28px] border-pink-500/20 shadow-2xl flex flex-col justify-center h-28 relative overflow-hidden active:scale-95 transition-all">
+                 class="card-btn bg-gradient-to-br from-zinc-900 to-black p-5 rounded-[28px] border-pink-500/20 shadow-2xl flex flex-col justify-center h-24 relative overflow-hidden active:scale-95 transition-all">
                 <span class="absolute top-3 right-4 text-2xl opacity-10">💃</span>
                 <p class="text-pink-500 font-bold text-[10px] tracking-wider uppercase flex items-center justify-center gap-1">
                     Liquidación Damas <span class="badge badge-pink badge-xs text-[8px] bg-pink-500/20 border-pink-500 text-pink-400">ⓘ</span>
                 </p>
-                <h2 class="text-3xl sm:text-4xl font-black text-pink-500 mt-1">
+                <h2 class="text-2xl sm:text-3xl font-black text-pink-500 mt-1">
                     ${{ "{:,.0f}".format(resumen.pagos_damas).replace(",", ".") }}
                 </h2>
             </div>
             
             <!-- Utilidad Casa -->
-            <div class="bg-gradient-to-br from-yellow-500 to-amber-600 p-5 rounded-[28px] text-black shadow-2xl flex flex-col justify-center h-28 relative overflow-hidden">
+            <div class="bg-gradient-to-br from-yellow-500 to-amber-600 p-5 rounded-[28px] text-black shadow-2xl flex flex-col justify-center h-24 relative overflow-hidden">
                 <span class="absolute top-3 right-4 text-2xl opacity-30">👑</span>
                 <p class="font-black text-[10px] tracking-wider uppercase text-black/60">Utilidad Casa</p>
-                <h2 class="text-3xl sm:text-4xl font-black italic mt-1 text-black">
+                <h2 class="text-2xl sm:text-3xl font-black italic mt-1 text-black">
                     ${{ "{:,.0f}".format(resumen.neto).replace(",", ".") }}
                 </h2>
             </div>
@@ -159,41 +164,41 @@
         </div>
 
         <!-- Fila 2: Métodos de Pago (Cuadrícula de 2x2 súper cómoda en móvil) -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
             
             <!-- Efectivo -->
-            <div class="bg-emerald-500/5 p-4 rounded-[22px] text-center border border-emerald-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
+            <div class="bg-emerald-500/5 p-4 rounded-[22px] border border-emerald-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
                 <span class="absolute -bottom-1 -right-1 text-2xl opacity-5">💵</span>
                 <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">EFECTIVO</span>
-                <span class="text-lg sm:text-xl font-black text-emerald-400 mt-1">
+                <span class="text-lg sm:text-xl font-black text-emerald-400 mt-0.5">
                     ${{ "{:,.0f}".format(resumen.efectivo).replace(",", ".") }}
                 </span>
             </div>
             
             <!-- Tarjeta -->
-            <div class="bg-blue-500/5 p-4 rounded-[22px] text-center border border-blue-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
+            <div class="bg-blue-500/5 p-4 rounded-[22px] border border-blue-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
                 <span class="absolute -bottom-1 -right-1 text-2xl opacity-5">💳</span>
                 <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TARJETA</span>
-                <span class="text-lg sm:text-xl font-black text-blue-400 mt-1">
+                <span class="text-lg sm:text-xl font-black text-blue-400 mt-0.5">
                     ${{ "{:,.0f}".format(resumen.tarjeta).replace(",", ".") }}
                 </span>
             </div>
             
             <!-- Transferencia -->
-            <div class="bg-purple-500/5 p-4 rounded-[22px] text-center border border-purple-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
+            <div class="bg-purple-500/5 p-4 rounded-[22px] border border-purple-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
                 <span class="absolute -bottom-1 -right-1 text-2xl opacity-5">📱</span>
                 <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TRANSFERENCIA</span>
-                <span class="text-lg sm:text-xl font-black text-purple-400 mt-1">
+                <span class="text-lg sm:text-xl font-black text-purple-400 mt-0.5">
                     ${{ "{:,.0f}".format(resumen.transferencia).replace(",", ".") }}
                 </span>
             </div>
             
             <!-- Cartera Total Deudores -->
             <div onclick="document.getElementById('modal_global_deudas').showModal()" 
-                 class="card-btn bg-zinc-900/80 p-4 rounded-[22px] text-center border border-yellow-500/20 flex flex-col justify-center h-20 relative overflow-hidden active:scale-95 transition-all col-span-2 sm:col-span-1">
+                 class="card-btn bg-zinc-900/80 p-4 rounded-[22px] border border-yellow-500/20 flex flex-col justify-center h-20 relative overflow-hidden active:scale-95 transition-all col-span-2 sm:col-span-1">
                 <span class="absolute -bottom-1 -right-1 text-2xl opacity-10">📔</span>
                 <span class="block text-[8px] sm:text-[9px] font-black text-yellow-500/80 uppercase tracking-widest">Deudores Históricos</span>
-                <span class="text-lg sm:text-xl font-black text-yellow-500 mt-1">
+                <span class="text-lg sm:text-xl font-black text-yellow-500 mt-0.5">
                     ${{ "{:,.0f}".format(monto_deudas_total).replace(",", ".") }}
                 </span>
             </div>
@@ -242,20 +247,20 @@
     </div>
 
 <!-- 3. VENTAS POR GARZONES (BLOQUE INDEPENDIENTE) -->
-        <div class="pt-8 w-full block seccion-garzones">
-            <h3 class="text-[10px] font-black mb-4 uppercase text-zinc-600 tracking-[3px] text-center italic">● Control de Ventas por Garzón ●</h3>
+        <div class="pt-6 w-full block seccion-garzones max-w-7xl mx-auto px-1">
+            <h3 class="text-[9px] font-black mb-4 uppercase text-zinc-600 tracking-[3px] text-center italic">● Control de Ventas por Garzón ●</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {% for garzon, data in detalle_garzones.items() %}
                 <div class="collapse collapse-plus bg-zinc-900/50 border border-white/5 rounded-2xl">
                     <input type="checkbox" /> 
-                    <div class="collapse-title flex justify-between items-center py-3 px-5 min-h-0">
-                        <span class="text-sm font-bold uppercase text-zinc-300">🤵 {{ garzon }}</span>
-                        <span class="text-sm font-black text-cyan-400">${{ "{:,.0f}".format(data.total).replace(",", ".") }}</span>
+                    <div class="collapse-title flex justify-between items-center py-2 px-4 min-h-0">
+                        <span class="text-xs font-bold uppercase text-zinc-300">🤵 {{ garzon }}</span>
+                        <span class="text-xs font-black text-cyan-400">${{ "{:,.0f}".format(data.total).replace(",", ".") }}</span>
                     </div>
-                    <div class="collapse-content px-4 pb-4">
-                        <table class="table table-xs w-full bg-black/20 rounded-xl">
-                            <thead class="text-zinc-500 uppercase text-[9px]">
+                    <div class="collapse-content px-2 pb-2">
+                        <table class="table table-xs w-full bg-black/20 rounded-xl text-[10px]">
+                            <thead class="text-zinc-500 uppercase text-[8px] border-b border-white/5">
                                 <tr>
                                     <th>Hora</th>
                                     <th>Servicio</th>
@@ -264,12 +269,12 @@
                                     <th class="text-right no-print">Acción</th> <!-- 💡 Nueva Columna -->
                                 </tr>
                             </thead>
-                            <tbody class="text-[10px]">
+                            <tbody>
                                 {% for v in data.lista %}
                                 <tr class="border-b border-white/5">
                                     <td>{{ v.hora }}</td>
-                                    <td>{{ v.servicio }}</td>
-                                    <td class="text-pink-500 uppercase">{{ v.destino }}</td>
+                                    <td class="truncate max-w-[80px]">{{ v.servicio }}</td>
+                                    <td class="text-pink-500 uppercase truncate max-w-[80px]">{{ v.destino }}</td>
                                     <td class="text-right font-bold text-zinc-200">${{ "{:,.0f}".format(v.monto).replace(",", ".") }}</td>
                                     <!-- 💡 Botón Eliminar Venta -->
                                     <td class="text-right no-print">
@@ -291,21 +296,21 @@
         </div>
 
         <!-- SECCIÓN AUDITORÍA DE CONTROL -->
-<div class="mt-12 w-full seccion-auditoria">
-    <div class="bg-zinc-900/80 border border-red-500/20 rounded-[40px] p-8 shadow-2xl">
-        <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
-            <h3 class="text-xs font-black uppercase text-red-500 tracking-[5px] italic">
+<div class="mt-8 w-full seccion-auditoria max-w-7xl mx-auto px-1">
+    <div class="bg-zinc-900/80 border border-red-500/20 rounded-[25px] p-4 shadow-xl">
+        <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
+            <h3 class="text-[9px] font-black uppercase text-red-500 tracking-[3px] italic">
                 ● Registro de Auditoría y Control ●
             </h3>
-            <span class="text-[10px] text-zinc-500 font-bold uppercase italic">Solo acciones administrativas</span>
+            <span class="text-[8px] text-zinc-500 font-bold uppercase italic">Solo acciones administrativas</span>
         </div>
 
-        <div class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+        <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
             {% for log in logs %}
-            <div class="flex items-center gap-4 bg-red-500/5 p-3 rounded-2xl border border-white/5">
-                <div class="text-[10px] font-mono text-zinc-500">{{ log.fecha.strftime('%H:%M:%S') }}</div>
-                <div class="shrink-0"><span class="text-[10px] font-black text-red-400 uppercase">[{{ log.usuario }}]</span></div>
-                <div class="text-[11px] text-zinc-300 font-bold uppercase tracking-tight">{{ log.accion }}</div>
+            <div class="flex items-center gap-2 bg-red-500/5 p-2 rounded-xl border border-white/5 text-[10px]">
+                <div class="text-[9px] font-mono text-zinc-500">{{ log.fecha.strftime('%H:%M:%S') }}</div>
+                <div class="shrink-0"><span class="text-[9px] font-black text-red-400 uppercase">[{{ log.usuario }}]</span></div>
+                <div class="text-[10px] text-zinc-300 font-bold uppercase tracking-tight truncate">{{ log.accion }}</div>
             </div>
             {% endfor %}
 
@@ -320,19 +325,19 @@
 
     <!-- MODAL LIQUIDACIÓN DAMAS -->
     <dialog id="modal_liq_damas" class="modal">
-        <div class="modal-box max-w-5xl bg-zinc-950 border border-pink-500">
-            <h3 class="text-2xl font-black text-pink-500 uppercase italic mb-4">Liquidaciones Personal</h3>
+        <div class="modal-box max-w-5xl bg-zinc-950 border border-pink-500 p-4">
+            <h3 class="text-lg font-black text-pink-500 uppercase italic mb-4">Liquidaciones Personal</h3>
             
             <!-- 🔍 BUSCADOR DE DAMAS EN EL MODAL -->
-            <div class="mb-6">
+            <div class="mb-4">
                 <input type="text" id="buscadorDamaModal" onkeyup="filtrarDamasModal()" 
                        placeholder="🔍 ESCRIBE EL NOMBRE DE LA DAMA PARA BUSCAR..." 
-                       class="input input-bordered input-sm w-full bg-black border-pink-500/40 text-center font-bold uppercase focus:border-pink-500">
+                       class="input input-bordered input-sm w-full bg-black border-pink-500/40 text-center font-bold uppercase focus:border-pink-500 text-xs h-9">
             </div>
 
             <div class="overflow-x-auto">
-                <table class="table w-full bg-black/40">
-                    <thead class="text-zinc-500 text-[10px] uppercase">
+                <table class="table w-full bg-black/40 text-[11px]">
+                    <thead class="text-zinc-500 text-[9px] uppercase border-b border-white/5">
                         <tr>
                             <th>Dama</th>
                             <th>Detalle</th>
@@ -348,13 +353,13 @@
                         {% if d %}
                         <!-- 💡 Añadimos clase 'fila-dama-modal' y bajamos la opacidad si ya está pagada -->
                         <tr class="border-b border-white/5 fila-dama-modal {% if d.liquidada %} opacity-50 bg-pink-950/10 {% endif %}">
-                            <td class="text-pink-400 nombre-dama-modal">
+                            <td class="text-pink-400 nombre-dama-modal truncate max-w-[80px]">
                                 {{ d.nombre }} 
-                                {% if d.liquidada %}<span class="text-green-400 text-[9px] block">✔ PAGADA</span>{% endif %}
+                                {% if d.liquidada %}<span class="text-green-400 text-[8px] block">✔ PAGADA</span>{% endif %}
                             </td>
-                            <td><button onclick="abrirDetalleDama('{{ d.dama_id }}', '{{ d.liquidada }}')" class="btn btn-xs btn-ghost btn-outline text-[9px]">Ver consumos</button></td>
+                            <td><button onclick="abrirDetalleDama('{{ d.dama_id }}', '{{ d.liquidada }}')" class="btn btn-xs btn-ghost btn-outline text-[8px] h-6 min-h-0">VER</button></td>
                             <td>
-                                <div class="text-[9px]">
+                                <div class="text-[8px] font-bold leading-tight">
                                     <p class="text-green-500">Asis: +{{ "{:,.0f}".format(d.monto_bono) }}</p>
                                     {% if d.es_bailarina %}
                                     <p class="text-purple-400">Baile: +{{ "{:,.0f}".format(d.ganancia_bailes) }}</p>
@@ -362,21 +367,20 @@
                                 </div>
                             </td>
                             <td class="text-red-500">-{{ "{:,.0f}".format(d.residencia) }}</td>
-                            <td class="text-right text-lg text-pink-500 font-black">${{ "{:,.0f}".format(d.total_pagar).replace(",", ".") }}</td>
+                            <td class="text-right text-sm text-pink-500 font-black">${{ "{:,.0f}".format(d.total_pagar).replace(",", ".") }}</td>
                             
                             <!-- BOTÓN PARA ENVIAR WHATSAPP -->
                             <td>
-                                <a href="{{ d.link_wa }}" target="_blank" class="btn btn-xs btn-success gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.891 11.893-11.891 3.181 0 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.335 11.892-11.893 11.892-1.99 0-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.658 3.844 1.908 5.404l-1.047 3.816 3.628-.953z"/></svg>
+                                <a href="{{ d.link_wa }}" target="_blank" class="btn btn-xs btn-success gap-1 text-[9px] h-6 min-h-0 px-2">
                                     ENVIAR
                                 </a>
                             </td>
 
                             <td>
                                 {% if d.liquidada %}
-                                <input type="checkbox" checked disabled class="checkbox checkbox-success border-2 opacity-50 cursor-not-allowed">
+                                <input type="checkbox" checked disabled class="checkbox checkbox-success checkbox-xs border-2 opacity-50 cursor-not-allowed">
                                 {% else %}
-                                <input type="checkbox" onchange="confirmarPagoDama(this, '{{d.dama_id}}', '{{d.nombre}}', '{{ d.total_pagar }}', '{{ d.fecha }}')" class="checkbox checkbox-success border-2">
+                                <input type="checkbox" onchange="confirmarPagoDama(this, '{{d.dama_id}}', '{{d.nombre}}', '{{ d.total_pagar }}', '{{ d.fecha }}')" class="checkbox checkbox-success checkbox-xs border-2">
                                 {% endif %}
                             </td>
                         </tr>
@@ -385,7 +389,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="modal-action"><form method="dialog"><button class="btn">CERRAR</button></form></div>
+            <div class="modal-action mt-4"><form method="dialog"><button class="btn btn-sm">CERRAR</button></form></div>
         </div>
     </dialog>
 
@@ -393,18 +397,18 @@
     {% for d in detalle_damas %}
     {% if d %}
     <dialog id="modal_dama_det_{{ d.dama_id }}_{{ d.liquidada }}" class="modal">
-        <div class="modal-box bg-zinc-900 border border-pink-500/50">
-            <h3 class="text-xl font-black text-pink-500 mb-4 uppercase">{{ d.nombre }} - Detalle</h3>
+        <div class="modal-box bg-zinc-900 border border-pink-500/50 p-4">
+            <h3 class="text-sm font-black text-pink-500 mb-4 uppercase">{{ d.nombre }} - Detalle</h3>
 
-            <div class="space-y-2 max-h-80 overflow-y-auto">
+            <div class="space-y-2 max-h-60 overflow-y-auto">
                 {% for c in d.consumos %}
-                <div class="flex justify-between bg-black/40 p-2 rounded-lg text-xs border border-white/5">
+                <div class="flex justify-between bg-black/40 p-2 rounded-lg text-[10px] border border-white/5">
                     <span>{{ c.hora }} - {{ c.serv }} <br><small class="text-zinc-500 uppercase">Garzón: {{ c.garzon }}</small></span>
                     <span class="font-black text-white">+${{ "{:,.0f}".format(c.ganancia).replace(",", ".") }}</span>
                 </div>
                 {% endfor %}
             </div>
-            <div class="modal-action"><form method="dialog"><button class="btn btn-sm">CERRAR</button></form></div>
+            <div class="modal-action"><form method="dialog"><button class="btn btn-xs">CERRAR</button></form></div>
         </div>
     </dialog>
     {% endif %}
@@ -412,39 +416,32 @@
 
     <!-- MODAL GLOBAL DEUDAS -->
 <dialog id="modal_global_deudas" class="modal">
-    <div class="modal-box max-w-4xl bg-zinc-950 border border-yellow-500 p-6">
-        <div class="flex justify-between items-center mb-6">
+    <div class="modal-box max-w-lg bg-zinc-950 border border-yellow-500 p-4">
+        <div class="flex justify-between items-center mb-4">
             <div>
-                <h3 class="text-2xl font-black text-yellow-500 uppercase italic">Seguimiento de Cuentas</h3>
-                <p class="text-[10px] text-zinc-500 uppercase font-bold">Listado de deudas pendientes históricas</p>
+                <h3 class="text-base font-black text-yellow-500 uppercase italic">Seguimiento de Cuentas</h3>
+                <p class="text-[9px] text-zinc-500 uppercase font-bold">Listado de deudas históricas</p>
             </div>
-            <div class="badge badge-warning p-4 font-black">TOTAL: ${{ "{:,.0f}".format(monto_deudas_total).replace(",", ".") }}</div>
+            <div class="badge badge-warning badge-sm p-3 font-black text-xs">TOTAL: ${{ "{:,.0f}".format(monto_deudas_total).replace(",", ".") }}</div>
         </div>
         
-        <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+        <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
             {% for d in deudas_global %}
-            <div class="bg-zinc-900/80 p-4 rounded-2xl border border-white/5 flex justify-between items-center shadow-lg">
-                <div class="flex flex-col gap-1">
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded font-mono">{{ d.fecha.strftime('%d/%m/%y %H:%M') }}</span>
-                        <span class="text-xs text-zinc-500 uppercase font-bold">Atendió: {{ d.mesero }}</span>
-                    </div>
+            <div class="bg-zinc-900/80 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                <div class="flex flex-col gap-0.5 truncate max-w-[150px]">
+                    <span class="text-[8px] text-zinc-500 font-bold uppercase">{{ d.fecha.strftime('%d/%m/%y %H:%M') }}</span>
                     <!-- Nombre del Cliente -->
-                    <p class="font-black text-white text-lg uppercase tracking-tight">{{ d.cliente_nombre or 'CLIENTE SIN REGISTRO' }}</p>
-                    <p class="text-xs text-yellow-600 font-bold italic">{{ d.servicio }}</p>
+                    <p class="font-black text-white uppercase truncate">{{ d.cliente_nombre or 'CLIENTE' }}</p>
+                    <p class="text-[9px] text-yellow-600 font-bold italic truncate">{{ d.servicio }}</p>
                 </div>
                 
-                <div class="text-right">
-                    <p class="text-2xl font-black text-yellow-500">${{ "{:,.0f}".format(d.monto).replace(",", ".") }}</p>
-                    
-                    <div class="flex gap-2 mt-2">
-                        <!-- FORMULARIO DE COBRO -->
-                        <form action="/cobrar_deuda/{{ d.id }}" method="post" onsubmit="return confirm('¿CONFIRMAR PAGO DE {{ d.cliente_nombre }}?')">
-                            <button type="submit" name="metodo_pago_final" value="EFECTIVO" class="btn btn-xs btn-success font-black px-4">
-                                💵 COBRAR
-                            </button>
-                        </form>
-                    </div>
+                <div class="text-right shrink-0">
+                    <p class="text-sm font-black text-yellow-500">${{ "{:,.0f}".format(d.monto).replace(",", ".") }}</p>
+                    <form action="/cobrar_deuda/{{ d.id }}" method="post" class="mt-1" onsubmit="return confirm('¿CONFIRMAR PAGO?')">
+                        <button type="submit" name="metodo_pago_final" value="EFECTIVO" class="btn btn-[8px] btn-success h-6 min-h-0 px-2 font-black">
+                            💵 COBRAR
+                        </button>
+                    </form>
                 </div>
             </div>
             {% endfor %}
@@ -456,49 +453,50 @@
             {% endif %}
         </div>
         
-        <div class="modal-action">
-            <form method="dialog"><button class="btn btn-ghost font-black">CERRAR PANEL</button></form>
+        <div class="modal-action mt-4">
+            <form method="dialog"><button class="btn btn-sm">CERRAR</button></form>
         </div>
     </div>
 </dialog>
+
     <!-- MODAL GLOBAL PENDIENTES (HEADER) -->
     <dialog id="modal_global_pendientes" class="modal">
-        <div class="modal-box max-w-4xl bg-zinc-950 border border-secondary">
-            <h3 class="text-2xl font-black text-secondary uppercase italic mb-6">Liquidaciones Días Anteriores</h3>
-            <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+        <div class="modal-box max-w-lg bg-zinc-950 border border-secondary p-4">
+            <h3 class="text-base font-black text-secondary uppercase italic mb-4">Liquidaciones Pendientes</h3>
+            <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
                 {% for p in pendientes_global %}
-                <div class="bg-zinc-900 p-4 rounded-3xl border border-white/5 flex justify-between items-center">
+                <div class="bg-zinc-900 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
                     <div>
-    <p class="text-[10px] text-zinc-500 font-bold uppercase">{{ p.fecha }} | {{ p.turno }}</p>
-    <div class="flex items-center gap-3">
-        <p class="font-black text-white text-xl uppercase">{{ p.nombre }}</p>
-        
-        <!-- BOTÓN WHATSAPP HISTÓRICO (NUEVO) -->
-        <a href="{{ p.link_wa }}" target="_blank" class="btn btn-circle btn-xs btn-success gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.891 11.893-11.891 3.181 0 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.335 11.892-11.893 11.892-1.99 0-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.658 3.844 1.908 5.404l-1.047 3.816 3.628-.953z"/></svg>
-        </a>
-    </div>
-</div>
-                    <div class="text-right">
-                        <p class="text-2xl font-black text-white">${{ "{:,.0f}".format(p.total_pagar).replace(",", ".") }}</p>
-                        <input type="checkbox" onchange="confirmarPagoDama(this, '{{p.dama_id}}', '{{p.nombre}}', '{{ p.total_pagar }}', '{{ p.fecha }}')" class="checkbox checkbox-success border-2 mt-2">
+                        <p class="text-[8px] text-zinc-500 font-bold uppercase">{{ p.fecha }} | {{ p.turno }}</p>
+                        <div class="flex items-center gap-2">
+                            <p class="font-black text-white uppercase truncate max-w-[100px]">{{ p.nombre }}</p>
+                            
+                            <!-- BOTÓN WHATSAPP HISTÓRICO (NUEVO) -->
+                            <a href="{{ p.link_wa }}" target="_blank" class="btn btn-circle btn-[8px] h-5 w-5 btn-success gap-1 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.891 11.893-11.891 3.181 0 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.335 11.892-11.893 11.892-1.99 0-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.658 3.844 1.908 5.404l-1.047 3.816 3.628-.953z"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <p class="text-sm font-black text-white">${{ "{:,.0f}".format(p.total_pagar).replace(",", ".") }}</p>
+                        <input type="checkbox" onchange="confirmarPagoDama(this, '{{p.dama_id}}', '{{p.nombre}}', '{{ p.total_pagar }}', '{{ p.fecha }}')" class="checkbox checkbox-success checkbox-xs border-2 mt-1">
                     </div>
                 </div>
                 {% endfor %}
             </div>
-            <div class="modal-action"><form method="dialog"><button class="btn btn-ghost">CERRAR</button></form></div>
+            <div class="modal-action mt-4"><form method="dialog"><button class="btn btn-sm">CERRAR</button></form></div>
         </div>
     </dialog>
 
     <!-- MODAL MOTIVO BORRADO -->
     <dialog id="modal_borrar_venta" class="modal">
-        <div class="modal-box bg-zinc-950 border border-red-500">
-            <h3 class="font-black text-red-500 uppercase mb-4">¿Eliminar Venta?</h3>
+        <div class="modal-box bg-zinc-950 border border-red-500 p-4">
+            <h3 class="font-black text-red-500 uppercase mb-4 text-sm">¿Eliminar Venta?</h3>
             <form id="form_borrar" method="post">
-                <input type="text" name="motivo" placeholder="Motivo..." class="input input-bordered w-full bg-black mb-4 uppercase text-xs" required>
+                <input type="text" name="motivo" placeholder="Motivo..." class="input input-bordered w-full bg-black mb-4 uppercase text-xs h-9" required>
                 <div class="flex gap-2">
-                    <button type="button" onclick="document.getElementById('modal_borrar_venta').close()" class="btn btn-ghost flex-1">CANCELAR</button>
-                    <button type="submit" class="btn btn-error flex-1 font-black">ELIMINAR</button>
+                    <button type="button" onclick="document.getElementById('modal_borrar_venta').close()" class="btn btn-ghost btn-xs flex-1">CANCELAR</button>
+                    <button type="submit" class="btn btn-error btn-xs flex-1 font-black">ELIMINAR</button>
                 </div>
             </form>
         </div>
