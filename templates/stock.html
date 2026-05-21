@@ -2,93 +2,95 @@
 <html lang="es" data-theme="night">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
     <title>Inventario Pro - Whiskeria 2000</title>
 </head>
-<body class="bg-[#020202] text-white p-4 md:p-8">
+<body class="bg-[#020202] text-white p-3 md:p-8 font-sans">
 
     <div class="max-w-5xl mx-auto">
-        <!-- HEADER -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <h1 class="text-3xl font-black text-cyan-400 uppercase italic">Almacén Inteligente</h1>
+        <!-- HEADER RESPONSIVE -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b border-white/5 pb-4">
+            <h1 class="text-2xl font-black text-cyan-400 uppercase italic">Almacén Inteligente</h1>
             
-            <form action="/stock" method="get" class="flex gap-2 bg-zinc-900 p-2 rounded-xl border border-white/5">
-                <input type="date" name="fecha" value="{{ fecha_filtro }}" class="input input-xs bg-black font-bold">
-                <select name="turno" class="select select-xs bg-black font-bold uppercase">
-                    <option {% if turno_filtro == 'Turno 1' %}selected{% endif %}>Turno 1</option>
-                    <option {% if turno_filtro == 'Turno 2' %}selected{% endif %}>Turno 2</option>
-                </select>
-                <button type="submit" class="btn btn-xs btn-info font-black">FILTRAR</button>
-            </form>
+            <div class="flex flex-wrap gap-2 w-full sm:w-auto justify-center">
+                <form action="/stock" method="get" class="flex gap-1 bg-zinc-900 p-1.5 rounded-xl border border-white/5">
+                    <input type="date" name="fecha" value="{{ fecha_filtro }}" class="input input-xs bg-black font-bold text-[10px] h-7">
+                    <select name="turno" class="select select-xs bg-black font-bold uppercase text-[10px] h-7 min-h-0">
+                        <option {% if turno_filtro == 'Turno 1' %}selected{% endif %}>Turno 1</option>
+                        <option {% if turno_filtro == 'Turno 2' %}selected{% endif %}>Turno 2</option>
+                    </select>
+                    <button type="submit" class="btn btn-xs btn-info font-black h-7 min-h-0 text-[10px]">FILTRAR</button>
+                </form>
 
-            <a href="/" class="btn btn-sm btn-outline rounded-full font-black">SALÓN</a>
+                <a href="/" class="btn btn-xs sm:btn-sm btn-outline rounded-full font-black uppercase h-7 min-h-0 py-1">SALÓN</a>
+            </div>
         </div>
 
         <!-- BUSCADOR GLOBAL -->
         <div class="mb-6">
             <input type="text" id="buscadorStock" onkeyup="filtrarStock()" 
-                   placeholder="🔍 BUSCAR POR NOMBRE O BOTELLA..." 
-                   class="input input-bordered w-full bg-zinc-900 border-zinc-700 font-bold uppercase text-center focus:border-cyan-400 shadow-2xl">
+                   placeholder="🔍 BUSCAR BEBIDA..." 
+                   class="input input-bordered w-full bg-zinc-900 border-zinc-700 font-bold uppercase text-center focus:border-cyan-400 shadow-2xl h-11 text-sm">
         </div>
 
         <!-- FORMULARIO DE REGISTRO COLAPSABLE -->
         <div class="collapse collapse-plus bg-cyan-500/10 border border-cyan-500/30 mb-6 rounded-2xl">
             <input type="checkbox" /> 
-            <div class="collapse-title text-xs font-black text-cyan-400 uppercase tracking-[3px]">
+            <div class="collapse-title text-[10px] font-black text-cyan-400 uppercase tracking-[2px]">
                 ➕ REGISTRAR NUEVO ÍTEM (PRODUCTO O BOTELLA)
             </div>
             <div class="collapse-content">
-                <form action="/agregar_producto_stock" method="post" class="grid grid-cols-1 md:grid-cols-4 gap-4 p-2" onsubmit="return confirm('¿DESEA CREAR ESTE PRODUCTO?')">
+                <form action="/agregar_producto_stock" method="post" class="space-y-3 p-1" onsubmit="return confirm('¿DESEA CREAR ESTE PRODUCTO?')">
                     <div class="form-control">
-                        <label class="label"><span class="label-text text-[10px] font-bold">NOMBRE</span></label>
-                        <input name="nombre" placeholder="EJ: CORONA" class="input input-bordered bg-black uppercase font-bold text-sm" required />
+                        <label class="label py-1"><span class="label-text text-[9px] font-bold text-zinc-400">NOMBRE</span></label>
+                        <input name="nombre" placeholder="EJ: CORONA" class="input input-bordered w-full bg-black uppercase font-bold text-xs h-9" required />
                     </div>
                     <div class="form-control">
-                        <label class="label"><span class="label-text text-[10px] font-bold">CATEGORÍA</span></label>
-                        <select name="tipo" class="select select-bordered bg-black font-bold text-sm">
+                        <label class="label py-1"><span class="label-text text-[9px] font-bold text-zinc-400">CATEGORÍA</span></label>
+                        <select name="tipo" class="select select-bordered w-full bg-black font-bold text-xs h-9 min-h-0">
                             <option value="PRODUCTO">PRODUCTO (COOLER)</option>
                             <option value="BOTELLA">BOTELLA (BARRA)</option>
                         </select>
                     </div>
                     <div class="form-control">
-                        <label class="label"><span class="label-text text-[10px] font-bold">STOCK INICIAL</span></label>
-                        <input name="inicio" type="number" placeholder="0" class="input input-bordered bg-black font-bold text-sm" required />
+                        <label class="label py-1"><span class="label-text text-[9px] font-bold text-zinc-400">STOCK INICIAL</span></label>
+                        <input name="inicio" type="number" placeholder="0" class="input input-bordered w-full bg-black font-bold text-xs h-9" required />
                     </div>
-                    <div class="form-control justify-end">
-                        <button type="submit" class="btn btn-info font-black">GUARDAR EN SISTEMA</button>
-                    </div>
+                    <button type="submit" class="btn btn-info btn-sm w-full font-black text-xs">GUARDAR EN SISTEMA</button>
                 </form>
             </div>
         </div>
 
-        <!-- LISTA DESPLEGABLE 1: PRODUCTOS COOLER -->
-        <div class="collapse collapse-arrow bg-zinc-900/50 border border-cyan-500/20 mb-3 rounded-2xl">
-            <input type="checkbox" /> 
-            <div class="collapse-title text-sm font-black text-cyan-400 uppercase tracking-widest">
+        <!-- LISTA DESPLEGABLE 1: PRODUCTOS COOLER (NÚMEROS GIGANTES Y SIN DESBORDAR) -->
+        <div class="collapse collapse-arrow bg-zinc-900/50 border border-cyan-500/20 mb-4 rounded-2xl">
+            <input type="checkbox" checked /> 
+            <div class="collapse-title text-xs font-black text-cyan-400 uppercase tracking-widest">
                 📦 PRODUCTOS COOLER (CERVEZAS / JUGOS)
             </div>
-            <div class="collapse-content overflow-x-auto">
-                <table class="table w-full text-center table-xs tabla-inventario">
+            <div class="collapse-content px-1 sm:px-4 pb-4 overflow-x-hidden">
+                <table class="table w-full text-center table-xs">
                     <thead>
-                        <tr class="text-zinc-500 uppercase">
-                            <th class="text-left">Nombre</th>
+                        <tr class="text-zinc-500 uppercase text-[9px] border-b border-white/5">
+                            <th class="text-left pl-1">Nombre</th>
                             <th>Repo</th>
                             <th>Venta</th>
                             <th>Falt</th>
                             <th class="text-cyan-400">Saldo</th>
-                            <th>Acciones</th>
+                            <th class="text-right pr-1">Acción</th>
                         </tr>
                     </thead>
-                    <tbody class="font-bold uppercase">
+                    <tbody class="font-bold uppercase text-xs">
                         {% for p in inventario_productos %}
                         <tr class="border-b border-white/5 item-stock">
-                            <td class="text-left text-white nombre-item text-xs sm:text-sm truncate max-w-[85px] sm:max-w-none">{{ p.nombre }}</td>
-                            <td class="text-red-400 text-sm sm:text-lg font-black">{{ p.salida }}</td>
-                            <td class="text-orange-400 text-sm sm:text-lg font-black">{{ p.faltante }}</td>
-                            <td class="text-base sm:text-xl text-cyan-400 font-black">{{ p.saldo }}</td>
-                            <td class="flex gap-1 justify-center">
-                                <button onclick="abrirModalMov('{{ p.id }}', '{{ p.nombre }}')" class="btn btn-xs btn-circle btn-ghost">⚙️</button>
+                            <td class="text-left text-white pl-1 truncate max-w-[80px] sm:max-w-none nombre-item">{{ p.nombre }}</td>
+                            <td class="text-blue-400 text-sm sm:text-base">+{{ p.reposicion }}</td>
+                            <td class="text-red-400 text-sm sm:text-base">{{ p.salida }}</td>
+                            <td class="text-orange-400 text-sm sm:text-base">{{ p.faltante }}</td>
+                            <td class="text-base sm:text-lg text-cyan-400 font-black">{{ p.saldo }}</td>
+                            <td class="flex gap-1 justify-end pr-1 pt-2">
+                                <button onclick="abrirModalMov('{{ p.id }}', '{{ p.nombre }}')" class="btn btn-xs btn-circle btn-ghost" title="Ajustar Stock">⚙️</button>
                                 <form action="/eliminar_producto/{{ p.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ p.nombre }} DEL SISTEMA?')">
                                     <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
                                     <button class="btn btn-xs btn-error btn-outline btn-square">✕</button>
@@ -102,33 +104,33 @@
         </div>
 
         <!-- LISTA DESPLEGABLE 2: BOTELLAS BARRA -->
-        <div class="collapse collapse-arrow bg-zinc-900/50 border border-warning/20 mb-10 rounded-2xl">
-            <input type="checkbox" /> 
-            <div class="collapse-title text-sm font-black text-warning uppercase tracking-widest">
+        <div class="collapse collapse-arrow bg-zinc-900/50 border border-warning/20 mb-6 rounded-2xl">
+            <input type="checkbox" checked /> 
+            <div class="collapse-title text-xs font-black text-warning uppercase tracking-widest">
                 🍾 BOTELLAS BARRA (LICORES)
             </div>
-            <div class="collapse-content overflow-x-auto">
-                <table class="table w-full text-center table-xs tabla-inventario">
+            <div class="collapse-content px-1 sm:px-4 pb-4 overflow-x-hidden">
+                <table class="table w-full text-center table-xs">
                     <thead>
-                        <tr class="text-zinc-500 uppercase">
-                            <th class="text-left">Nombre</th>
+                        <tr class="text-zinc-500 uppercase text-[9px] border-b border-white/5">
+                            <th class="text-left pl-1">Nombre</th>
                             <th>Repo</th>
                             <th>Venta</th>
                             <th>Falt</th>
                             <th class="text-warning">Saldo</th>
-                            <th>Acciones</th>
+                            <th class="text-right pr-1">Acción</th>
                         </tr>
                     </thead>
-                    <tbody class="font-bold uppercase">
+                    <tbody class="font-bold uppercase text-xs">
                         {% for b in inventario_botellas %}
                         <tr class="border-b border-white/5 item-stock">
-                            <td class="text-left text-white nombre-item">{{ b.nombre }}</td>
-                            <td class="text-blue-400">+{{ b.reposicion }}</td>
-                            <td class="text-red-400">{{ b.salida }}</td>
-                            <td class="text-orange-400">{{ b.faltante }}</td>
-                            <td class="text-lg text-warning">{{ b.saldo }}</td>
-                            <td class="flex gap-1 justify-center">
-                                <button onclick="abrirModalMov('{{ b.id }}', '{{ b.nombre }}')" class="btn btn-xs btn-circle btn-ghost">⚙️</button>
+                            <td class="text-left text-white pl-1 truncate max-w-[80px] sm:max-w-none nombre-item">{{ b.nombre }}</td>
+                            <td class="text-blue-400 text-sm sm:text-base">+{{ b.reposicion }}</td>
+                            <td class="text-red-400 text-sm sm:text-base">{{ b.salida }}</td>
+                            <td class="text-orange-400 text-sm sm:text-base">{{ b.faltante }}</td>
+                            <td class="text-base sm:text-lg text-warning font-black">{{ b.saldo }}</td>
+                            <td class="flex gap-1 justify-end pr-1 pt-2">
+                                <button onclick="abrirModalMov('{{ b.id }}', '{{ b.nombre }}')" class="btn btn-xs btn-circle btn-ghost" title="Ajustar Stock">⚙️</button>
                                 <form action="/eliminar_producto/{{ b.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ b.nombre }} DEL SISTEMA?')">
                                     <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
                                     <button class="btn btn-xs btn-error btn-outline btn-square">✕</button>
@@ -141,45 +143,45 @@
             </div>
         </div>
 
-        <!-- AUDITORÍA DE MOVIMIENTOS -->
-        <div class="bg-zinc-900 p-6 rounded-[35px] border border-zinc-700">
+        <!-- AUDITORÍA DE MOVIMIENTOS GRANDE Y LEGIBLE -->
+        <div class="bg-zinc-900 p-4 rounded-[25px] border border-zinc-800">
             <h3 class="text-[10px] font-black text-zinc-500 uppercase mb-4 text-center tracking-widest">Auditoría de Acciones - {{ turno_filtro }}</h3>
-            <div class="space-y-2 max-h-48 overflow-y-auto">
-    {% for log in auditoria %}
-    <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl text-xs border-b border-white/5">
-        <div class="flex gap-4 items-center">
-            <span class="text-zinc-600 font-mono">{{ log.hora }}</span>
-            <span class="font-black {% if log.tipo == 'ELIMINADO' %} text-red-500 {% else %} text-white {% endif %} w-24 truncate">{{ log.nombre }}</span>
-            <span class="badge badge-outline badge-xs text-[8px] font-bold">{{ log.tipo }}</span>
-        </div>
-        <div class="flex gap-4 items-center">
-            <span class="text-cyan-500 font-bold uppercase italic">By: {{ log.usuario }}</span>
-            <span class="badge badge-info badge-xs font-black">{{ log.cantidad }}</span>
-        </div>
-    </div>
-    {% endfor %}
-</div>
+            <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {% for log in auditoria %}
+                <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl text-xs border-b border-white/5">
+                    <div class="flex gap-2 items-center truncate">
+                        <span class="text-zinc-600 font-mono text-[9px]">{{ log.hora }}</span>
+                        <span class="font-black {% if log.tipo == 'ELIMINADO' %} text-red-500 {% else %} text-white {% endif %} truncate max-w-[95px]">{{ log.nombre }}</span>
+                        <span class="badge badge-outline badge-xs text-[8px] font-bold">{{ log.tipo }}</span>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <span class="text-cyan-500 font-bold uppercase italic text-[10px]">{{ log.usuario }}</span>
+                        <span class="badge badge-info badge-sm font-black">{{ log.cantidad }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 
-    <!-- MODAL (IGUAL AL ANTERIOR) -->
+    <!-- MODAL -->
     <dialog id="modal_movimiento" class="modal">
-        <div class="modal-box bg-zinc-950 border-2 border-cyan-400">
-            <h3 id="modal_prod_nombre" class="font-black text-xl text-white uppercase text-center mb-6"></h3>
-            <form action="/registrar_movimiento_stock" method="post" class="space-y-6" onsubmit="return confirm('¿CONFIRMAR MOVIMIENTO?')">
+        <div class="modal-box bg-zinc-950 border-2 border-cyan-400 p-6">
+            <h3 id="modal_prod_nombre" class="font-black text-lg text-white uppercase text-center mb-6"></h3>
+            <form action="/registrar_movimiento_stock" method="post" class="space-y-4" onsubmit="return confirm('¿CONFIRMAR MOVIMIENTO?')">
                 <input type="hidden" name="producto_id" id="modal_prod_id">
                 <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div class="form-control">
-                        <label class="label"><span class="label-text font-black text-blue-400">REPOSICIÓN (+)</span></label>
-                        <input type="number" name="cantidad_repo" value="0" class="input input-bordered bg-black text-center font-black">
+                        <label class="label py-1"><span class="label-text font-black text-blue-400 text-xs">REPOSICIÓN (+)</span></label>
+                        <input type="number" name="cantidad_repo" value="0" class="input input-bordered bg-black text-center font-black h-10">
                     </div>
                     <div class="form-control">
-                        <label class="label"><span class="label-text font-black text-orange-400">FALTANTE (-)</span></label>
-                        <input type="number" name="cantidad_falt" value="0" class="input input-bordered bg-black text-center font-black">
+                        <label class="label py-1"><span class="label-text font-black text-orange-400 text-xs">FALTANTE (-)</span></label>
+                        <input type="number" name="cantidad_falt" value="0" class="input input-bordered bg-black text-center font-black h-10">
                     </div>
                 </div>
-                <button type="submit" class="btn btn-info w-full font-black">GUARDAR</button>
+                <button type="submit" class="btn btn-info btn-sm w-full font-black">GUARDAR</button>
             </form>
         </div>
     </dialog>
@@ -199,7 +201,6 @@
                 let nombre = item.querySelector(".nombre-item").innerText;
                 if (nombre.toUpperCase().indexOf(filter) > -1) {
                     item.style.display = "";
-                    // Si encontramos el item, nos aseguramos de que su contenedor colapsable esté abierto
                     item.closest(".collapse").querySelector("input").checked = true;
                 } else {
                     item.style.display = "none";

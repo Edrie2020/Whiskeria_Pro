@@ -83,36 +83,23 @@
 
 <body class="bg-[#020202] text-white min-h-screen p-4 md:p-8" id="reporte-jefe">
 
-<!-- HEADER RESPONSIVE OPTIMIZADO (REEMPLAZA SOLO ESTE BLOQUE) -->
-<div class="max-w-7xl mx-auto flex flex-col gap-4 mb-6 border-b border-white/10 pb-4 no-print">
-    <div class="flex items-center justify-between px-2">
-        <div class="flex items-center gap-2">
-            <a href="/" class="btn btn-circle btn-xs btn-outline btn-warning">←</a>
-            <h1 class="text-xl sm:text-2xl font-black text-yellow-500 uppercase italic neon-gold">Contabilidad</h1>
-        </div>
-        
-        <div class="flex gap-1">
-            <button type="button" onclick="document.getElementById('modal_global_pendientes').showModal()" class="btn btn-xs btn-outline btn-secondary rounded-full font-black text-[9px] px-2.5 h-7 min-h-0">⚠️ LIQ</button>
-            <button type="button" onclick="document.getElementById('modal_global_deudas').showModal()" class="btn btn-xs btn-outline btn-warning rounded-full font-black text-[9px] px-2.5 h-7 min-h-0">📔 DEUDAS</button>
-        </div>
+<!-- HEADER -->
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-10 gap-6 border-b border-white/10 pb-6 no-print">
+    <div class="flex items-center gap-4">
+        <a href="/?user={{ role }}" class="btn btn-circle btn-outline btn-warning">←</a>
+        <h1 class="text-4xl font-black text-yellow-500 uppercase italic neon-gold">Panel Contable</h1>
     </div>
+    
+    <div class="flex flex-wrap gap-2 justify-center bg-zinc-900 p-3 rounded-2xl border border-white/5 no-print">
+    <!-- BOTÓN JEFE: IMPRIME TODO -->
+    <button type="button" onclick="imprimirJefe()" class="btn btn-sm btn-secondary font-black rounded-full px-6 italic">
+        IMPRIMIR FULL (JEFE) 👑
+    </button>
 
-    <!-- Filtros de fecha y botones de impresión cómodos para celular -->
-    <div class="flex flex-col sm:flex-row gap-2.5 justify-between items-center bg-zinc-900/50 p-3 rounded-2xl border border-white/5 mx-2">
-        <form action="/contabilidad" method="get" class="flex gap-1 w-full sm:w-auto">
-            <!-- Reducimos el tamaño de la fuente para que la fecha quepa completa sin cortarse -->
-            <input type="date" name="fecha" value="{{ fecha_filtro }}" onchange="this.form.submit()" class="input input-xs bg-black font-bold border-zinc-700 flex-1 text-[11px] h-8">
-            <select name="turno" onchange="this.form.submit()" class="select select-xs bg-black font-bold border-zinc-700 h-8 min-h-0 text-[11px]">
-                <option value="Turno 1" {% if turno_filtro == 'Turno 1' %}selected{% endif %}>Turno 1</option>
-                <option value="Turno 2" {% if turno_filtro == 'Turno 2' %}selected{% endif %}>Turno 2</option>
-            </select>
-        </form>
-        
-        <div class="flex gap-1.5 w-full sm:w-auto justify-end">
-            <button type="button" onclick="imprimirJefe()" class="btn btn-xs btn-secondary font-black rounded-full px-4 italic text-[10px] h-8 min-h-0 flex-1 sm:flex-none">IMPRIMIR FULL 👑</button>
-            <button type="button" onclick="window.print()" class="btn btn-xs btn-error font-black rounded-full px-4 italic text-[10px] h-8 min-h-0 flex-1 sm:flex-none">IMPRIMIR CONTADOR 📄</button>
-        </div>
-    </div>
+    <!-- BOTÓN CONTADOR: IMPRIME SOLO LO FORMAL -->
+    <button type="button" onclick="window.print()" class="btn btn-sm btn-error font-black rounded-full px-6 italic">
+        IMPRIMIR CONTADOR 📄
+    </button>
 </div>
 
         <form action="/contabilidad" method="get" class="flex gap-2">
