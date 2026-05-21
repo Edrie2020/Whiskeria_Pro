@@ -384,7 +384,13 @@
     <!-- Asegúrate de que el botón sea type="submit" -->
     <button type="submit" class="btn btn-info font-black">Añadir</button>
 </form>
-            <div class="modal-action"><form method="dialog"><button class="btn btn-ghost" onclick="window.location.reload()">LISTO</button></form></div>
+            <div class="modal-action">
+    <form method="dialog">
+        <button class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider" onclick="window.location.reload()">
+            ← SALÓN
+        </button>
+    </form>
+</div>
         </div>
     </dialog>
  
@@ -1159,10 +1165,10 @@ async function ejecutarAccionBailarina(event, form) {
                 <h3 class="font-black text-2xl text-purple-500 uppercase italic tracking-tighter">Control de Pista</h3>
                 <p class="text-[9px] font-bold text-zinc-500 uppercase">Gestión en tiempo real</p>
             </div>
-            <button class="btn btn-error btn-outline btn-sm rounded-full font-black px-6" 
-                    onclick="document.getElementById('modal_bailarinas_pro').close()">
-                ✕ Salón 
-            </button>
+            <button class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider" 
+        onclick="document.getElementById('modal_bailarinas_pro').close()">
+    ← SALÓN
+</button>
         </div>
 
         <div class="p-6 space-y-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
