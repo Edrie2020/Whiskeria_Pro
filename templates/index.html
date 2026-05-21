@@ -24,41 +24,46 @@
 </head>
 <body class="bg-[#020202] min-h-screen text-white font-sans overflow-x-hidden">
 
-    <!-- BARRA ESTADO -->
-<!-- BARRA ESTADO -->
-<div class="status-bar w-full py-3 px-4 md:px-10 flex justify-between items-center sticky top-0 z-[60] shadow-2xl">
-    
-    <!-- Lado Izquierdo: Estado del Club -->
-    <div class="flex items-center gap-3">
-        <div class="w-3 h-3 rounded-full {% if estado_club == 'ABIERTO' %} bg-green-400 animate-pulse {% else %} bg-red-500 {% endif %}"></div>
-        <p class="text-xs md:text-sm font-black uppercase tracking-widest">
-            {% if estado_club == 'ABIERTO' %} ABIERTO | {{ turno }} {% else %} CERRADO {% endif %}
-        </p>
-    </div>
-
-    <!-- Lado Derecho: Grupo de Botones (ABRIR TURNO, SALIR, ACCESOS) -->
-    <div class="flex items-center gap-2">
+<!-- BARRA ESTADO RESPONSIVE -->
+    <div class="status-bar w-full py-2.5 md:py-3 px-4 md:px-10 flex flex-col sm:flex-row justify-between items-center sticky top-0 z-[60] shadow-2xl gap-2 sm:gap-4">
         
-        <!-- 1. GESTIÓN DE TURNO (Solo Roles de Mando) -->
-        {% if role in ['jefe', 'admin', 'cajera'] %}
-        <button onclick="document.getElementById('modal_turno_fijo').showModal()" 
-                class="btn btn-xs md:btn-sm rounded-full {% if estado_club == 'ABIERTO' %} btn-error {% else %} btn-success {% endif %} font-black uppercase px-4 shadow-lg">
-            {{ 'CERRAR TURNO' if estado_club == 'ABIERTO' else 'ABRIR TURNO' }}
-        </button>
-        {% endif %}
+        <!-- Lado Izquierdo: Estado del Club (Se alinea al centro en móvil, a la izquierda en PC) -->
+        <div class="flex items-center gap-2 justify-between w-full sm:w-auto border-b border-white/5 pb-2 sm:pb-0 sm:border-0">
+            <div class="flex items-center gap-2 mx-auto sm:mx-0">
+                <div class="w-2.5 h-2.5 rounded-full {% if estado_club == 'ABIERTO' %} bg-green-400 animate-pulse {% else %} bg-red-500 {% endif %}"></div>
+                <p class="text-[10px] md:text-xs font-black uppercase tracking-widest text-zinc-300">
+                    {% if estado_club == 'ABIERTO' %} ABIERTO | {{ turno }} {% else %} CERRADO {% endif %}
+                </p>
+            </div>
+            <!-- Rol sutil en celular -->
+            <span class="badge badge-outline badge-xs sm:hidden font-mono uppercase border-zinc-700 text-zinc-500">{{ role }}</span>
+        </div>
 
-        <!-- 2. BOTÓN SALIR (Visible para todos) -->
-        <a href="/logout" class="btn btn-xs md:btn-sm btn-outline btn-error rounded-full font-black px-4">SALIR</a>
+        <!-- Lado Derecho: Grupo de Botones (Más pequeños y ordenados en celular) -->
+        <div class="flex items-center gap-2 justify-center sm:justify-end w-full sm:w-auto">
+            
+            <!-- 1. GESTIÓN DE TURNO (Solo Roles de Mando) -->
+            {% if role in ['jefe', 'admin', 'cajera'] %}
+            <button onclick="document.getElementById('modal_turno_fijo').showModal()" 
+                    class="btn btn-xs sm:btn-sm rounded-full {% if estado_club == 'ABIERTO' %} btn-error {% else %} bg-emerald-500 hover:bg-emerald-600 text-black {% endif %} font-black uppercase px-3 sm:px-4 shadow-lg h-8 min-h-0 text-[10px] sm:text-xs">
+                {{ 'CERRAR TURNO' if estado_club == 'ABIERTO' else 'ABRIR TURNO' }}
+            </button>
+            {% endif %}
 
-        <!-- 3. BOTÓN ACCESOS (Solo Roles de Mando) -->
-        {% if role in ['jefe', 'admin', 'cajera'] %}
-        <a href="/usuarios" class="btn btn-xs md:btn-sm btn-warning rounded-full font-black px-4 shadow-lg text-black uppercase">
-            ACCESOS
-        </a>
-        {% endif %}
+            <!-- 2. BOTÓN ACCESOS (Solo Roles de Mando) -->
+            {% if role in ['jefe', 'admin', 'cajera'] %}
+            <a href="/usuarios" class="btn btn-xs sm:btn-sm btn-warning rounded-full font-black px-3 sm:px-4 shadow-lg text-black uppercase h-8 min-h-0 text-[10px] sm:text-xs">
+                ACCESOS
+            </a>
+            {% endif %}
 
+            <!-- 3. BOTÓN SALIR -->
+            <a href="/logout" class="btn btn-xs sm:btn-sm btn-outline btn-error rounded-full font-black px-3 sm:px-4 h-8 min-h-0 text-[10px] sm:text-xs">
+                SALIR
+            </a>
+
+        </div>
     </div>
-</div>
 
     <!-- CABECERA -->
     <header class="bg-zinc-900/30 border-b border-zinc-800 py-4 px-4">
