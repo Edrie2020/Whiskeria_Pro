@@ -24,6 +24,15 @@
         }
         .no-print { display: none !important; }
         
+        /* Forzar texto negro absoluto y remover sombras neón en impresión */
+        body.modo-jefe,
+        body.modo-jefe *,
+        body.modo-contador,
+        body.modo-contador * {
+            color: #000000 !important;
+            text-shadow: none !important;
+        }
+
         /* 1. DISEÑO LIMPIO Y DE BAJO CONSUMO EN MODO JEFE (IMPRESIÓN FULL) */
         body.modo-jefe .bg-zinc-900, 
         body.modo-jefe .bg-zinc-950, 
@@ -33,31 +42,28 @@
         body.modo-jefe .bg-zinc-900\/80,
         body.modo-jefe .bg-gradient-to-br { 
             background: #ffffff !important; 
-            border: 1px solid #e4e4e7 !important; 
-            color: #000000 !important;
+            border: 1.5px solid #e4e4e7 !important; 
             box-shadow: none !important;
         }
 
-        /* Utilidad de la Casa en un amarillo pastel muy suave */
+        /* Utilidad de la Casa en un amarillo pastel suave */
         body.modo-jefe .bg-gradient-to-br.from-yellow-500.to-amber-600 {
             background: #fef08a !important; /* Amarillo pastel */
-            border: 1px solid #eab308 !important;
-            color: #854d0e !important;
+            border: 1.5px solid #eab308 !important;
         }
-        body.modo-jefe .bg-gradient-to-br.from-yellow-500.to-amber-600 p,
-        body.modo-jefe .bg-gradient-to-br.from-yellow-500.to-amber-600 h2 {
+        body.modo-jefe .bg-gradient-to-br.from-yellow-500.to-amber-600 * {
             color: #854d0e !important;
         }
 
         /* Recuadro de Liquidación Damas */
         body.modo-jefe .border-pink-500\/20 {
-            border: 1px solid #fbcfe8 !important; /* Rosa sutil */
+            border: 1.5px solid #fbcfe8 !important; /* Rosa sutil */
         }
-        body.modo-jefe .text-pink-500 {
+        body.modo-jefe .border-pink-500\/20 * {
             color: #db2777 !important;
         }
 
-        /* Tarjetas de Métodos de Pago: Fondo blanco con bordes de color neón sutil */
+        /* Tarjetas de Métodos de Pago: Fondo blanco con bordes sutiles de color */
         body.modo-jefe .bg-emerald-500\/5,
         body.modo-jefe .bg-blue-500\/5,
         body.modo-jefe .bg-purple-500\/5,
@@ -69,24 +75,26 @@
         }
 
         body.modo-jefe .bg-emerald-500\/5 { border-color: #10b981 !important; }
+        body.modo-jefe .bg-emerald-500\/5 * { color: #047857 !important; }
+
         body.modo-jefe .bg-blue-500\/5 { border-color: #3b82f6 !important; }
+        body.modo-jefe .bg-blue-500\/5 * { color: #1d4ed8 !important; }
+
         body.modo-jefe .bg-purple-500\/5 { border-color: #a855f7 !important; }
-        body.modo-jefe .bg-zinc-900\/80 { border-color: #eab308 !important; } /* Cuentas con borde amarillo */
+        body.modo-jefe .bg-purple-500\/5 * { color: #6d28d9 !important; }
 
-        /* Colores de texto legibles para métodos de pago */
-        body.modo-jefe .text-emerald-400 { color: #047857 !important; }
-        body.modo-jefe .text-blue-400 { color: #1d4ed8 !important; }
-        body.modo-jefe .text-purple-400 { color: #6d28d9 !important; }
-        body.modo-jefe .text-yellow-500 { color: #a16207 !important; }
+        body.modo-jefe .bg-zinc-900\/80 { border-color: #eab308 !important; } 
+        body.modo-jefe .bg-zinc-900\/80 * { color: #a16207 !important; }
 
-        /* Lista de Garzones con fondo totalmente transparente */
+        /* Lista de Garzones transparente */
         body.modo-jefe .seccion-garzones .bg-zinc-900\/50 {
             background: #ffffff !important;
             border: 1px solid #e4e4e7 !important;
         }
         body.modo-jefe .seccion-garzones .bg-black\/20 {
             background: transparent !important;
-            border: none !}
+            border: none !important;
+        }
         body.modo-jefe .seccion-garzones th {
             color: #71717a !important;
             border-bottom: 1px solid #e4e4e7 !important;
@@ -96,7 +104,7 @@
             border-bottom: 1px solid #f4f4f5 !important;
         }
 
-        /* Auditoría Administrativa transparente con borde rojo de advertencia sutil */
+        /* Auditoría Administrativa transparente */
         body.modo-jefe .seccion-auditoria .bg-zinc-900\/80 {
             background: #ffffff !important;
             border: 1px solid #fca5a5 !important;
@@ -113,15 +121,9 @@
             color: #dc2626 !important;
         }
 
-        /* Fuerza legibilidad total de textos generales */
-        body.modo-jefe .text-white, 
-        body.modo-jefe .text-zinc-300, 
-        body.modo-jefe .text-zinc-200 { 
-            color: #000000 !important; 
-        }
         .collapse-content { display: block !important; }
 
-        /* 2. CONTROL DE VISTAS EXCLUSIVAS (RESUELVE EL CONFLICTO DE IMPRESIÓN) */
+        /* 2. CONTROL DE VISTAS EXCLUSIVAS */
         
         /* A. Si se imprime el Contador */
         body.modo-contador #dashboard-completo-jefe,
@@ -162,12 +164,12 @@
             <h1 class="text-xl sm:text-2xl font-black text-yellow-500 uppercase italic neon-gold leading-none">Panel Contable</h1>
         </div>
         
-        <!-- Botones de Acción Apilados Verticalmente -->
+        <!-- Botones de Acción Apilados de forma óptima y responsiva -->
         <div class="flex flex-col gap-1 items-end shrink-0">
-            <button type="button" onclick="document.getElementById('modal_global_pendientes').showModal()" class="btn btn-[8px] sm:btn-xs btn-outline btn-secondary rounded-full font-black h-6 sm:h-7 min-h-0 px-2.5 uppercase tracking-wide">
-                ⚠️ Liquidaciones Pendientes
+            <button type="button" onclick="document.getElementById('modal_global_pendientes').showModal()" class="btn btn-outline btn-secondary rounded-full font-black text-[9px] sm:text-[10px] h-6 sm:h-7 min-h-0 px-2.5 uppercase tracking-wide">
+                ⚠️ Liq. Pendientes
             </button>
-            <button type="button" onclick="document.getElementById('modal_global_deudas').showModal()" class="btn btn-[8px] sm:btn-xs btn-outline btn-warning rounded-full font-black h-6 sm:h-7 min-h-0 px-2.5 uppercase tracking-wide">
+            <button type="button" onclick="document.getElementById('modal_global_deudas').showModal()" class="btn btn-outline btn-warning rounded-full font-black text-[9px] sm:text-[10px] h-6 sm:h-7 min-h-0 px-2.5 uppercase tracking-wide">
                 📔 Deudas Clientes
             </button>
         </div>
@@ -190,9 +192,11 @@
     </form>
 
     <!-- Fila 3: Botones de Impresión en Móvil -->
-    <div>
-        <button type="button" onclick="imprimirJefe()" class="btn btn-xs sm:btn-sm btn-secondary w-full font-black rounded-full h-8 min-h-0 text-[9px] uppercase italic">👑 Imprimir Reporte Completo</button>
+    <div class="grid grid-cols-2 gap-2">
+        <button type="button" onclick="imprimirJefe()" class="btn btn-xs sm:btn-sm btn-secondary font-black rounded-full h-8 min-h-0 text-[9px] uppercase italic">👑 Imprimir Full</button>
+        <button type="button" onclick="imprimirContador()" class="btn btn-xs sm:btn-sm btn-error font-black rounded-full h-8 min-h-0 text-[9px] uppercase italic">📄 Imprimir Contador</button>
     </div>
+</div>
 
     <!-- DASHBOARD PREMIUM REDISEÑADO -->
     <div class="max-w-7xl mx-auto space-y-4 px-1" id="dashboard-completo-jefe">
@@ -232,11 +236,11 @@
 
         </div>
 
-        <!-- Fila 2: Métodos de Pago -->
+        <!-- Fila 2: Métodos de Pago Simétricos -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
             
             <!-- Efectivo -->
-            <div class="bg-emerald-500/5 p-4 rounded-[22px] border border-emerald-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
+            <div class="bg-emerald-500/5 p-4 rounded-[22px] border border-emerald-500/10 flex flex-col justify-center h-20">
                 <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">EFECTIVO 💵</span>
                 <span class="text-lg sm:text-xl font-black text-emerald-400 mt-0.5">
                     ${{ "{:,.0f}".format(resumen.efectivo).replace(",", ".") }}
@@ -244,7 +248,7 @@
             </div>
             
             <!-- Tarjeta -->
-            <div class="bg-blue-500/5 p-4 rounded-[22px] border border-blue-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
+            <div class="bg-blue-500/5 p-4 rounded-[22px] border border-blue-500/10 flex flex-col justify-center h-20">
                 <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TARJETA 💳</span>
                 <span class="text-lg sm:text-xl font-black text-blue-400 mt-0.5">
                     ${{ "{:,.0f}".format(resumen.tarjeta).replace(",", ".") }}
@@ -252,16 +256,16 @@
             </div>
             
             <!-- Transferencia -->
-            <div class="bg-purple-500/5 p-4 rounded-[22px] border border-purple-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
+            <div class="bg-purple-500/5 p-4 rounded-[22px] border border-purple-500/10 flex flex-col justify-center h-20">
                 <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TRANSFERENCIA 📱</span>
                 <span class="text-lg sm:text-xl font-black text-purple-400 mt-0.5">
                     ${{ "{:,.0f}".format(resumen.transferencia).replace(",", ".") }}
                 </span>
             </div>
             
-            <!-- Cuentas -->
+            <!-- Cuentas (Simétrico, mismo tamaño) -->
             <div onclick="document.getElementById('modal_global_deudas').showModal()" 
-                 class="card-btn bg-zinc-900/80 p-4 rounded-[22px] border border-yellow-500/20 flex flex-col justify-center h-20 relative overflow-hidden active:scale-95 transition-all col-span-2 sm:col-span-1">
+                 class="card-btn bg-zinc-900/80 p-4 rounded-[22px] border border-yellow-500/20 flex flex-col justify-center h-20 active:scale-95 transition-all">
                 <span class="block text-[8px] sm:text-[9px] font-black text-yellow-500/80 uppercase tracking-widest">CUENTAS 📔</span>
                 <span class="text-lg sm:text-xl font-black text-yellow-500 mt-0.5">
                     ${{ "{:,.0f}".format(monto_deudas_total).replace(",", ".") }}
@@ -273,7 +277,7 @@
 
 
   <!-- ======================================================================= -->
-    <!-- 2. BLOQUE EXCLUSIVO PARA IMPRESIÓN DEL CONTADOR (Oculto en pantalla) -->
+    <!-- 2. BLOQUE EXCLUSIVO PARA IMPRESIÓN DEL CONTADOR -->
     <!-- ======================================================================= -->
     <div class="bloque-contador" style="color: black; font-family: Arial, sans-serif;">
         <div style="text-align: center; margin-bottom: 30px;">
@@ -579,19 +583,37 @@
             });
         }
 
+        // --- SISTEMA DE CAPTURA NATIVO ESTABLE PARA EVITAR EL PDF EN BLANCO ---
+        var estiloImpresionActivo = null;
+
+        window.addEventListener('beforeprint', () => {
+            if (estiloImpresionActivo === 'jefe') {
+                document.body.classList.add('modo-jefe');
+                document.body.classList.remove('modo-contador');
+            } else if (estiloImpresionActivo === 'contador') {
+                document.body.classList.add('modo-contador');
+                document.body.classList.remove('modo-jefe');
+            } else {
+                // Configuración predeterminada si imprimen directo de navegador
+                document.body.classList.add('modo-jefe');
+            }
+        });
+
+        window.addEventListener('afterprint', () => {
+            document.body.classList.remove('modo-jefe');
+            document.body.classList.remove('modo-contador');
+            estiloImpresionActivo = null;
+        });
+
         function imprimirJefe() {
-            document.body.classList.add('modo-jefe');
-            
-            setTimeout(() => {
-                window.print();
-                
-                setTimeout(() => {
-                    document.body.classList.remove('modo-jefe');
-                }, 1000);
-            }, 200);
+            estiloImpresionActivo = 'jefe';
+            window.print();
         }
 
-
+        function imprimirContador() {
+            estiloImpresionActivo = 'contador';
+            window.print();
+        }
 
         async function confirmarPagoDama(checkbox, damaId, nombre, monto, fecha) {
             if (confirm(`¿CONFIRMAR PAGO A: ${nombre}?\nMONTO: $${monto}\nFECHA: ${fecha}`)) {
