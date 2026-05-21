@@ -100,9 +100,15 @@
             border-bottom: 1px solid #e4e4e7 !important;
         }
         body.modo-jefe .seccion-garzones td {
-            color: #000000 !important;
-            border-bottom: 1px solid #f4f4f5 !important;
-        }
+        color: #000000 !important;
+        border-bottom: 1px solid #f4f4f5 !important;
+        
+        /* 💡 Desbloqueo de truncado para mostrar el texto completo en cualquier tamaño de pantalla */
+        max-width: none !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
 
         /* Auditoría Administrativa transparente */
         body.modo-jefe .seccion-auditoria .bg-zinc-900\/80 {
@@ -342,7 +348,11 @@
                                 {% for v in data.lista %}
                                 <tr class="border-b border-white/5">
                                     <td>{{ v.hora }}</td>
-                                    <td class="truncate max-w-[80px]">{{ v.servicio }}</td>
+                                    <td class="truncate max-w-[80px] cursor-pointer hover:text-cyan-400 active:scale-95 transition-transform" 
+    data-full-text="{{ v.servicio }}" 
+    onclick="mostrarServicioCompleto(this.getAttribute('data-full-text'))">
+    {{ v.servicio }}
+</td>
                                     <td class="text-pink-500 uppercase truncate max-w-[80px]">{{ v.destino }}</td>
                                     <td class="text-right font-bold text-zinc-200">${{ "{:,.0f}".format(v.monto).replace(",", ".") }}</td>
                                     <td class="text-right no-print">
@@ -670,6 +680,21 @@
             document.getElementById('form_borrar').action = "/eliminar_venta/" + id + "?user={{ role }}";
             document.getElementById('modal_borrar_venta').showModal();
         }
+        function mostrarServicioCompleto(texto) {
+            document.getElementById('texto_servicio_completo').innerText = texto;
+            document.getElementById('modal_servicio_completo').showModal();
+        }
     </script>
+  <!-- MODAL GLOBAL PARA MOSTRAR DETALLE COMPLETO DEL SERVICIO -->
+    <dialog id="modal_servicio_completo" class="modal" onclick="this.close()">
+        <div class="modal-box bg-zinc-950 border border-zinc-800 p-6 text-center rounded-[24px] max-w-xs" onclick="event.stopPropagation()">
+            <p class="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2">Detalle de la Venta</p>
+            <p id="texto_servicio_completo" class="text-base font-black text-white uppercase italic tracking-tight"></p>
+            <button type="button" onclick="document.getElementById('modal_servicio_completo').close()" class="btn btn-xs btn-outline btn-warning rounded-full mt-4 uppercase">
+                Volver
+            </button>
+        </div>
+    </dialog>
+
 </body>
 </html>

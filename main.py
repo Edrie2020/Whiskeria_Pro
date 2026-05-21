@@ -215,10 +215,10 @@ async def home(request: Request, db: Session = Depends(get_db)):
                 en_espera.append(info)
 
     # 8. META DIARIA
-    porcentaje = (total_ventas / conf.meta_diaria) * 100 if conf.meta_diaria > 0 else 0
-    if porcentaje > 100: porcentaje = 100
-
-    lista_usuarios = db.query(models.Usuario).all()
+    meta_fija = 4000000.0
+    porcentaje = (total_ventas / meta_fija) * 100 if meta_fija > 0 else 0
+    if porcentaje > 100: 
+        porcentaje = 100
 
     # 9. RETORNO DE LA RESPUESTA (ACTUALIZADO CON LAS NUEVAS LISTAS)
     return templates.TemplateResponse(
@@ -237,7 +237,6 @@ async def home(request: Request, db: Session = Depends(get_db)):
             "bailando_hoy": bailando_hoy,   # <--- Cambio
             "en_espera": en_espera,         # <--- Cambio
             "ausentes_b": ausentes_b,       # <--- Cambio
-            "usuarios_sistema": lista_usuarios,
             "dict_bailando": {a.dama_id: a.bailando_hoy for a in asistencias},
             "garzones": db.query(models.Mesero).all(),
             "productos_cooler": db.query(models.Producto).filter(models.Producto.tipo == "PRODUCTO").all(),
