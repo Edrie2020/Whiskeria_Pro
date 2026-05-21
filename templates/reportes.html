@@ -14,68 +14,128 @@
     /* Ocultar bloque de contador por defecto en pantalla */
     .bloque-contador { display: none; }
 
-    /* --- CONFIGURACIÓN DE IMPRESIÓN INTELIGENTE --- */
+    /* --- CONFIGURACIÓN DE IMPRESIÓN INTELIGENTE (AHORRO DE TINTA) --- */
     @media print {
-        body { background: white !important; color: black !important; padding: 20px; font-family: sans-serif; }
+        body { 
+            background: #ffffff !important; 
+            color: #000000 !important; 
+            padding: 10px; 
+            font-family: sans-serif; 
+        }
         .no-print { display: none !important; }
         
-        /* Ajuste de colores planos en papel */
-        .bg-zinc-900, .bg-zinc-950, .bg-black, .bg-emerald-500\/10, .bg-blue-500\/10, .bg-purple-500\/10, .bg-zinc-800 { 
-            background: white !important; 
-            border: 1px solid #ddd !important; 
-            color: black !important;
+        /* 1. DISEÑO LIMPIO Y DE BAJO CONSUMO EN MODO JEFE (IMPRESIÓN FULL) */
+        body.modo-jefe .bg-zinc-900, 
+        body.modo-jefe .bg-zinc-950, 
+        body.modo-jefe .bg-black,
+        body.modo-jefe .bg-zinc-900\/50,
+        body.modo-jefe .bg-zinc-800,
+        body.modo-jefe .bg-gradient-to-br { 
+            background: #ffffff !important; 
+            border: 1px solid #e4e4e7 !important; 
+            color: #000000 !important;
             box-shadow: none !important;
         }
-        .text-white, .text-zinc-300, .text-zinc-200 { color: black !important; }
+
+        /* Utilidad de la Casa en un amarillo pastel muy suave */
+        body.modo-jefe .bg-gradient-to-br.from-yellow-500.to-amber-600 {
+            background: #fef08a !important; /* Amarillo pastel */
+            border: 1px solid #eab308 !important;
+            color: #854d0e !important;
+        }
+
+        /* Recuadro de Liquidación Damas */
+        body.modo-jefe .border-pink-500\/20 {
+            border: 1px solid #fbcfe8 !important; /* Rosa sutil */
+        }
+        body.modo-jefe .text-pink-500 {
+            color: #db2777 !important;
+        }
+
+        /* Tarjetas de Métodos de Pago: Fondo blanco con bordes de color neón sutil */
+        body.modo-jefe .bg-emerald-500\/5,
+        body.modo-jefe .bg-blue-500\/5,
+        body.modo-jefe .bg-purple-500\/5,
+        body.modo-jefe .bg-zinc-900\/80 {
+            background: #ffffff !important;
+            border-width: 1.5px !important;
+            box-shadow: none !important;
+        }
+
+        body.modo-jefe .bg-emerald-500\/5 { border-color: #10b981 !important; }
+        body.modo-jefe .bg-blue-500\/5 { border-color: #3b82f6 !important; }
+        body.modo-jefe .bg-purple-500\/5 { border-color: #a855f7 !important; }
+        body.modo-jefe .bg-zinc-900\/80 { border-color: #eab308 !important; } /* Cuentas igual de limpio que los demás */
+
+        /* Colores de texto legibles para métodos de pago */
+        body.modo-jefe .text-emerald-400 { color: #047857 !important; }
+        body.modo-jefe .text-blue-400 { color: #1d4ed8 !important; }
+        body.modo-jefe .text-purple-400 { color: #6d28d9 !important; }
+        body.modo-jefe .text-yellow-500 { color: #a16207 !important; }
+
+        /* Lista de Garzones con fondo totalmente transparente */
+        body.modo-jefe .seccion-garzones .bg-zinc-900\/50 {
+            background: #ffffff !important;
+            border: 1px solid #e4e4e7 !important;
+        }
+        body.modo-jefe .seccion-garzones .bg-black\/20 {
+            background: transparent !important;
+        }
+        body.modo-jefe .seccion-garzones th {
+            color: #71717a !important;
+            border-bottom: 1px solid #e4e4e7 !important;
+        }
+        body.modo-jefe .seccion-garzones td {
+            color: #000000 !important;
+            border-bottom: 1px solid #f4f4f5 !important;
+        }
+
+        /* Auditoría Administrativa transparente con borde rojo de advertencia sutil */
+        body.modo-jefe .seccion-auditoria .bg-zinc-900\/80 {
+            background: #ffffff !important;
+            border: 1px solid #fca5a5 !important;
+        }
+        body.modo-jefe .seccion-auditoria .bg-red-500\/5 {
+            background: transparent !important;
+            border-bottom: 1px solid #f4f4f5 !important;
+        }
+        body.modo-jefe .seccion-auditoria span, 
+        body.modo-jefe .seccion-auditoria div {
+            color: #000000 !important;
+        }
+        body.modo-jefe .seccion-auditoria .text-red-400 {
+            color: #dc2626 !important;
+        }
+
+        /* Fuerza legibilidad total de textos generales */
+        body.modo-jefe .text-white, 
+        body.modo-jefe .text-zinc-300, 
+        body.modo-jefe .text-zinc-200 { 
+            color: #000000 !important; 
+        }
         .collapse-content { display: block !important; }
 
-        /* 💡 1. MODO CONTADOR (Impresión Formal de Tarjetas) */
-        body:not(.modo-jefe) #dashboard-completo-jefe {
-            display: none !important; /* Oculta todo el panel negro/neón */
-        }
-        body:not(.modo-jefe) .bloque-contador {
-            display: block !important; /* Muestra solo el informe limpio de tarjetas */
-            color: black !important;
-        }
-        body:not(.modo-jefe) .seccion-garzones, 
-        body:not(.modo-jefe) .seccion-auditoria { 
-            display: none !important; /* Oculta garzones y auditorías en modo contador */
-        }
-
-        /* 💡 2. MODO JEFE (Impresión Full) */
-        body.modo-jefe .bloque-contador {
-            display: none !important; /* El jefe no ve el bloque resumido */
-        }
-        body.modo-jefe #dashboard-completo-jefe {
-            display: block !important;
-        }
-        body.modo-jefe .metodo-privado, 
-        body.modo-jefe .seccion-garzones, 
-        body.modo-jefe .seccion-auditoria { 
-            display: block !important; /* Muestra garzones, efectivo, deudas y auditoría */
-        }
-        .seccion-auditoria .custom-scrollbar,
-        .seccion-auditoria div {
-            max-height: none !important;   /* Estira la caja al máximo para mostrar todos los registros */
-            overflow: visible !important;   /* Hace visible todo el contenido oculto */
-        }
+        /* 2. CONTROL DE VISTAS EXCLUSIVAS (RESUELVE EL CONFlicto de IMPRESIÓN) */
         
-        /* Oculta la barra de desplazamiento en el PDF */
-        .seccion-auditoria ::-webkit-scrollbar {
+        /* A. Si se imprime el Contador */
+        body.modo-contador #dashboard-completo-jefe,
+        body.modo-contador .seccion-garzones,
+        body.modo-contador .seccion-auditoria {
             display: none !important;
         }
-
-        /* Estiliza las filas de auditoría para que parezcan un informe formal en papel */
-        .seccion-auditoria .bg-red-500\/5 {
-            background: #f9f9f9 !important; /* Fondo gris claro limpio para hojas blancas */
-            border: 1px solid #ddd !important; /* Borde sutil */
-            color: black !important;
-            page-break-inside: avoid; /* Evita que una fila se corte por la mitad entre páginas */
+        body.modo-contador .bloque-contador {
+            display: block !important;
+            color: #000000 !important;
         }
 
-        .seccion-auditoria span, 
-        .seccion-auditoria div {
-            color: black !important; /* Forzar que todo el texto sea negro legible en papel */
+        /* B. Si se imprime el Jefe (Impresión Full) */
+        body.modo-jefe .bloque-contador {
+            display: none !important;
+        }
+        body.modo-jefe #dashboard-completo-jefe,
+        body.modo-jefe .seccion-garzones,
+        body.modo-jefe .seccion-auditoria {
+            display: block !important;
         }
     }
 </style>
@@ -121,9 +181,9 @@
     
     <div class="flex gap-1.5 w-full sm:w-auto justify-end">
         <button type="button" onclick="imprimirJefe()" class="btn btn-xs btn-secondary font-black rounded-full px-4 italic text-[10px] h-8 min-h-0 flex-1 sm:flex-none">👑 IMPRIME FULL</button>
-        <button type="button" onclick="window.print()" class="btn btn-xs btn-error font-black rounded-full px-4 italic text-[10px] h-8 min-h-0 flex-1 sm:flex-none">📄 IMPRIME CONTADOR</button>
+        <!-- Actualizado para ejecutar imprimirContador() de manera segura -->
+        <button type="button" onclick="imprimirContador()" class="btn btn-xs btn-error font-black rounded-full px-4 italic text-[10px] h-8 min-h-0 flex-1 sm:flex-none">📄 IMPRIME CONTADOR</button>
     </div>
-</div>
 
     <!-- DASHBOARD PREMIUM REDISEÑADO -->
     <div class="max-w-7xl mx-auto space-y-4 px-1" id="dashboard-completo-jefe">
@@ -340,7 +400,7 @@
                             <th>Bono/Baile</th> <!-- Unificado para ahorrar espacio -->
                             <th>Resid.</th>
                             <th class="text-right">Total</th>
-                            <th>Ficha</th> <!-- NUEVA COLUMNA -->
+                            <th>Ficha</th> 
                             <th>Check</th>
                         </tr>
                     </thead>
@@ -515,17 +575,36 @@
             });
         }
         function imprimirJefe() {
-    // 1. Añadimos la clase para que el CSS sepa que debe mostrar TODO
-    document.body.classList.add('modo-jefe');
-    
-    // 2. Ejecutamos la impresión
-    window.print();
-    
-    // 3. Limpiamos la clase después de imprimir para que el panel vuelva a ser neón en pantalla
-    setTimeout(() => {
-        document.body.classList.remove('modo-jefe');
-    }, 1000);
-}
+            // Aseguramos que solo el modo jefe esté activo
+            document.body.classList.remove('modo-contador');
+            document.body.classList.add('modo-jefe');
+            
+            // Esperamos 200 milisegundos para que el navegador redibuje los estilos a blanco antes de imprimir
+            setTimeout(() => {
+                window.print();
+                
+                // Limpiamos el estado después de imprimir
+                setTimeout(() => {
+                    document.body.classList.remove('modo-jefe');
+                }, 1000);
+            }, 200);
+        }
+
+        function imprimirContador() {
+            // Aseguramos que solo el modo contador esté activo
+            document.body.classList.remove('modo-jefe');
+            document.body.classList.add('modo-contador');
+            
+            // Pausa de seguridad antes de abrir la impresión
+            setTimeout(() => {
+                window.print();
+                
+                // Limpiamos el estado después de imprimir
+                setTimeout(() => {
+                    document.body.classList.remove('modo-contador');
+                }, 1000);
+            }, 200);
+        }
 
         async function confirmarPagoDama(checkbox, damaId, nombre, monto, fecha) {
             if (confirm(`¿CONFIRMAR PAGO A: ${nombre}?\nMONTO: $${monto}\nFECHA: ${fecha}`)) {
