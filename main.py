@@ -487,19 +487,19 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 f"📅 *Fecha:* {asis.fecha} | 🕒 *Turno:* {asis.turno}\n"
                 f"--------------------------------\n"
                 f"💼 *COMISIONES DE TRAGOS:*\n{tragos_det_f1_pend}"
-                f"-----------------------------------------\n"
+                f"--------------------------------\n"
                 f"➕ *BONOS / ADICIONALES:*\n"
                 f"• Bono de Asistencia: +${monto_bono_base:,.0f}\n"
             )
             if dama.es_bailarina:
                 msg_f1_pend += f"• Ganancia de Bailes: +${asis.bono_show:,.0f}\n"
             msg_f1_pend += (
-                f"-----------------------------------------\n"
+                f"--------------------------------\n"
                 f"➖ *DESCUENTOS:*\n"
                 f"• Descuento Residencia: -${costo_residencia_base:,.0f}\n"
-                f"-----------------------------------------\n"
+                f"--------------------------------\n"
                 f"💵 *TOTAL NETO PENDIENTE (FICHA 1):* *${total_ficha1_pend:,.0f}*\n"
-                f"-----------------------------------------\n"
+                f"--------------------------------\n"
                 f"_¡Muchas gracias por tu trabajo de hoy!_ 🌸"
             )
 
@@ -652,19 +652,19 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                     msg_p = (
                         f"⭐ *LIQUIDACIÓN PENDIENTE - {nombre_ficha_label}* ⭐\n"
                         f"📅 *Fecha:* {asis_p.fecha} | 🕒 *Turno:* {asis_p.turno}\n"
-                        f"-----------------------------------------\n"
+                        f"--------------------------------\n"
                         f"💼 *COMISIONES DE TRAGOS:*\n"
                         f"{tragos_detalle_p}"
-                        f"-----------------------------------------\n"
+                        f"--------------------------------\n"
                         f"➕ *BONOS:*\n"
                         f"• Bono de Asistencia: +$0 (Ya pagado en Ficha 1)\n"
-                        f"-----------------------------------------\n"
+                        f"--------------------------------\n"
                         f"➖ *DESCUENTOS:*\n"
                         f"• Descuento Residencia: -$0 (Ya deducido en Ficha 1)\n"
-                        f"-----------------------------------------\n"
+                        f"--------------------------------\n"
                         f"💵 *TOTAL NETO A RECIBIR (FICHA 2):*\n"
                         f"👉 *${total_chica_p:,.0f}*\n"
-                        f"-----------------------------------------\n"
+                        f"--------------------------------\n"
                         f"_¡Muchas gracias!_ 🌸"
                     )
                 else:
