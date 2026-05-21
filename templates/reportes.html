@@ -86,8 +86,7 @@
         }
         body.modo-jefe .seccion-garzones .bg-black\/20 {
             background: transparent !important;
-            border: none !important;
-        }
+            border: none !}
         body.modo-jefe .seccion-garzones th {
             color: #71717a !important;
             border-bottom: 1px solid #e4e4e7 !important;
@@ -154,18 +153,23 @@
 <!-- HEADER RESPONSIVE OPTIMIZADO -->
 <div class="max-w-7xl mx-auto flex flex-col gap-4 mb-6 border-b border-white/10 pb-4 no-print px-1">
     
-    <!-- Fila 1: Botón Volver, Título y Modales de Acceso -->
-    <div class="flex justify-between items-center w-full">
+    <!-- Fila 1: Botón Volver, Título y Modales de Acceso Apilados -->
+    <div class="flex justify-between items-center w-full gap-2">
         <div class="flex items-center gap-2">
             <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider">
                 ← SALÓN
             </a>
-            <h1 class="text-xl sm:text-2xl font-black text-yellow-500 uppercase italic neon-gold">Panel Contable</h1>
+            <h1 class="text-xl sm:text-2xl font-black text-yellow-500 uppercase italic neon-gold leading-none">Panel Contable</h1>
         </div>
         
-        <div class="flex gap-1">
-            <button type="button" onclick="document.getElementById('modal_global_pendientes').showModal()" class="btn btn-xs btn-outline btn-secondary rounded-full font-black text-[9px] px-2.5 h-7 min-h-0">⚠️ LIQ</button>
-            <button type="button" onclick="document.getElementById('modal_global_deudas').showModal()" class="btn btn-xs btn-outline btn-warning rounded-full font-black text-[9px] px-2.5 h-7 min-h-0">📔 DEUDAS</button>
+        <!-- Botones de Acción Apilados Verticalmente -->
+        <div class="flex flex-col gap-1 items-end shrink-0">
+            <button type="button" onclick="document.getElementById('modal_global_pendientes').showModal()" class="btn btn-[8px] sm:btn-xs btn-outline btn-secondary rounded-full font-black h-6 sm:h-7 min-h-0 px-2.5 uppercase tracking-wide">
+                ⚠️ Liquidaciones Pendientes
+            </button>
+            <button type="button" onclick="document.getElementById('modal_global_deudas').showModal()" class="btn btn-[8px] sm:btn-xs btn-outline btn-warning rounded-full font-black h-6 sm:h-7 min-h-0 px-2.5 uppercase tracking-wide">
+                📔 Deudas Clientes
+            </button>
         </div>
     </div>
 
@@ -186,11 +190,9 @@
     </form>
 
     <!-- Fila 3: Botones de Impresión en Móvil -->
-    <div class="grid grid-cols-2 gap-2">
-        <button type="button" onclick="imprimirJefe()" class="btn btn-xs sm:btn-sm btn-secondary font-black rounded-full h-8 min-h-0 text-[9px] uppercase italic">👑 Imprimir Full</button>
-        <button type="button" onclick="imprimirContador()" class="btn btn-xs sm:btn-sm btn-error font-black rounded-full h-8 min-h-0 text-[9px] uppercase italic">📄 Imprimir Contador</button>
+    <div>
+        <button type="button" onclick="imprimirJefe()" class="btn btn-xs sm:btn-sm btn-secondary w-full font-black rounded-full h-8 min-h-0 text-[9px] uppercase italic">👑 Imprimir Reporte Completo</button>
     </div>
-</div>
 
     <!-- DASHBOARD PREMIUM REDISEÑADO -->
     <div class="max-w-7xl mx-auto space-y-4 px-1" id="dashboard-completo-jefe">
@@ -235,8 +237,7 @@
             
             <!-- Efectivo -->
             <div class="bg-emerald-500/5 p-4 rounded-[22px] border border-emerald-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
-                <span class="absolute -bottom-1 -right-1 text-2xl opacity-5">💵</span>
-                <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">EFECTIVO</span>
+                <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">EFECTIVO 💵</span>
                 <span class="text-lg sm:text-xl font-black text-emerald-400 mt-0.5">
                     ${{ "{:,.0f}".format(resumen.efectivo).replace(",", ".") }}
                 </span>
@@ -244,8 +245,7 @@
             
             <!-- Tarjeta -->
             <div class="bg-blue-500/5 p-4 rounded-[22px] border border-blue-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
-                <span class="absolute -bottom-1 -right-1 text-2xl opacity-5">💳</span>
-                <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TARJETA</span>
+                <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TARJETA 💳</span>
                 <span class="text-lg sm:text-xl font-black text-blue-400 mt-0.5">
                     ${{ "{:,.0f}".format(resumen.tarjeta).replace(",", ".") }}
                 </span>
@@ -253,18 +253,16 @@
             
             <!-- Transferencia -->
             <div class="bg-purple-500/5 p-4 rounded-[22px] border border-purple-500/10 flex flex-col justify-center h-20 relative overflow-hidden">
-                <span class="absolute -bottom-1 -right-1 text-2xl opacity-5">📱</span>
-                <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TRANSFERENCIA</span>
+                <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TRANSFERENCIA 📱</span>
                 <span class="text-lg sm:text-xl font-black text-purple-400 mt-0.5">
                     ${{ "{:,.0f}".format(resumen.transferencia).replace(",", ".") }}
                 </span>
             </div>
             
-            <!-- Cartera Total Deudores -->
+            <!-- Cuentas -->
             <div onclick="document.getElementById('modal_global_deudas').showModal()" 
                  class="card-btn bg-zinc-900/80 p-4 rounded-[22px] border border-yellow-500/20 flex flex-col justify-center h-20 relative overflow-hidden active:scale-95 transition-all col-span-2 sm:col-span-1">
-                <span class="absolute -bottom-1 -right-1 text-2xl opacity-10">📔</span>
-                <span class="block text-[8px] sm:text-[9px] font-black text-yellow-500/80 uppercase tracking-widest">Deudores Históricos</span>
+                <span class="block text-[8px] sm:text-[9px] font-black text-yellow-500/80 uppercase tracking-widest">CUENTAS 📔</span>
                 <span class="text-lg sm:text-xl font-black text-yellow-500 mt-0.5">
                     ${{ "{:,.0f}".format(monto_deudas_total).replace(",", ".") }}
                 </span>
@@ -582,36 +580,18 @@
         }
 
         function imprimirJefe() {
-            // 1. Limpiamos cualquier clase de impresión previa y fijamos el modo-jefe
-            document.body.classList.remove('modo-contador');
             document.body.classList.add('modo-jefe');
             
-            // 2. Esperamos 200ms para asegurar que el navegador redibuje el diseño en blanco antes de imprimir
             setTimeout(() => {
                 window.print();
                 
-                // 3. Limpiamos el estado después de abrir la ventana de impresión
                 setTimeout(() => {
                     document.body.classList.remove('modo-jefe');
                 }, 1000);
             }, 200);
         }
 
-        function imprimirContador() {
-            // 1. Limpiamos cualquier clase previa y fijamos modo-contador
-            document.body.classList.remove('modo-jefe');
-            document.body.classList.add('modo-contador');
-            
-            // 2. Pausa segura para evitar desfases de renderizado
-            setTimeout(() => {
-                window.print();
-                
-                // 3. Limpiamos el estado de manera asíncrona
-                setTimeout(() => {
-                    document.body.classList.remove('modo-contador');
-                }, 1000);
-            }, 200);
-        }
+
 
         async function confirmarPagoDama(checkbox, damaId, nombre, monto, fecha) {
             if (confirm(`¿CONFIRMAR PAGO A: ${nombre}?\nMONTO: $${monto}\nFECHA: ${fecha}`)) {
