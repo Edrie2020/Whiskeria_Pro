@@ -83,11 +83,10 @@
                     <tbody class="font-bold uppercase">
                         {% for p in inventario_productos %}
                         <tr class="border-b border-white/5 item-stock">
-                            <td class="text-left text-white nombre-item">{{ p.nombre }}</td>
-                            <td class="text-blue-400">+{{ p.reposicion }}</td>
-                            <td class="text-red-400">{{ p.salida }}</td>
-                            <td class="text-orange-400">{{ p.faltante }}</td>
-                            <td class="text-lg text-cyan-400">{{ p.saldo }}</td>
+                            <td class="text-left text-white nombre-item text-xs sm:text-sm truncate max-w-[85px] sm:max-w-none">{{ p.nombre }}</td>
+                            <td class="text-red-400 text-sm sm:text-lg font-black">{{ p.salida }}</td>
+                            <td class="text-orange-400 text-sm sm:text-lg font-black">{{ p.faltante }}</td>
+                            <td class="text-base sm:text-xl text-cyan-400 font-black">{{ p.saldo }}</td>
                             <td class="flex gap-1 justify-center">
                                 <button onclick="abrirModalMov('{{ p.id }}', '{{ p.nombre }}')" class="btn btn-xs btn-circle btn-ghost">⚙️</button>
                                 <form action="/eliminar_producto/{{ p.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ p.nombre }} DEL SISTEMA?')">
@@ -147,7 +146,7 @@
             <h3 class="text-[10px] font-black text-zinc-500 uppercase mb-4 text-center tracking-widest">Auditoría de Acciones - {{ turno_filtro }}</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto">
     {% for log in auditoria %}
-    <div class="flex justify-between items-center bg-black/40 p-2 rounded-lg text-[10px] border-b border-white/5">
+    <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl text-xs border-b border-white/5">
         <div class="flex gap-4 items-center">
             <span class="text-zinc-600 font-mono">{{ log.hora }}</span>
             <span class="font-black {% if log.tipo == 'ELIMINADO' %} text-red-500 {% else %} text-white {% endif %} w-24 truncate">{{ log.nombre }}</span>
