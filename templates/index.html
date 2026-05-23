@@ -445,8 +445,10 @@
                 <input type="hidden" name="trago" id="input_cliente_trago">
                 <input type="hidden" name="producto_id" id="input_cliente_producto_id">
                 
-                <div class="flex flex-col gap-2">
-                    <button type="button" onclick="irAPagoCliente()" class="btn btn-info w-full font-black text-lg">CONTINUAR →</button>
+                <div class="flex flex-col gap-2 pt-2 border-t border-white/5">
+                    <button type="button" onclick="irAPagoCliente()" class="btn btn-info w-full font-black text-sm">CONTINUAR COMPRA →</button>
+                    <!-- Botón de cortesía directo sin ingresar valor -->
+                    <button type="button" onclick="registrarCortesiaCliente()" class="btn btn-secondary w-full font-black text-sm">🎁 REGISTRAR CORTESÍA ($0)</button>
                     <button type="button" onclick="document.getElementById('modal_cliente').close()" class="btn btn-ghost btn-xs text-zinc-500 uppercase">← CANCELAR Y SALIR</button>
                 </div>
             </div>
@@ -902,9 +904,9 @@ function preConfirmarInd(monto) {
         document.getElementById('input_individual_tier_precio').value = 0;
     } else {
         // Lógica para Tragos Normales
-        const tragoId = document.getElementById('input_individual_producto_id').value;
-        if (parseInt(monto) >= 35000 && (!tragoId || tragoId === "0" || tragoId === "")) {
-            alert("⚠️ PARA VENTAS DE $35.000 O MÁS, ES OBLIGATORIO SELECCIONAR UN TRAGO");
+        const tragoNombre = document.getElementById('buscTragoInd').value.trim();
+        if (!tragoNombre) {
+            alert("⚠️ ES OBLIGATORIO SELECCIONAR UN TRAGO DE LA LISTA (PUEDE SER TRAGO BÁSICO)");
             return;
         }
         total = parseInt(monto);
@@ -1116,6 +1118,37 @@ async function ejecutarAccionBailarina(event, form) {
         form.querySelector('.confirm-state').classList.add('hidden');
         form.querySelector('.normal-state').classList.remove('hidden');
     }
+
+    function registrarCortesiaCliente() {
+    const mesero = document.getElementById('cliente_mesero').value;
+    const prodId = document.getElementById('input_cliente_producto_id').value;
+    const prodNombre = document.getElementById('input_cliente_trago').value;
+
+    if (!mesero) {
+        alert("⚠️ SELECCIONE EL GARZÓN QUE OTORGA LA CORTESÍA");
+        return;
+    }
+    if (!prodId || !prodNombre) {
+        alert("⚠️ SELECCIONE UN PRODUCTO DE LA LISTA PARA DEBITAR DEL STOCK");
+        return;
+    }
+
+    if (confirm(`¿CONFIRMAR REGISTRO DE CORTESÍA?\nBebida: ${prodNombre.toUpperCase()}\nGarzón: ${mesero}`)) {
+        // Fijamos el precio a 0 pesos para la cortesía
+        document.getElementById('cliente_monto').value = 0;
+        
+        const form = document.getElementById('form_venta_cliente');
+        
+        // Creamos el input temporal para enviar el método de pago como CORTESIA
+        const inputMetodo = document.createElement("input");
+        inputMetodo.type = "hidden";
+        inputMetodo.name = "metodo_pago";
+        inputMetodo.value = "CORTESIA";
+        
+        form.appendChild(inputMetodo);
+        form.submit();
+    }
+}
 
 
 </script>
