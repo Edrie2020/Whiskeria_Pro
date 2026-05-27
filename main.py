@@ -45,11 +45,6 @@ async def verificar_sesion(request: Request):
     return user
 
 def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str):
-    """
-    Arrastra el stock final del último turno registrado y lo congela 
-    como el stock inicial para el nuevo turno que se está abriendo.
-    """
-    # 1. Evitamos duplicados si el botón se presiona dos veces
     existe = db.query(models.InventarioTurno).filter(
         models.InventarioTurno.fecha == fecha_hoy,
         models.InventarioTurno.turno == turno_nuevo
@@ -58,23 +53,35 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
     if existe:
         return
 
-    # 2. Iteramos todos los productos activos
     productos = db.query(models.Producto).all()
     for p in productos:
-        # Buscamos el último turno registrado para arrastrar su stock
         ultimo_registro = db.query(models.InventarioTurno).filter(
             models.InventarioTurno.producto_id == p.id
         ).order_by(models.InventarioTurno.fecha.desc(), models.InventarioTurno.id.desc()).first()
         
-        stock_inicial = p.inicio  # Fallback por defecto si es el primer turno de la historia del producto
+        stock_inicial = p.inicio
         
         if ultimo_registro:
-            # Calculamos las salidas, reposiciones y faltantes de ese último turno para obtener el saldo final
-            salida = db.query(func.count(models.Venta.id)).filter(
+            # 1. Salidas directas de botellas enteras o productos
+            salida_directa = db.query(func.count(models.Venta.id)).filter(
                 models.Venta.producto_id == p.id,
                 func.strftime("%Y-%m-%d", models.Venta.fecha) == ultimo_registro.fecha,
                 models.Venta.turno == ultimo_registro.turno
             ).scalar() or 0
+            
+            # 2. Descuento proporcional de cortos para arrastrar el stock correcto
+            botellas_debitadas_por_cortos = 0
+            if p.tipo == "BOTELLA" and p.capacidad_cortos:
+                corto_vinculado = db.query(models.Producto).filter(models.Producto.parent_botella_id == p.id).first()
+                if corto_vinculado:
+                    cortos_consumidos = db.query(func.count(models.Venta.id)).filter(
+                        models.Venta.producto_id == corto_vinculado.id,
+                        func.strftime("%Y-%m-%d", models.Venta.fecha) == ultimo_registro.fecha,
+                        models.Venta.turno == ultimo_registro.turno
+                    ).scalar() or 0
+                    botellas_debitadas_por_cortos = cortos_consumidos // p.capacidad_cortos
+            
+            salida_total = salida_directa + botellas_debitadas_por_cortos
             
             repos = db.query(func.sum(models.StockMovimiento.cantidad)).filter(
                 models.StockMovimiento.producto_id == p.id,
@@ -90,11 +97,9 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
                 models.StockMovimiento.turno == ultimo_registro.turno
             ).scalar() or 0
             
-            # Saldo final con el que cerró el turno anterior
-            saldo_final = (ultimo_registro.inicio + repos) - salida - falts
+            saldo_final = (ultimo_registro.inicio + repos) - salida_total - falts
             stock_inicial = max(0, saldo_final)
             
-        # 3. Congelamos el stock para el nuevo turno
         nuevo_inventario = models.InventarioTurno(
             producto_id=p.id,
             fecha=fecha_hoy,
@@ -104,7 +109,6 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
         db.add(nuevo_inventario)
         
     db.commit()
-
 # =========================================================
 # 4. CONFIGURACIÓN E INICIALIZACIÓN DE LA APLICACIÓN
 # =========================================================
@@ -252,10 +256,8 @@ async def home(request: Request, db: Session = Depends(get_db)):
 # ---------------------------------------------------------
 @app.post("/gestionar_club")
 async def gestionar_club(request: Request, accion: str = Form(...), turno: str = Form(None), db: Session = Depends(get_db)):
-    # 🔒 1. SEGURIDAD SEGURA: Verificamos firma digital de las cookies
     username, user_role = obtener_usuario_sesion(request)
-
-    if not username or user_role not in ["jefe", "admin", "cajera"]:
+    if user_role not in ["admin1", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
     # 2. CONFIGURACIÓN DEL CLUB (Inicialización si no existe)
@@ -331,8 +333,8 @@ async def asistencia_page(request: Request, db: Session = Depends(get_db)):
 @app.get("/contabilidad", response_class=HTMLResponse)  
 async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
-
-    if not username or user_role not in ["jefe", "admin", "cajera"]:
+    # Permite ver a los dueños, administradores y cajeras
+    if not username or user_role not in ["admin1", "jefe_guillermo", "admin2", "cajera"]:
         return RedirectResponse(url="/login?error=no_autorizado", status_code=303)
     
     # --- LÓGICA DE FILTROS SEGURA ---
@@ -727,10 +729,8 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
 # ---------------------------------------------------------
 @app.post("/eliminar_venta/{venta_id}")
 async def eliminar_venta(request: Request, venta_id: int, motivo: str = Form(...), db: Session = Depends(get_db)):
-    # 🔒 SEGURIDAD SEGURA CONTRA HACKERS
     username, user_role = obtener_usuario_sesion(request)
-    
-    if not username or user_role not in ["jefe", "admin", "cajera"]:
+    if not username or user_role not in ["admin1", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
     
     venta = db.query(models.Venta).filter(models.Venta.id == venta_id).first()
@@ -747,21 +747,10 @@ async def eliminar_venta(request: Request, venta_id: int, motivo: str = Form(...
     return RedirectResponse(url="/contabilidad", status_code=303)
 
 @app.post("/registrar_pago_dama/{dama_id}")
-async def registrar_pago_dama(
-    request: Request, 
-    dama_id: int, 
-    fecha: str = Form(...), 
-    turno: str = Form(...), 
-    db: Session = Depends(get_db)
-):
-    # 🔒 1. SEGURIDAD SEGURA CONTRA HACKERS
+async def registrar_pago_dama(request: Request, dama_id: int, fecha: str = Form(...), turno: str = Form(...), db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
-
-    if not username or user_role not in ["jefe", "admin", "cajera"]:
-        raise HTTPException(
-            status_code=403, 
-            detail="No tienes permisos suficientes para realizar liquidaciones."
-        )
+    if not username or user_role not in ["admin1", "cajera"]:
+        raise HTTPException(status_code=403, detail="No autorizado.")
     
     # 2. PROCESO DE FECHAS (Tu lógica original)
     f_obj = datetime.strptime(fecha, "%Y-%m-%d")

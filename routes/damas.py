@@ -22,7 +22,7 @@ templates = Jinja2Templates(directory="templates")
 def admin_personal(request: Request, db: Session = Depends(get_db)):
     # 🔒 SEGURIDAD: Solo el rol 'jefe' puede ver esta página
     user_role = obtener_usuario_sesion(request)[1]
-    if user_role != "jefe":
+    if user_role not in ["admin1", "jefe_guillermo", "admin2", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
     todas = db.query(models.Dama).all()
@@ -109,7 +109,7 @@ async def editar_dama(
     db: Session = Depends(get_db)
 ):
     # 🔒 SEGURIDAD
-    if obtener_usuario_sesion(request)[1] != "jefe":
+    if obtener_usuario_sesion(request)[1] != "admin1":
         return RedirectResponse(url="/", status_code=303)
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()

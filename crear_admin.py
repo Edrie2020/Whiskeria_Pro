@@ -9,9 +9,9 @@ def crear_primer_usuario():
     db = SessionLocal()
     
     # Datos del primer usuario
-    usuario_nombre = "admin"
-    clave_plana = "1234" # <--- CAMBIA ESTO POR LA CLAVE QUE QUIERAS
-    rol_usuario = "jefe"
+    usuario_nombre = "admin1"
+    clave_plana = "1234" # <--- Cámbiala por tu contraseña de producción
+    rol_usuario = "admin1"
 
     # Revisamos si ya existe para no duplicarlo
     existe = db.query(models.Usuario).filter(models.Usuario.username == usuario_nombre).first()

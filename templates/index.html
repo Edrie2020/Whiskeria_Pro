@@ -45,15 +45,15 @@
         <div class="flex items-center gap-2 justify-center sm:justify-end w-full sm:w-auto">
             
             <!-- 1. GESTIÓN DE TURNO (Solo Roles de Mando) -->
-            {% if role in ['jefe', 'admin', 'cajera'] %}
-            <button onclick="document.getElementById('modal_turno_fijo').showModal()" 
+            {% if role in ['admin1', 'cajera'] %}
+            <button onclick="document.getElementById('modal_turno_fijo').showModal()" ...> 
                     class="btn btn-xs sm:btn-sm rounded-full {% if estado_club == 'ABIERTO' %} btn-error {% else %} bg-emerald-500 hover:bg-emerald-600 text-black {% endif %} font-black uppercase px-3 sm:px-4 shadow-lg h-8 min-h-0 text-[10px] sm:text-xs">
                 {{ 'CERRAR TURNO' if estado_club == 'ABIERTO' else 'ABRIR TURNO' }}
             </button>
             {% endif %}
 
             <!-- 2. BOTÓN ACCESOS (Solo Roles de Mando) -->
-            {% if role in ['jefe', 'admin', 'cajera'] %}
+            {% if role in ['admin1', 'jefe_guillermo'] %}
             <a href="/usuarios" class="btn btn-xs sm:btn-sm btn-warning rounded-full font-black px-3 sm:px-4 shadow-lg text-black uppercase h-8 min-h-0 text-[10px] sm:text-xs">
                 ACCESOS
             </a>
@@ -82,43 +82,42 @@
             <div class="grid grid-cols-3 md:flex gap-4 md:gap-6 justify-center max-w-lg mx-auto md:max-w-none">
                 
                 <!-- 1. DAMAS (Chicas de fiesta) -->
-                <a href="/admin_personal" class="flex flex-col items-center gap-1.5 {% if role not in ['jefe', 'admin' ,  'cajera'] %} locked {% endif %}">
+                <a href="/admin_personal" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'jefe_guillermo', 'admin2', 'cajera'] %} locked {% endif %}">
                     <div class="icon-circle glow-pink text-4xl">👯‍♀️</div>
                     <span class="text-[9px] font-black uppercase text-pink-500">Damas</span>
                 </a>
 
                 <!-- 2. ASISTENCIAS (Notero alegre) -->
-                <a href="/asistencia" class="flex flex-col items-center gap-1.5 {% if role not in ['jefe', 'admin' ,  'cajera'] %} locked {% endif %}">
+                <a href="/asistencia" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'jefe_guillermo', 'admin2', 'cajera'] %} locked {% endif %}">
                     <div class="icon-circle glow-green text-4xl">📝</div>
                     <span class="text-[9px] font-black uppercase text-green-500">Asistencias</span>
                 </a>
 
                 <!-- 3. BAILARINAS (Original alegre) -->
                 {% if turno == 'Turno 1' %}
-                <button onclick="document.getElementById('modal_bailarinas_pro').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['jefe', 'admin', 'cajera'] %} locked {% endif %}">
+                <button onclick="document.getElementById('modal_bailarinas_pro').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'cajera'] %} locked {% endif %}">
                     <div class="icon-circle glow-purple text-4xl">💃</div>
                     <span class="text-[9px] font-black uppercase text-purple-500">Bailarinas</span>
                 </button>
                 {% endif %}
 
                 <!-- 4. REPORTES (Gráfico de éxito con flecha roja) -->
-                <a href="/contabilidad" class="flex flex-col items-center gap-1.5 {% if role not in ['jefe', 'admin', 'cajera'] %} locked {% endif %}">
+                <a href="/contabilidad" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'jefe_guillermo', 'admin2', 'cajera'] %} locked {% endif %}">
                     <div class="icon-circle glow-yellow text-4xl">📈</div>
                     <span class="text-[9px] font-black uppercase text-yellow-500">Reportes</span>
                 </a>
 
                 <!-- 5. STOCK (Cervezas brindando) -->
-                <a href="/stock" class="flex flex-col items-center gap-1.5 {% if role not in ['jefe', 'admin', 'cajera'] %} locked {% endif %}">
+                 <a href="/stock" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'jefe_guillermo', 'admin2', 'cajera'] %} locked {% endif %}">
                     <div class="icon-circle glow-blue text-4xl">🍻</div>
                     <span class="text-[9px] font-black uppercase text-blue-400">Stock</span>
                 </a>
 
                 <!-- 6. GARZONES (Original alegre) -->
-                <button onclick="document.getElementById('modal_garzones').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['jefe', 'admin', 'cajera'] %} locked {% endif %}">
+                <button onclick="document.getElementById('modal_garzones').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'cajera'] %} locked {% endif %}">
                     <div class="icon-circle glow-cyan text-4xl">🤵</div>
                     <span class="text-[9px] font-black uppercase text-cyan-400">Garzones</span>
                 </button>
-
             </div>
     </header>
 
@@ -143,7 +142,7 @@
         </div>
 
         {% if estado_club == 'ABIERTO' %}
-<div id="damas_salon_grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-2">
+<div id="damas_salon_grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-2 {% if role not in ['admin1', 'cajera', 'garzon'] %} pointer-events-none opacity-80 {% endif %}">
             <div onclick="document.getElementById('modal_cliente').showModal()" class="flex flex-col items-center cursor-pointer transition-all hover:scale-110">
                 <div class="w-20 h-20 md:w-28 md:h-28 rounded-full p-1 border-4 glow-cyan flex items-center justify-center">
                     <span class="text-4xl md:text-5xl">👔</span>
@@ -861,9 +860,14 @@ function preConfirmarMesa(tier) {
     const garzon = document.getElementById('mesa_mesero_select').value;
     if (!garzon) { alert("⚠️ SELECCIONE GARZÓN"); return; }
     if (mesaActual.ids.length === 0) { alert("⚠️ SELECCIONE CHICAS"); return; }
-    if (tier !== 'T25' && (!mesaActual.productoId || mesaActual.productoId === "0")) {
-        alert("⚠️ SELECCIONE UN PRODUCTO DE STOCK"); return;
+    
+    // Nueva validación obligatoria idéntica a tragos individuales
+    const tragoNombreMesa = document.getElementById('buscTragoMesa').value.trim();
+    if (!tragoNombreMesa) {
+        alert("⚠️ ES OBLIGATORIO SELECCIONAR UN TRAGO DE LA LISTA (PUEDE SER TRAGO BÁSICO)");
+        return;
     }
+
     const precios = { 'T25': 25000, 'T35': 35000, 'T50': 50000, 'T100': 100000 };
     mesaActual.montoTier = precios[tier];
     const container = document.getElementById('ids_mesa_input_container');

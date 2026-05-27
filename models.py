@@ -80,6 +80,10 @@ class Producto(Base):
     inicio = Column(Integer, default=0)
     reposicion = Column(Integer, default=0)
     faltante = Column(Integer, default=0)
+     # 🍾 CONTROL DE CORTOS Y BOTELLAS
+    capacidad_cortos = Column(Integer, nullable=True) # 10, 13, 20 o 26
+    es_corto = Column(Boolean, default=False)
+    parent_botella_id = Column(Integer, ForeignKey("productos.id", ondelete="CASCADE"), nullable=True)
 
 class StockMovimiento(Base):
     __tablename__ = "stock_movimientos"

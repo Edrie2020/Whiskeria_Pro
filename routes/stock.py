@@ -20,12 +20,10 @@ templates = Jinja2Templates(directory="templates")
 # ---------------------------------------------------------
 @router.get("/stock", response_class=HTMLResponse)
 async def stock_page(request: Request, fecha: str = None, turno: str = None, db: Session = Depends(get_db)):
-    # 🔒 SEGURIDAD SEGURA: Solo ingresan usuarios verificados
     username, user_role = obtener_usuario_sesion(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
 
-    # Calculamos la fecha operativa real de Chile para el control antifraude
     ahora = obtener_ahora_local()
     if ahora.time() < time(6, 0):
         fecha_actual = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -44,6 +42,10 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
     inv_botellas = []
     
     for p in productos_db:
+        # Los cortos se calculan y visualizan integrados con la botella padre
+        if p.es_corto:
+            continue
+
         inv_turno = db.query(models.InventarioTurno).filter(
             models.InventarioTurno.producto_id == p.id,
             models.InventarioTurno.fecha == fecha_f,
@@ -52,8 +54,8 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
         
         inicio_stock = inv_turno.inicio if inv_turno else p.inicio
         
-        # 1. SALIDAS
-        salida = db.query(func.count(models.Venta.id)).filter(
+        # 1. SALIDAS DIRECTAS (Botella completa o productos cooler)
+        salida_directa = db.query(func.count(models.Venta.id)).filter(
             models.Venta.producto_id == p.id,
             func.strftime("%Y-%m-%d", models.Venta.fecha) == fecha_f,
             models.Venta.turno == turno_f
@@ -75,16 +77,50 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
             models.StockMovimiento.turno == turno_f
         ).scalar() or 0
 
-        saldo = (inicio_stock + repos) - salida - falts
+        # 4. DEBITO PROPORCIONAL DE CORTOS
+        botellas_debitadas_por_cortos = 0
+        cortos_sueltos_restantes = 0
+        
+        if p.tipo == "BOTELLA" and p.capacidad_cortos:
+            corto_vinculado = db.query(models.Producto).filter(models.Producto.parent_botella_id == p.id).first()
+            if corto_vinculado:
+                cortos_consumidos = db.query(func.count(models.Venta.id)).filter(
+                    models.Venta.producto_id == corto_vinculado.id,
+                    func.strftime("%Y-%m-%d", models.Venta.fecha) == fecha_f,
+                    models.Venta.turno == turno_f
+                ).scalar() or 0
+                
+                botellas_debitadas_por_cortos = cortos_consumidos // p.capacidad_cortos
+                cortos_sueltos_restantes = cortos_consumidos % p.capacidad_cortos
+
+        salida_total = salida_directa + botellas_debitadas_por_cortos
+        saldo = (inicio_stock + repos) - salida_total - falts
+
+        # Formateo visual inteligente del saldo
+        saldo_visual = f"{saldo}"
+        if cortos_sueltos_restantes > 0 and saldo > 0:
+            saldo_visual = f"{saldo} (Abierta: -{cortos_sueltos_restantes} cortos)"
+
+        # 💡 NUEVO: Formateo explicativo en la columna VENTA para advertir la debitación por cortos
+        salida_visual = f"{salida_directa}"
+        if botellas_debitadas_por_cortos > 0:
+            salida_visual = f"{salida_directa} + {botellas_debitadas_por_cortos} (Por Cortos)"
 
         datos = {
-            "id": p.id, "nombre": p.nombre, "reposicion": repos,
-            "salida": salida, "faltante": falts, "saldo": saldo
+            "id": p.id, 
+            "nombre": p.nombre, 
+            "reposicion": repos,
+            "salida": salida_total, 
+            "salida_visual": salida_visual, # <-- AÑADIR ESTA LÍNEA
+            "faltante": falts, 
+            "saldo": saldo,
+            "saldo_visual": saldo_visual
         }
-        if p.tipo == "PRODUCTO": inv_productos.append(datos)
-        else: inv_botellas.append(datos)
+        if p.tipo == "PRODUCTO": 
+            inv_productos.append(datos)
+        else: 
+            inv_botellas.append(datos)
 
-    # Auditoría
     audit_db = db.query(models.StockMovimiento).filter(
         models.StockMovimiento.fecha == fecha_f,
         models.StockMovimiento.turno == turno_f
@@ -94,11 +130,8 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
     for a in audit_db:
         nombre_p = a.nombre_respaldo if a.nombre_respaldo else (db.query(models.Producto.nombre).filter(models.Producto.id == a.producto_id).scalar() or "N/A")
         auditoria.append({
-            "hora": a.hora,
-            "nombre": nombre_p,
-            "tipo": a.tipo_movimiento,
-            "cantidad": a.cantidad,
-            "usuario": a.usuario
+            "hora": a.hora, "nombre": nombre_p, "tipo": a.tipo_movimiento,
+            "cantidad": a.cantidad, "usuario": a.usuario
         })
 
     return templates.TemplateResponse(request=request, name="stock.html", context={
@@ -108,20 +141,54 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
     })
 
 # ---------------------------------------------------------
-# 2. ACCIONES DE STOCK (CON BLOQUEO ANTIFRAUDE)
+# 2. ACCIONES DE STOCK (CON CREACIÓN AUTOMÁTICA DE CORTOS)
 # ---------------------------------------------------------
+from typing import Optional
 
 @router.post("/agregar_producto_stock")
-async def agregar_producto(request: Request, nombre: str = Form(...), tipo: str = Form(...), inicio: int = Form(...), db: Session = Depends(get_db)):
+async def agregar_producto(
+    request: Request, 
+    nombre: str = Form(...), 
+    tipo: str = Form(...), 
+    inicio: int = Form(...), 
+    volumen: Optional[str] = Form(None),
+    vende_cortos: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
+):
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["jefe", "admin", "cajera"]:
         return RedirectResponse(url="/stock", status_code=303)
 
-    nuevo = models.Producto(nombre=nombre.upper(), tipo=tipo, inicio=inicio)
+    capacidad = None
+    if tipo == "BOTELLA" and volumen:
+        mapeo = {"750": 10, "1000": 13, "1500": 20, "2000": 26}
+        capacidad = mapeo.get(volumen, 10)
+
+    nuevo = models.Producto(
+        nombre=nombre.upper(), 
+        tipo=tipo, 
+        inicio=inicio,
+        capacidad_cortos=capacidad
+    )
     db.add(nuevo)
     db.commit()
     db.refresh(nuevo)
-    
+
+    # Si se venden cortos de la botella, se autogenera su versión de corto seleccionable
+    if tipo == "BOTELLA" and vende_cortos == "on":
+        nombre_corto = f"CORTO {nombre.upper()}"
+        existe_corto = db.query(models.Producto).filter(models.Producto.nombre == nombre_corto).first()
+        if not existe_corto:
+            nuevo_corto = models.Producto(
+                nombre=nombre_corto,
+                tipo="PRODUCTO",
+                inicio=0,
+                es_corto=True,
+                parent_botella_id=nuevo.id
+            )
+            db.add(nuevo_corto)
+            db.commit()
+
     conf = obtener_config(db)
     if conf.estado_club == "ABIERTO":
         ahora = obtener_ahora_local()
@@ -137,6 +204,17 @@ async def agregar_producto(request: Request, nombre: str = Form(...), tipo: str 
             inicio=inicio
         )
         db.add(nuevo_inv)
+
+        if tipo == "BOTELLA" and vende_cortos == "on":
+            corto_db = db.query(models.Producto).filter(models.Producto.nombre == f"CORTO {nombre.upper()}").first()
+            if corto_db:
+                db.add(models.InventarioTurno(
+                    producto_id=corto_db.id,
+                    fecha=fecha_actual,
+                    turno=conf.turno_activo,
+                    inicio=0
+                ))
+                
         db.commit()
         
     return RedirectResponse(url="/stock", status_code=303)
