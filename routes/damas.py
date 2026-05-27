@@ -1,3 +1,5 @@
+# routes/damas.py
+
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
@@ -57,7 +59,7 @@ def admin_personal(request: Request, db: Session = Depends(get_db)):
     )
 
 # ---------------------------------------------------------
-# 2. AGREGAR NUEVA DAMA (SOLO ADMIN1)
+# 2. AGREGAR NUEVA DAMA (SÓLO ADMIN1, ADMINISTRADOR, CAJERA)
 # ---------------------------------------------------------
 @router.post("/agregar_dama")
 async def agregar_dama(
@@ -71,7 +73,8 @@ async def agregar_dama(
     foto: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    if obtener_usuario_sesion(request)[1] != ["admin1", "administrador"]:
+    user_role = obtener_usuario_sesion(request)[1]
+    if user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
     base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -103,7 +106,7 @@ async def agregar_dama(
     return RedirectResponse(url="/admin_personal", status_code=303)
 
 # ---------------------------------------------------------
-# 3. EDITAR FICHA (SOLO ADMIN1)
+# 3. EDITAR FICHA (SÓLO ADMIN1, ADMINISTRADOR, CAJERA)
 # ---------------------------------------------------------
 @router.post("/editar_dama/{dama_id}")
 async def editar_dama(
@@ -116,8 +119,8 @@ async def editar_dama(
     es_bailarina: str = Form("off"),
     db: Session = Depends(get_db)
 ):
-    # 🔒 SEGURIDAD DE ROL MAESTRO
-    if obtener_usuario_sesion(request)[1] != ["admin1", "administrador"]:
+    user_role = obtener_usuario_sesion(request)[1]
+    if user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
@@ -131,17 +134,17 @@ async def editar_dama(
     return RedirectResponse(url="/admin_personal", status_code=303)
 
 # ---------------------------------------------------------
-# 4. REACTIVAR (SOLO ADMIN1)
+# 4. REACTIVAR (SÓLO ADMIN1, ADMINISTRADOR, CAJERA)
 # ---------------------------------------------------------
 @router.post("/reactivar_dama/{dama_id}")
 async def reactivar_dama(request: Request, dama_id: int, db: Session = Depends(get_db)):
-    # 🔒 SEGURIDAD DE ROL MAESTRO
-    if obtener_usuario_sesion(request)[1] != ["admin1", "administrador"]:
+    user_role = obtener_usuario_sesion(request)[1]
+    if user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
     if dama:
-        dama.ultima_asistencia = datetime.now()
+        dama.ultima_asistencia = obtener_ahora_local()
         db.commit()
     return RedirectResponse(url="/admin_personal", status_code=303)
 
@@ -168,14 +171,14 @@ async def activar_baile(
     return RedirectResponse(url="/", status_code=303)
 
 # ---------------------------------------------------------
-# ELIMINAR DAMA (SÓLO ADMIN1)
+# ELIMINAR DAMA (SÓLO ADMIN1, ADMINISTRADOR, CAJERA)
 # ---------------------------------------------------------
 @router.post("/eliminar_dama/{dama_id}")
 async def eliminar_dama(request: Request, dama_id: int, db: Session = Depends(get_db)):
     user_role = obtener_usuario_sesion(request)[1]
     username = request.cookies.get("session_user")
     
-    if obtener_usuario_sesion(request)[1] != ["admin1", "administrador"]:
+    if user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()

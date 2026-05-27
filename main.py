@@ -153,10 +153,9 @@ async def home(request: Request, db: Session = Depends(get_db)):
     fin_dia = datetime.combine(hoy_dt.date(), time.max)
     fecha_hoy_str = hoy_dt.strftime("%Y-%m-%d")
     
-    # 3. SUMAR VENTAS DEL TURNO ACTIVO
+    # 3. SUMAR VENTAS DEL TURNO ACTIVO (Filtro contable por Fecha Operativa)
     total_ventas = db.query(func.sum(models.Venta.monto)).filter(
-        models.Venta.fecha >= inicio_dia,
-        models.Venta.fecha <= fin_dia,
+        models.Venta.fecha_operativa == fecha_hoy_str,
         models.Venta.turno == conf.turno_activo
     ).scalar() or 0.0
     
@@ -315,10 +314,9 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     inicio_dia = datetime.combine(fecha_obj.date(), time.min)
     fin_dia = datetime.combine(fecha_obj.date(), time.max)
 
-    # 1. Obtener Ventas del turno
+    # 1. Obtener Ventas del turno (Filtro contable por Fecha Operativa)
     ventas_hoy = db.query(models.Venta).filter(
-        models.Venta.fecha >= inicio_dia, 
-        models.Venta.fecha <= fin_dia, 
+        models.Venta.fecha_operativa == fecha_param, 
         models.Venta.turno == turno_filter
     ).all()
     
@@ -539,18 +537,17 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         models.Venta.liquidada == False
     ).all()
 
-    # Agrupamos las ventas en memoria por una clave única: (dama_id, fecha, turno)
-    # Esto nos permite buscar ventas asociadas en tiempo récord O(1)
+    # Agrupamos las ventas en memoria por una clave única contable: (dama_id, fecha_operativa, turno)
     ventas_agrupadas = {}
     claves_ventas_pendientes = set()
     for v in ventas_pendientes_raw:
-        if not v.fecha:
+        if not v.fecha_operativa:
             continue
-        clave = (v.dama_id, v.fecha.strftime("%Y-%m-%d"), v.turno)
+        clave = (v.dama_id, v.fecha_operativa, v.turno)
         if clave not in ventas_agrupadas:
             ventas_agrupadas[clave] = []
         ventas_agrupadas[clave].append(v)
-        claves_ventas_pendientes.add((v.dama_id, v.fecha.strftime("%Y-%m-%d"), v.turno))
+        claves_ventas_pendientes.add((v.dama_id, v.fecha_operativa, v.turno))
 
     # C. Obtenemos las asistencias ya pagadas (liquidada == True) pero que tienen ventas pendientes (Ficha 2+)
     asis_fichas_extras = []
@@ -729,11 +726,10 @@ async def registrar_pago_dama(request: Request, dama_id: int, fecha: str = Form(
     ini = datetime.combine(f_obj.date(), time.min)
     fn = datetime.combine(f_obj.date(), time.max)
     
-    # 3. Liquidar ventas de ese turno
+    # 3. Liquidar ventas de ese turno usando la columna fecha_operativa exacta
     ventas_pendientes = db.query(models.Venta).filter(
         models.Venta.dama_id == dama_id,
-        models.Venta.fecha >= ini,
-        models.Venta.fecha <= fn,
+        models.Venta.fecha_operativa == fecha,
         models.Venta.turno == turno,
         models.Venta.liquidada == False
     ).all()
