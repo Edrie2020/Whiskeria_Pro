@@ -142,7 +142,7 @@
         </div>
 
         {% if estado_club == 'ABIERTO' %}
-<div id="damas_salon_grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-2 {% if role not in ['admin1', 'cajera', 'garzon'] %} pointer-events-none opacity-80 {% endif %}">
+<div id="damas_salon_grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-2 {% if role not in ['admin1', 'administrador', 'cajera'] %} pointer-events-none opacity-80 {% endif %}">
             <div onclick="document.getElementById('modal_cliente').showModal()" class="flex flex-col items-center cursor-pointer transition-all hover:scale-110">
                 <div class="w-20 h-20 md:w-28 md:h-28 rounded-full p-1 border-4 glow-cyan flex items-center justify-center">
                     <span class="text-4xl md:text-5xl">👔</span>

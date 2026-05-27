@@ -22,7 +22,7 @@ templates = Jinja2Templates(directory="templates")
 async def asistencia_page(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
     
-    if not username or user_role not in ["admin1", "jefe_guillermo", "admin2", "cajera"]:
+    if not username or user_role not in ["admin1", "administrador", "cajera", "jefe_guillermo", "encargado"]:
         return RedirectResponse(url="/", status_code=303)
 
     conf = obtener_config(db)
@@ -80,7 +80,7 @@ async def marcar_asistencia(
     username, user_role = obtener_usuario_sesion(request)
     
     # Seguridad: Solo admin1 y cajera pueden registrar asistencia
-    if not username or user_role not in ["admin1", "cajera"]:
+    if not username or user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/asistencia", status_code=303)
 
     conf = obtener_config(db)
@@ -105,7 +105,7 @@ async def dar_salida(request: Request, dama_id: int, db: Session = Depends(get_d
     username, user_role = obtener_usuario_sesion(request)
     
     # Seguridad: Solo admin1 y cajera pueden quitar asistencias de salón
-    if not username or user_role not in ["admin1", "cajera"]:
+    if not username or user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/asistencia", status_code=303)
 
     conf = obtener_config(db)

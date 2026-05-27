@@ -29,7 +29,7 @@ async def registrar_venta(
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
-    if not username or user_role not in ["admin1", "cajera"]:
+    if not username or user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
     if not dama_id or not mesero or not metodo_pago:
@@ -60,7 +60,7 @@ async def registrar_venta(
         metodo_pago=metodo_pago,
         cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
         producto_id=producto_id,
-        fecha=obtener_ahora_local() # fecha_operativa se calcula por defecto en el modelo
+        fecha=obtener_ahora_local()
     )
     db.add(nueva_venta)
     db.commit()
@@ -82,7 +82,7 @@ async def registrar_ronda_mesa(
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
-    if not username or user_role not in ["admin1", "cajera"]:
+    if not username or user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
     conf = obtener_config(db)
@@ -106,7 +106,7 @@ async def registrar_ronda_mesa(
             metodo_pago=metodo_pago,
             cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
             producto_id=producto_id,
-            fecha=ahora # fecha_operativa se calcula por defecto en el modelo
+            fecha=ahora
         )
         db.add(nueva_v)
 
@@ -128,7 +128,7 @@ async def registrar_venta_cliente(
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
-    if not username or user_role not in ["admin1", "cajera"]:
+    if not username or user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
     if not monto or not mesero:
@@ -151,7 +151,7 @@ async def registrar_venta_cliente(
         metodo_pago=metodo_pago,
         cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
         producto_id=producto_id,
-        fecha=obtener_ahora_local() # fecha_operativa se calcula por defecto en el modelo
+        fecha=obtener_ahora_local()
     )
     db.add(nueva_venta)
     db.commit()

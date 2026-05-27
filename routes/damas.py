@@ -22,7 +22,7 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/admin_personal")
 def admin_personal(request: Request, db: Session = Depends(get_db)):
     user_role = obtener_usuario_sesion(request)[1]
-    if user_role not in ["admin1", "jefe_guillermo", "admin2", "cajera"]:
+    if user_role not in ["admin1", "administrador", "cajera", "jefe_guillermo", "encargado"]:
         return RedirectResponse(url="/", status_code=303)
 
     todas = db.query(models.Dama).all()
@@ -71,7 +71,7 @@ async def agregar_dama(
     foto: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    if obtener_usuario_sesion(request)[1] != "admin1":
+    if obtener_usuario_sesion(request)[1] != ["admin1", "administrador"]:
         return RedirectResponse(url="/", status_code=303)
 
     base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -117,7 +117,7 @@ async def editar_dama(
     db: Session = Depends(get_db)
 ):
     # 🔒 SEGURIDAD DE ROL MAESTRO
-    if obtener_usuario_sesion(request)[1] != "admin1":
+    if obtener_usuario_sesion(request)[1] != ["admin1", "administrador"]:
         return RedirectResponse(url="/", status_code=303)
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
@@ -136,7 +136,7 @@ async def editar_dama(
 @router.post("/reactivar_dama/{dama_id}")
 async def reactivar_dama(request: Request, dama_id: int, db: Session = Depends(get_db)):
     # 🔒 SEGURIDAD DE ROL MAESTRO
-    if obtener_usuario_sesion(request)[1] != "admin1":
+    if obtener_usuario_sesion(request)[1] != ["admin1", "administrador"]:
         return RedirectResponse(url="/", status_code=303)
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
@@ -175,7 +175,7 @@ async def eliminar_dama(request: Request, dama_id: int, db: Session = Depends(ge
     user_role = obtener_usuario_sesion(request)[1]
     username = request.cookies.get("session_user")
     
-    if obtener_usuario_sesion(request)[1] != "admin1":
+    if obtener_usuario_sesion(request)[1] != ["admin1", "administrador"]:
         return RedirectResponse(url="/", status_code=303)
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()

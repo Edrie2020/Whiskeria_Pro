@@ -1,12 +1,12 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey
 from database import Base
-from datetime import datetime
+from datetime import datetime, time, timedelta
 from services.time_service import obtener_ahora_local
 
-
+# Función de cálculo para evitar desfase de madrugada (00:00 AM - 06:00 AM)
 def calcular_fecha_operativa_defecto():
     ahora = obtener_ahora_local()
-    if ahora.time() < time(6, 0):  # Madrugada
+    if ahora.time() < time(6, 0):  # Madrugada contable
         return (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
     return ahora.strftime("%Y-%m-%d")
 
@@ -38,7 +38,10 @@ class Venta(Base):
     mesero = Column(String) 
     metodo_pago = Column(String, default="EFECTIVO") 
     fecha = Column(DateTime, default=obtener_ahora_local)
+    
+    # Campo clave de control contable nocturno
     fecha_operativa = Column(String, default=calcular_fecha_operativa_defecto, index=True)
+    
     cliente_nombre = Column(String, nullable=True)
     liquidada = Column(Boolean, default=False) 
     producto_id = Column(Integer, ForeignKey("productos.id"), nullable=True) 
@@ -47,11 +50,8 @@ class Asistencia(Base):
     __tablename__ = "asistencias"
     id = Column(Integer, primary_key=True, index=True)
     dama_id = Column(Integer, ForeignKey("damas.id"))
-    
-    # Fecha operativa con zona horaria local segura
     fecha = Column(String, default=lambda: obtener_ahora_local().strftime("%Y-%m-%d"))
-    
-    turno = Column(String)  # <--- ❌ ¡ASEGÚRATE DE QUE ESTA LÍNEA ESTÉ AQUÍ!
+    turno = Column(String)  
     tipo_llegada = Column(String)
     hora_libro = Column(String)
     bono_asistencia = Column(Float, default=0.0)
@@ -88,8 +88,7 @@ class Producto(Base):
     inicio = Column(Integer, default=0)
     reposicion = Column(Integer, default=0)
     faltante = Column(Integer, default=0)
-     # 🍾 CONTROL DE CORTOS Y BOTELLAS
-    capacidad_cortos = Column(Integer, nullable=True) # 10, 13, 20 o 26
+    capacidad_cortos = Column(Integer, nullable=True) 
     es_corto = Column(Boolean, default=False)
     parent_botella_id = Column(Integer, ForeignKey("productos.id", ondelete="CASCADE"), nullable=True)
 
@@ -105,30 +104,29 @@ class StockMovimiento(Base):
     turno = Column(String)   
     hora = Column(String)
 
-# --- TABLA DE USUARIOS MEJORADA ---
 class Usuario(Base):
     __tablename__ = "usuarios"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     password_hash = Column(String)
-    rol = Column(String)  # "jefe" o "garzon"
-    activo = Column(Boolean, default=True) # <--- Útil para bloquear accesos
-    ultimo_acceso = Column(DateTime, nullable=True) # <--- Para auditoría del jefe
+    rol = Column(String)  
+    activo = Column(Boolean, default=True) 
+    ultimo_acceso = Column(DateTime, nullable=True) 
 
 class InventarioTurno(Base):
     __tablename__ = "inventario_turnos"
     id = Column(Integer, primary_key=True)
     producto_id = Column(Integer, ForeignKey("productos.id", ondelete="CASCADE"), nullable=True)
-    fecha = Column(String)  # Almacena en formato "YYYY-MM-DD"
-    turno = Column(String)  # "Turno 1" o "Turno 2"
-    inicio = Column(Integer, default=0) # Stock con el que inicia este turno congelado
+    fecha = Column(String)  
+    turno = Column(String)  
+    inicio = Column(Integer, default=0) 
 
 class CierreTurno(Base):
     __tablename__ = "cierres_turno"
     id = Column(Integer, primary_key=True)
-    fecha = Column(DateTime, default=obtener_ahora_local)  # <-- Usando nuestra hora local segura
+    fecha = Column(DateTime, default=obtener_ahora_local)  
     turno = Column(String)
     total_ventas = Column(Float)
     total_comisiones_damas = Column(Float)
     total_bonos = Column(Float)
-    utilidad_neta_casa = Column(Float)  
+    utilidad_neta_casa = Column(Float)

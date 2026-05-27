@@ -140,9 +140,8 @@ async def home(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
 
     # Si las cookies no existen o la firma criptográfica fue alterada por un hacker:
-    if not username or user_role not in ["admin1", "cajera", "jefe_guillermo", "administrador",]:
+    if not username or user_role not in ["admin1", "administrador", "cajera", "jefe_guillermo", "encargado"]:
         return RedirectResponse(url="/login", status_code=303)
-        
     # 2. OBTENER CONFIGURACIÓN DEL CLUB
     conf = obtener_config(db)
     
@@ -257,7 +256,7 @@ async def home(request: Request, db: Session = Depends(get_db)):
 @app.post("/gestionar_club")
 async def gestionar_club(request: Request, accion: str = Form(...), turno: str = Form(None), db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
-    if user_role not in ["admin1", "cajera"]:
+    if user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
     # 2. CONFIGURACIÓN DEL CLUB (Inicialización si no existe)
@@ -304,7 +303,7 @@ async def gestionar_club(request: Request, accion: str = Form(...), turno: str =
 @app.get("/contabilidad", response_class=HTMLResponse)  
 async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
-    if not username or user_role not in ["admin1", "cajera", "jefe_guillermo", "administrador"]:
+    if not username or user_role not in ["admin1", "administrador", "cajera", "jefe_guillermo", "encargado"]:
         return RedirectResponse(url="/login?error=no_autorizado", status_code=303)
     # --- LÓGICA DE FILTROS SEGURA ---
     hoy_dt = obtener_fecha_operativa()
@@ -703,9 +702,9 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
 @app.post("/eliminar_venta/{venta_id}")
 async def eliminar_venta(request: Request, venta_id: int, motivo: str = Form(...), db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
-    if not username or user_role not in ["admin1", "cajera"]:
-        return RedirectResponse(url="/", status_code=303)
-    
+    if not username or user_role not in ["admin1", "administrador", "cajera"]:
+        raise HTTPException(status_code=403, detail="No autorizado.")
+
     venta = db.query(models.Venta).filter(models.Venta.id == venta_id).first()
     if venta:
         # 💡 Corregido: Guardamos el usuario verificado que borró la venta con su motivo en el log de auditoría
@@ -722,7 +721,7 @@ async def eliminar_venta(request: Request, venta_id: int, motivo: str = Form(...
 @app.post("/registrar_pago_dama/{dama_id}")
 async def registrar_pago_dama(request: Request, dama_id: int, fecha: str = Form(...), turno: str = Form(...), db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
-    if not username or user_role not in ["admin1", "cajera"]:
+    if not username or user_role not in ["admin1", "administrador", "cajera"]:
         raise HTTPException(status_code=403, detail="No autorizado.")
     
     # 2. PROCESO DE FECHAS (Tu lógica original)
@@ -776,8 +775,8 @@ async def cobrar_deuda(
     from services.auth_service import obtener_usuario_sesion
     username, user_role = obtener_usuario_sesion(request)
 
-    if user_role not in ["admin1", "cajera"]:
-        return RedirectResponse(url="/", status_code=303)
+    if not username or user_role not in ["admin1", "administrador", "cajera"]:
+        raise HTTPException(status_code=403, detail="No autorizado.")
     
     # Obtener configuración del club para conocer el turno activo de hoy
     conf = obtener_config(db)
