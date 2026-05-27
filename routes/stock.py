@@ -158,7 +158,7 @@ async def agregar_producto(
 ):
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["admin1", "cajera"]:
-    return RedirectResponse(url="/stock", status_code=303)
+        return RedirectResponse(url="/stock", status_code=303)
 
     capacidad = None
     if tipo == "BOTELLA" and volumen:
@@ -233,7 +233,7 @@ async def registrar_mov(
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["admin1", "cajera"]:
         return RedirectResponse(url="/stock", status_code=303)
-
+    
     # 🔒 VALIDACIÓN DE SEGURIDAD ANTIFRAUDE (SERVER-SIDE)
     ahora = obtener_ahora_local()
     if ahora.time() < time(6, 0):

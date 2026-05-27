@@ -16,17 +16,18 @@ templates = Jinja2Templates(directory="templates")
 # ---------------------------------------------------------
 # 1. VER PANEL DE ASISTENCIA (MIGRADO DESDE MAIN.PY)
 # ---------------------------------------------------------
+# routes/asistencia.py (Líneas de la ruta /asistencia)
+
 @router.get("/asistencia", response_class=HTMLResponse)
 async def asistencia_page(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
     
-    # Seguridad: Solo admin1, jefe_guillermo, admin2 y cajera pueden ver esta página
     if not username or user_role not in ["admin1", "jefe_guillermo", "admin2", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
     conf = obtener_config(db)
     
-    # Calculamos la fecha operativa de Chile de manera segura
+    # Obtener fecha operativa local
     ahora = obtener_ahora_local()
     if ahora.time() < time(6, 0):
         hoy = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -39,8 +40,19 @@ async def asistencia_page(request: Request, db: Session = Depends(get_db)):
     ).all()
 
     ids_presentes = [a.dama_id for a in asistencias_hoy]
-    ausentes = db.query(models.Dama).filter(models.Dama.esta_activa == True, ~models.Dama.id.in_(ids_presentes)).all()
-    presentes = db.query(models.Dama).filter(models.Dama.id.in_(ids_presentes)).all()
+    
+    # EVITAR FILTRADO INCORRECTO SI LA LISTA ESTÁ VACÍA
+    if ids_presentes:
+        ausentes = db.query(models.Dama).filter(
+            models.Dama.esta_activa == True, 
+            ~models.Dama.id.in_(ids_presentes)
+        ).all()
+        presentes = db.query(models.Dama).filter(
+            models.Dama.id.in_(ids_presentes)
+        ).all()
+    else:
+        ausentes = db.query(models.Dama).filter(models.Dama.esta_activa == True).all()
+        presentes = []
 
     return templates.TemplateResponse(
         request=request,
@@ -50,7 +62,7 @@ async def asistencia_page(request: Request, db: Session = Depends(get_db)):
             "presentes": presentes,
             "turno": conf.turno_activo, 
             "estado_club": conf.estado_club,
-            "role": user_role  # Enviamos el rol para bloquear clics si es de lectura
+            "role": user_role
         }
     )
 

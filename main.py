@@ -304,8 +304,9 @@ async def gestionar_club(request: Request, accion: str = Form(...), turno: str =
 @app.get("/contabilidad", response_class=HTMLResponse)  
 async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
+
     # Permite ver a los dueños, administradores y cajeras
-    if not username or user_role not in ["admin1", "cajera"]:
+    if not username or user_role not in ["admin1", "cajera", "jefe_guillermo", "admin2"]:
         return RedirectResponse(url="/login?error=no_autorizado", status_code=303)
     
     # --- LÓGICA DE FILTROS SEGURA ---

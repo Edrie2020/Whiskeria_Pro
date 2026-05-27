@@ -62,8 +62,15 @@
                         <form action="/eliminar_dama/{{ dama.id }}" method="post" class="absolute top-4 right-4">
                             <button type="submit" class="btn btn-circle btn-xs btn-error btn-outline" onclick="return confirm('¿Eliminar ficha?')">✕</button>
                         </form>
-                        <img src="{{ dama.foto_url }}" class="w-24 h-24 rounded-full object-cover border-4 border-pink-500 cursor-pointer" 
-                             onclick="mostrarDetalles('{{ dama.nombre_real }}', '{{ dama.rut }}', '{{ dama.whatsapp }}', '{{ dama.nombre_artistico }}', '{{ dama.es_bailarina }}', '{{ dama.foto_url }}')">
+                        <img src="{{ dama.foto_url }}" 
+     class="w-24 h-24 rounded-full object-cover border-4 border-pink-500 cursor-pointer" 
+     data-real="{{ dama.nombre_real }}"
+     data-rut="{{ dama.rut }}"
+     data-whatsapp="{{ dama.whatsapp }}"
+     data-artista="{{ dama.nombre_artistico }}"
+     data-bailarina="{{ dama.es_bailarina }}"
+     data-foto="{{ dama.foto_url }}"
+     onclick="mostrarDetallesDesdeAttr(this)">
                         
                         <h3 class="font-black uppercase text-2xl mt-4 text-white tracking-tighter text-center">
                             {{ dama.nombre_artistico }} {% if dama.es_bailarina %} 💃 {% endif %}
@@ -188,6 +195,16 @@
             document.getElementById('edit_baile').checked = (es_baile === 'True' || es_baile === true);
             document.getElementById('modal_editar').showModal();
         }
+        function mostrarDetallesDesdeAttr(element) {
+    const real = element.getAttribute('data-real');
+    const rut = element.getAttribute('data-rut');
+    const wsp = element.getAttribute('data-whatsapp');
+    const artista = element.getAttribute('data-artista');
+    const es_baile = element.getAttribute('data-bailarina');
+    const foto = element.getAttribute('data-foto');
+    
+    mostrarDetalles(real, rut, wsp, artista, es_baile, foto);
+}
     </script>
 </body>
 </html>

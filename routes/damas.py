@@ -4,6 +4,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from services.auth_service import obtener_usuario_sesion
+from services.time_service import obtener_ahora_local  
 import models
 from datetime import datetime
 from database import get_db
@@ -25,9 +26,22 @@ def admin_personal(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse(url="/", status_code=303)
 
     todas = db.query(models.Dama).all()
-    # Lógica de inactivas por más de 30 días
-    activas = [d for d in todas if (datetime.now() - d.ultima_asistencia).days <= 30]
-    inactivas = [d for d in todas if (datetime.now() - d.ultima_asistencia).days > 30]
+    ahora = obtener_ahora_local()
+    
+    activas = []
+    inactivas = []
+    
+    # EVITAR CRASH POR VALORES NONE Y UNIFICAR HORA DE COMPARACIÓN
+    for d in todas:
+        if not d.ultima_asistencia:
+            d.ultima_asistencia = ahora  # Asignación segura en memoria
+            
+        diff_days = (ahora - d.ultima_asistencia).days
+        if diff_days <= 30:
+            activas.append(d)
+        else:
+            inactivas.append(d)
+            
     garzones = db.query(models.Mesero).all()
 
     return templates.TemplateResponse(
@@ -57,26 +71,21 @@ async def agregar_dama(
     foto: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    # 🔒 SEGURIDAD DE ROL MAESTRO
     if obtener_usuario_sesion(request)[1] != "admin1":
         return RedirectResponse(url="/", status_code=303)
 
-    # Lógica de guardado de imagen con nombre de archivo único
     base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     uploads_path = os.path.join(base_path, "static", "uploads")
     os.makedirs(uploads_path, exist_ok=True)
     
-    # 📝 Separamos el nombre original de la extensión (ej: ".jpg" o ".png")
     ext = os.path.splitext(foto.filename)[1].lower()
-    
-    # 🔒 Generamos un nombre único usando UUIDv4 para evitar colisiones
     nombre_unico = f"{uuid.uuid4()}{ext}"
     
-    # Guardamos el archivo con el nuevo nombre único
     file_location = os.path.join(uploads_path, nombre_unico)
     with open(file_location, "wb") as buffer:
         shutil.copyfileobj(foto.file, buffer)
 
+    # USAR OBTENER_AHORA_LOCAL() EN LUGAR DE DATETIME.NOW()
     nueva = models.Dama(
         nombre_artistico=nombre_artistico.upper(),
         nombre_real=nombre_real,
@@ -84,9 +93,9 @@ async def agregar_dama(
         rut=rut,
         tipo_documento=tipo_documento,
         es_bailarina=(es_bailarina == "on"),
-        foto_url=f"/static/uploads/{nombre_unico}", # <--- Guardamos la ruta única en la base de datos
+        foto_url=f"/static/uploads/{nombre_unico}",
         esta_activa=True,
-        ultima_asistencia=datetime.now()
+        ultima_asistencia=obtener_ahora_local()
     )
 
     db.add(nueva)
