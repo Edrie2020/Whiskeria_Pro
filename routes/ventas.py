@@ -10,6 +10,9 @@ from datetime import datetime
 from services.time_service import obtener_ahora_local
 from database import get_db
 
+# Importación de seguridad necesaria para la firma de cookies de sesión y roles
+from services.auth_service import obtener_usuario_sesion
+
 router = APIRouter()
 
 # ---------------------------------------------------------
@@ -29,9 +32,10 @@ async def registrar_venta(
     cliente_nombre: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
-    # 🔒 VERIFICACIÓN DE SESIÓN
-    if not request.cookies.get("session_user"):
-        return RedirectResponse(url="/login", status_code=303)
+    # 🔒 VERIFICACIÓN DE SESIÓN Y ROLES DE ESCRITURA
+    username, user_role = obtener_usuario_sesion(request)
+    if not username or user_role not in ["admin1", "cajera"]:
+        return RedirectResponse(url="/", status_code=303)
 
     if not dama_id or not mesero or not metodo_pago:
         return RedirectResponse(url="/", status_code=303)
@@ -83,9 +87,10 @@ async def registrar_ronda_mesa(
     cliente_nombre: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
-    # 🔒 VERIFICACIÓN DE SESIÓN
-    if not request.cookies.get("session_user"):
-        return RedirectResponse(url="/login", status_code=303)
+    # 🔒 VERIFICACIÓN DE SESIÓN Y ROLES DE ESCRITURA
+    username, user_role = obtener_usuario_sesion(request)
+    if not username or user_role not in ["admin1", "cajera"]:
+        return RedirectResponse(url="/", status_code=303)
 
     conf = obtener_config(db)
     ahora = obtener_ahora_local()
@@ -115,9 +120,6 @@ async def registrar_ronda_mesa(
     return RedirectResponse(url="/", status_code=303)
 
 # ---------------------------------------------------------
-# 3. VENTA CLIENTE SOLO
-# ---------------------------------------------------------
-# ---------------------------------------------------------
 # 3. VENTA CLIENTE SOLO (CORREGIDA PARA DEBITAR STOCK)
 # ---------------------------------------------------------
 @router.post("/registrar_venta_cliente")
@@ -131,9 +133,10 @@ async def registrar_venta_cliente(
     producto_id: Optional[int] = Form(None), # 📦 1. AÑADIMOS ESTO
     db: Session = Depends(get_db)
 ):
-    # 🔒 VERIFICACIÓN DE SESIÓN
-    if not request.cookies.get("session_user"):
-        return RedirectResponse(url="/login", status_code=303)
+    # 🔒 VERIFICACIÓN DE SESIÓN Y ROLES DE ESCRITURA
+    username, user_role = obtener_usuario_sesion(request)
+    if not username or user_role not in ["admin1", "cajera"]:
+        return RedirectResponse(url="/", status_code=303)
 
     if not monto or not mesero:
         return RedirectResponse(url="/", status_code=303)

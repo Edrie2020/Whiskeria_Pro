@@ -298,35 +298,6 @@ async def gestionar_club(request: Request, accion: str = Form(...), turno: str =
     return RedirectResponse(url="/", status_code=303)
 
 # ---------------------------------------------------------
-# ASISTENCIA
-# ---------------------------------------------------------
-@app.get("/asistencia", response_class=HTMLResponse)
-async def asistencia_page(request: Request, db: Session = Depends(get_db)):
-    conf = obtener_config(db)
-    hoy_dt = obtener_fecha_operativa()
-    hoy = hoy_dt.strftime("%Y-%m-%d")
-
-    asistencias_hoy = db.query(models.Asistencia).filter(
-        models.Asistencia.fecha == hoy,
-        models.Asistencia.turno == conf.turno_activo
-    ).all()
-
-    ids_presentes = [a.dama_id for a in asistencias_hoy]
-    ausentes = db.query(models.Dama).filter(models.Dama.esta_activa == True, ~models.Dama.id.in_(ids_presentes)).all()
-    presentes = db.query(models.Dama).filter(models.Dama.id.in_(ids_presentes)).all()
-
-    return templates.TemplateResponse(
-        request=request,
-        name="asistencia.html",
-        context={
-            "ausentes": ausentes, 
-            "presentes": presentes,
-            "turno": conf.turno_activo, 
-            "estado_club": conf.estado_club
-        }
-    )
-
-# ---------------------------------------------------------
 # CONTABILIDAD Y REPORTES
 # ---------------------------------------------------------
 
@@ -334,7 +305,7 @@ async def asistencia_page(request: Request, db: Session = Depends(get_db)):
 async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
     # Permite ver a los dueños, administradores y cajeras
-    if not username or user_role not in ["admin1", "jefe_guillermo", "admin2", "cajera"]:
+    if not username or user_role not in ["admin1", "cajera"]:
         return RedirectResponse(url="/login?error=no_autorizado", status_code=303)
     
     # --- LÓGICA DE FILTROS SEGURA ---
@@ -803,7 +774,7 @@ async def cobrar_deuda(
     from services.auth_service import obtener_usuario_sesion
     username, user_role = obtener_usuario_sesion(request)
 
-    if user_role not in ["jefe", "admin", "cajera"]:
+    if user_role not in ["admin1", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
     
     # Obtener configuración del club para conocer el turno activo de hoy

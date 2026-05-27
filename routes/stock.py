@@ -21,8 +21,8 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/stock", response_class=HTMLResponse)
 async def stock_page(request: Request, fecha: str = None, turno: str = None, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
-    if not username:
-        return RedirectResponse(url="/login", status_code=303)
+    if not username or user_role not in ["admin1", "jefe_guillermo", "admin2", "cajera"]:
+        return RedirectResponse(url="/", status_code=303)
 
     ahora = obtener_ahora_local()
     if ahora.time() < time(6, 0):
@@ -137,7 +137,8 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
     return templates.TemplateResponse(request=request, name="stock.html", context={
         "inventario_productos": inv_productos, "inventario_botellas": inv_botellas,
         "auditoria": auditoria, "fecha_filtro": fecha_f, "turno_filtro": turno_f,
-        "fecha_actual": fecha_actual, "turno_actual": turno_actual, "estado_club": estado_club
+        "fecha_actual": fecha_actual, "turno_actual": turno_actual, "estado_club": estado_club,
+        "role": user_role  # <-- Asegura que esta línea esté aquí
     })
 
 # ---------------------------------------------------------
@@ -156,8 +157,8 @@ async def agregar_producto(
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
-    if not username or user_role not in ["jefe", "admin", "cajera"]:
-        return RedirectResponse(url="/stock", status_code=303)
+    if not username or user_role not in ["admin1", "cajera"]:
+    return RedirectResponse(url="/stock", status_code=303)
 
     capacidad = None
     if tipo == "BOTELLA" and volumen:
@@ -230,7 +231,7 @@ async def registrar_mov(
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
-    if not username or user_role not in ["jefe", "admin", "cajera"]:
+    if not username or user_role not in ["admin1", "cajera"]:
         return RedirectResponse(url="/stock", status_code=303)
 
     # 🔒 VALIDACIÓN DE SEGURIDAD ANTIFRAUDE (SERVER-SIDE)
@@ -278,7 +279,7 @@ async def registrar_mov(
 @router.post("/eliminar_producto/{id}")
 async def eliminar_prod(request: Request, id: int, fecha: str = Form(...), turno: str = Form(...), db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
-    if not username or user_role not in ["jefe", "admin", "cajera"]:
+    if not username or user_role not in ["admin1", "cajera"]:
         return RedirectResponse(url="/stock", status_code=303)
 
     # 🔒 VALIDACIÓN DE SEGURIDAD ANTIFRAUDE (SERVER-SIDE)

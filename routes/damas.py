@@ -59,7 +59,7 @@ async def agregar_dama(
     db: Session = Depends(get_db)
 ):
     # 🔒 SEGURIDAD
-    if obtener_usuario_sesion(request)[1]!= "jefe":
+    if obtener_usuario_sesion(request)[1] != "admin1":
         return RedirectResponse(url="/", status_code=303)
 
     # Lógica de guardado de imagen con nombre de archivo único
@@ -127,7 +127,7 @@ async def editar_dama(
 # ---------------------------------------------------------
 @router.post("/reactivar_dama/{dama_id}")
 async def reactivar_dama(request: Request, dama_id: int, db: Session = Depends(get_db)):
-    if obtener_usuario_sesion(request)[1] != "jefe":
+    if obtener_usuario_sesion(request)[1] != "admin1":
         return RedirectResponse(url="/", status_code=303)
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
@@ -169,8 +169,8 @@ async def eliminar_dama(request: Request, dama_id: int, db: Session = Depends(ge
     user_role = obtener_usuario_sesion(request)[1]
     username = request.cookies.get("session_user")
     
-    if user_role not in ["jefe", "admin", "cajera"]:
-        return RedirectResponse(url="/admin_personal", status_code=303)
+    if obtener_usuario_sesion(request)[1] != "admin1":
+        return RedirectResponse(url="/", status_code=303)
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
     if dama:
