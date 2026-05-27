@@ -46,11 +46,11 @@
             
             <!-- 1. GESTIÓN DE TURNO (Solo Roles de Mando) -->
             {% if role in ['admin1', 'cajera'] %}
-            <button onclick="document.getElementById('modal_turno_fijo').showModal()" ...> 
-                    class="btn btn-xs sm:btn-sm rounded-full {% if estado_club == 'ABIERTO' %} btn-error {% else %} bg-emerald-500 hover:bg-emerald-600 text-black {% endif %} font-black uppercase px-3 sm:px-4 shadow-lg h-8 min-h-0 text-[10px] sm:text-xs">
-                {{ 'CERRAR TURNO' if estado_club == 'ABIERTO' else 'ABRIR TURNO' }}
-            </button>
-            {% endif %}
+<button onclick="document.getElementById('modal_turno_fijo').showModal()" 
+        class="btn btn-xs sm:btn-sm rounded-full {% if estado_club == 'ABIERTO' %} btn-error {% else %} bg-emerald-500 hover:bg-emerald-600 text-black {% endif %} font-black uppercase px-3 sm:px-4 shadow-lg h-8 min-h-0 text-[10px] sm:text-xs">
+    {{ 'CERRAR TURNO' if estado_club == 'ABIERTO' else 'ABRIR TURNO' }}
+</button>
+{% endif %}
 
             <!-- 2. BOTÓN ACCESOS (Solo Roles de Mando) -->
             {% if role in ['admin1', 'jefe_guillermo'] %}
