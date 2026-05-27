@@ -17,8 +17,8 @@ templates = Jinja2Templates(directory="templates")
 async def usuarios_page(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
     
-    # Permitir únicamente a admin1, administrador (poder total) y jefe_guillermo (gestor de accesos)
-    if not username or user_role not in ["admin1", "administrador", "jefe_guillermo"]:
+    # Únicamente admin1 y jefe_guillermo pueden gestionar usuarios
+    if not username or user_role not in ["admin1", "jefe_guillermo"]:
         return RedirectResponse(url="/", status_code=303)
     
     lista = db.query(models.Usuario).all()
@@ -38,7 +38,7 @@ async def crear_usuario(
     db: Session = Depends(get_db)
 ):
     username_sesion, user_role = obtener_usuario_sesion(request)
-    if not username_sesion or user_role not in ["admin1", "administrador", "jefe_guillermo"]:
+    if not username_sesion or user_role not in ["admin1", "jefe_guillermo"]:
         return RedirectResponse(url="/", status_code=303)
 
     nuevo = models.Usuario(
@@ -54,7 +54,7 @@ async def crear_usuario(
 @router.post("/usuarios/eliminar/{user_id}")
 async def eliminar_usuario(request: Request, user_id: int, db: Session = Depends(get_db)):
     username_sesion, user_role = obtener_usuario_sesion(request)
-    if not username_sesion or user_role not in ["admin1", "administrador", "jefe_guillermo"]:
+    if not username_sesion or user_role not in ["admin1", "jefe_guillermo"]:
         return RedirectResponse(url="/", status_code=303)
     
     user = db.query(models.Usuario).filter(models.Usuario.id == user_id).first()
@@ -69,7 +69,7 @@ async def eliminar_usuario(request: Request, user_id: int, db: Session = Depends
 @router.post("/usuarios/cambiar_password/{user_id}")
 async def cambiar_password(request: Request, user_id: int, nueva_clave: str = Form(...), db: Session = Depends(get_db)):
     username_sesion, user_role = obtener_usuario_sesion(request)
-    if not username_sesion or user_role not in ["admin1", "administrador", "jefe_guillermo"]:
+    if not username_sesion or user_role not in ["admin1", "jefe_guillermo"]:
         return RedirectResponse(url="/", status_code=303)
 
     user = db.query(models.Usuario).filter(models.Usuario.id == user_id).first()

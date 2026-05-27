@@ -245,12 +245,16 @@
         <!-- Fila 2: Métodos de Pago Simétricos -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
             
-            <!-- Efectivo -->
-            <div class="bg-emerald-500/5 p-4 rounded-[22px] border border-emerald-500/10 flex flex-col justify-center h-20">
-                <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">EFECTIVO 💵</span>
-                <span class="text-lg sm:text-xl font-black text-emerald-400 mt-0.5">
-                    ${{ "{:,.0f}".format(resumen.efectivo).replace(",", ".") }}
-                </span>
+    
+            <!-- Efectivo Detallado (Cuadratura con Caja Chica de Apertura) -->
+            <div class="bg-emerald-500/5 p-4 rounded-[22px] border border-emerald-500/20 flex flex-col justify-center min-h-20 h-auto text-left">
+                <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest text-center mb-1">EFECTIVO EN GAVETA 💵</span>
+                <div class="text-[9px] font-bold text-zinc-400 space-y-0.5 uppercase">
+                    <p class="flex justify-between"><span>Apertura:</span> <span class="text-white">${{ "{:,.0f}".format(resumen.monto_apertura).replace(",", ".") }}</span></p>
+                    <p class="flex justify-between"><span>Ventas Turno:</span> <span class="text-emerald-400">+${{ "{:,.0f}".format(resumen.efectivo).replace(",", ".") }}</span></p>
+                    <div class="border-t border-zinc-800 my-1"></div>
+                    <p class="flex justify-between text-xs font-black text-white"><span>Total Caja:</span> <span class="text-emerald-400">${{ "{:,.0f}".format(resumen.efectivo_total_gaveta).replace(",", ".") }}</span></p>
+                </div>
             </div>
             
             <!-- Tarjeta -->

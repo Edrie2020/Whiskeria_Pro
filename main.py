@@ -247,18 +247,22 @@ async def home(request: Request, db: Session = Depends(get_db)):
     )
 
 # ---------------------------------------------------------
-# GESTIÓN DE TURNO (ABRIR/CERRAR) - CORREGIDO
-# ---------------------------------------------------------
-# ---------------------------------------------------------
 # GESTIÓN DE TURNO (ABRIR/CERRAR) - UNIFICADO Y SEGURO
 # ---------------------------------------------------------
+# main.py
+
 @app.post("/gestionar_club")
-async def gestionar_club(request: Request, accion: str = Form(...), turno: str = Form(None), db: Session = Depends(get_db)):
+async def gestionar_club(
+    request: Request, 
+    accion: str = Form(...), 
+    turno: str = Form(None), 
+    caja_chica_inicio: float = Form(0.0), # <-- NUEVO PARÁMETRO
+    db: Session = Depends(get_db)
+):
     username, user_role = obtener_usuario_sesion(request)
     if user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
 
-    # 2. CONFIGURACIÓN DEL CLUB (Inicialización si no existe)
     conf = db.query(models.Configuracion).first()
     if not conf:
         conf = models.Configuracion(estado_club="CERRADO", turno_activo="Turno 1", meta_diaria=3000000.0)
@@ -266,33 +270,44 @@ async def gestionar_club(request: Request, accion: str = Form(...), turno: str =
     
     accion_limpia = accion.upper()
     
-    # 3. LÓGICA DE APERTURA / CIERRE
     if accion_limpia == "ABRIR":
         conf.estado_club = "ABIERTO"
         if turno:
             conf.turno_activo = turno
             
             # 📦 CONGELACIÓN TRANSACCIONAL DE INVENTARIO
-            # Usamos la función obtener_fecha_operativa() que ya declaramos al inicio de main.py
             fecha_op = obtener_fecha_operativa().strftime("%Y-%m-%d")
             inicializar_stock_nuevo_turno(db, fecha_op, turno)
+            
+            # 💰 REGISTRAR O ACTUALIZAR EL MONTO DE APERTURA PARA ESTA JORNADA
+            caja_existente = db.query(models.CajaTurno).filter(
+                models.CajaTurno.fecha == fecha_op,
+                models.CajaTurno.turno == turno
+            ).first()
+            
+            if caja_existente:
+                caja_existente.monto_apertura = caja_chica_inicio
+            else:
+                nueva_caja = models.CajaTurno(
+                    fecha=fecha_op,
+                    turno=turno,
+                    monto_apertura=caja_chica_inicio
+                )
+                db.add(nueva_caja)
             
     else:
         conf.estado_club = "CERRADO"
 
-    # 4. AUDITORÍA (Registramos el username real que hizo la acción)
     log = models.LogAuditoria(
         usuario=username, 
         accion=f"{accion_limpia} CLUB - {conf.turno_activo}",
-        turno=conf.turno_activo  # 💡 <-- AGREGAR ESTA LÍNEA
+        turno=conf.turno_activo  
     )
     db.add(log)
     
-    # 5. GUARDAR Y REFRESCAR
     db.commit()
     db.refresh(conf) 
     
-    # 6. REDIRECCIÓN LIMPIA 
     return RedirectResponse(url="/", status_code=303)
 
 # ---------------------------------------------------------

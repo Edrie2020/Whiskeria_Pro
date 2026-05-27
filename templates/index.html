@@ -53,11 +53,11 @@
 {% endif %}
 
             <!-- 2. BOTÓN ACCESOS (Solo Roles de Mando) -->
-            {% if role in ['admin1', 'administrador', 'jefe_guillermo'] %}
-            <a href="/usuarios" class="btn btn-xs sm:btn-sm btn-warning rounded-full font-black px-3 sm:px-4 shadow-lg text-black uppercase h-8 min-h-0 text-[10px] sm:text-xs">
-                ACCESOS
-            </a>
-            {% endif %}
+            {% if role in ['admin1', 'jefe_guillermo'] %}
+<a href="/usuarios" class="btn btn-xs sm:btn-sm btn-warning rounded-full font-black px-3 sm:px-4 shadow-lg text-black uppercase h-8 min-h-0 text-[10px] sm:text-xs">
+    ACCESOS
+</a>
+{% endif %}
 
             <!-- 3. BOTÓN SALIR -->
             <a href="/logout" class="btn btn-xs sm:btn-sm btn-outline btn-error rounded-full font-black px-3 sm:px-4 h-8 min-h-0 text-[10px] sm:text-xs">
@@ -82,42 +82,41 @@
             <div class="grid grid-cols-3 md:flex gap-4 md:gap-6 justify-center max-w-lg mx-auto md:max-w-none">
                 
                 <!-- 1. DAMAS (Chicas de fiesta) -->
-                <a href="/admin_personal" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'jefe_guillermo', 'admin2', 'cajera'] %} locked {% endif %}">
-                    <div class="icon-circle glow-pink text-4xl">👯‍♀️</div>
-                    <span class="text-[9px] font-black uppercase text-pink-500">Damas</span>
-                </a>
+                <a href="/admin_personal" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
+    <div class="icon-circle glow-pink text-4xl">👯‍♀️</div>
+    <span class="text-[9px] font-black uppercase text-pink-500">Damas</span>
+</a>
 
                 <!-- 2. ASISTENCIAS (Notero alegre) -->
-                <a href="/asistencia" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'jefe_guillermo', 'admin2', 'cajera'] %} locked {% endif %}">
-                    <div class="icon-circle glow-green text-4xl">📝</div>
-                    <span class="text-[9px] font-black uppercase text-green-500">Asistencias</span>
-                </a>
+                <a href="/asistencia" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
+    <div class="icon-circle glow-green text-4xl">📝</div>
+    <span class="text-[9px] font-black uppercase text-green-500">Asistencias</span>
+</a>
 
                 <!-- 3. BAILARINAS (Original alegre) -->
                 {% if turno == 'Turno 1' %}
-                <button onclick="document.getElementById('modal_bailarinas_pro').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'cajera'] %} locked {% endif %}">
-                    <div class="icon-circle glow-purple text-4xl">💃</div>
-                    <span class="text-[9px] font-black uppercase text-purple-500">Bailarinas</span>
-                </button>
-                {% endif %}
+<button onclick="document.getElementById('modal_bailarinas_pro').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
+    <div class="icon-circle glow-purple text-4xl">💃</div>
+    <span class="text-[9px] font-black uppercase text-purple-500">Bailarinas</span>
+</button>
+{% endif %}
 
                 <!-- 4. REPORTES (Gráfico de éxito con flecha roja) -->
-                <a href="/contabilidad" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'jefe_guillermo', 'admin2', 'cajera'] %} locked {% endif %}">
-                    <div class="icon-circle glow-yellow text-4xl">📈</div>
-                    <span class="text-[9px] font-black uppercase text-yellow-500">Reportes</span>
-                </a>
+                <a href="/contabilidad" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
+    <div class="icon-circle glow-yellow text-4xl">📈</div>
+    <span class="text-[9px] font-black uppercase text-yellow-500">Reportes</span>
+</a>
 
                 <!-- 5. STOCK (Cervezas brindando) -->
-                 <a href="/stock" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'jefe_guillermo', 'admin2', 'cajera'] %} locked {% endif %}">
-                    <div class="icon-circle glow-blue text-4xl">🍻</div>
-                    <span class="text-[9px] font-black uppercase text-blue-400">Stock</span>
-                </a>
-
+                 <a href="/stock" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
+<div class="icon-circle glow-blue text-4xl">🍻</div>
+<span class="text-[9px] font-black uppercase text-blue-400">Stock</span>
+</a>
                 <!-- 6. GARZONES (Original alegre) -->
-                <button onclick="document.getElementById('modal_garzones').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'cajera'] %} locked {% endif %}">
-                    <div class="icon-circle glow-cyan text-4xl">🤵</div>
-                    <span class="text-[9px] font-black uppercase text-cyan-400">Garzones</span>
-                </button>
+                <button onclick="document.getElementById('modal_garzones').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
+    <div class="icon-circle glow-cyan text-4xl">🤵</div>
+    <span class="text-[9px] font-black uppercase text-cyan-400">Garzones</span>
+</button>
             </div>
     </header>
 
@@ -199,8 +198,15 @@
                     <input type="text" id="buscTragoInd" onkeyup="filtrarTragosInd()" onfocus="mostrarMenuTragosInd()" placeholder="🔍 ESCRIBIR NOMBRE TRAGO..." class="input input-bordered input-sm w-full bg-black border-zinc-700 text-center uppercase font-black text-pink-400">
                     <div id="menuTragosInd" class="hidden absolute bottom-full left-0 w-full mb-2 bg-zinc-900 border-2 border-zinc-700 rounded-2xl shadow-2xl z-[100] max-h-48 overflow-y-auto">
                         <div onclick="seleccionarTragoInd(this, '0', 'TRAGO BÁSICO')" class="trago-ind-item p-3 hover:bg-pink-600 cursor-pointer border-b border-white/5 font-black text-xs uppercase text-zinc-400" data-nombre="TRAGO BÁSICO">TRAGO BÁSICO</div>
-                        {% for p in productos_cooler %}<div onclick="seleccionarTragoInd(this, '{{p.id}}', '{{p.nombre}}')" class="trago-ind-item p-3 hover:bg-pink-600 cursor-pointer border-b border-white/5 font-black text-xs uppercase text-white" data-nombre="{{p.nombre}}">{{ p.nombre }}</div>{% endfor %}
-                    </div>
+                        {% for p in productos_cooler %}
+{% if not p.es_corto %}
+<div onclick="seleccionarTragoMesaDirecto(this, '{{p.id}}', '{{p.nombre}}')" 
+     class="trago-mesa-item p-3 hover:bg-purple-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-white"
+     data-nombre="{{p.nombre}}">
+    {{ p.nombre }}
+</div>
+{% endif %}
+{% endfor %}
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
@@ -480,11 +486,73 @@
             </div>
         </form>
     </div>
-</dialog>
+</dialog> <!-- Cierre del modal anterior -->
 
 <script>
+// =========================================================================
+// 🍾 CONTROL INTELIGENTE DE BOTELLAS DE RESPALDO (NUEVO)
+// =========================================================================
+let preVentaDeteccion = null;
+
+// Función que intercepta el flujo de venta de cortos
+async function verificarBotellaAgotada(productoId, callbackExito) {
+    if (!productoId) {
+        callbackExito();
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/estado_corto/${productoId}`);
+        const data = await res.json();
+
+        if (data.vacia) {
+            if (data.respaldos.length > 0) {
+                // Cargar opciones en el select del modal
+                const select = document.getElementById('select_respaldo_botella');
+                select.innerHTML = data.respaldos.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
+                
+                document.getElementById('abrir_corto_id').value = productoId;
+                preVentaDeteccion = callbackExito; // Guardar callback
+                document.getElementById('modal_abrir_respaldo').showModal();
+            } else {
+                alert(`⚠️ STOCK COMPLETAMENTE AGOTADO: No tienes botellas de respaldo selladas para ${data.parent_nombre}. Registra la compra de un nuevo producto en stock.`);
+            }
+        } else {
+            callbackExito();
+        }
+    } catch (error) {
+        callbackExito(); // Continuar si hay algún fallo en la API
+    }
+}
+
+// Acción para abrir la botella en el servidor mediante AJAX
+async function confirmarAperturaBotella() {
+    const cortoId = document.getElementById('abrir_corto_id').value;
+    const botellaId = document.getElementById('select_respaldo_botella').value;
+
+    const formData = new FormData();
+    formData.append('corto_id', cortoId);
+    formData.append('nueva_botella_id', botellaId);
+
+    const res = await fetch('/api/abrir_botella_respaldo', {
+        method: 'POST',
+        body: formData
+    });
+
+    if (res.ok) {
+        const data = await res.json();
+        alert(`✅ BOTELLA ABIERTA CON ÉXITO: Se ha descorchado ${data.parent_nombre}.`);
+        document.getElementById('modal_abrir_respaldo').close();
+        if (preVentaDeteccion) {
+            preVentaDeteccion(); // Proceder a guardar la venta original
+        }
+    } else {
+        alert("❌ Ocurrió un error al intentar descorchar la botella.");
+    }
+}
+
 // ==========================================
-// 1. GARZONES (AJAX) 
+// 1. GARZONES (AJAX) - (TU CÓDIGO ORIGINAL SIGUE AQUÍ)
 // ==========================================
 async function borrarGarzonJS(id) {
     if (!confirm("¿Eliminar Garzón?")) return;
@@ -861,7 +929,6 @@ function preConfirmarMesa(tier) {
     if (!garzon) { alert("⚠️ SELECCIONE GARZÓN"); return; }
     if (mesaActual.ids.length === 0) { alert("⚠️ SELECCIONE CHICAS"); return; }
     
-    // Nueva validación obligatoria idéntica a tragos individuales
     const tragoNombreMesa = document.getElementById('buscTragoMesa').value.trim();
     if (!tragoNombreMesa) {
         alert("⚠️ ES OBLIGATORIO SELECCIONAR UN TRAGO DE LA LISTA (PUEDE SER TRAGO BÁSICO)");
@@ -888,8 +955,14 @@ function preConfirmarMesa(tier) {
     if(mesaActual.extra === 'VIP') unitario += 50000;
     if(mesaActual.extra === 'PRIVADO') unitario += 200000;
     document.getElementById('resumen_total_mesa').innerText = `TOTAL RONDA: $${(unitario * mesaActual.ids.length).toLocaleString('es-CL')}`;
-    document.getElementById('mesa_paso_datos').classList.add('hidden');
-    document.getElementById('mesa_resumen_confirmacion').classList.remove('hidden');
+    
+    // =========================================================================
+    // 🍾 CÓDIGO ENVUELTO: Primero verifica el stock, y si es correcto, avanza de pantalla
+    // =========================================================================
+    verificarBotellaAgotada(mesaActual.productoId, () => {
+        document.getElementById('mesa_paso_datos').classList.add('hidden');
+        document.getElementById('mesa_resumen_confirmacion').classList.remove('hidden');
+    });
 }
 
 function preConfirmarInd(monto) {
@@ -900,14 +973,12 @@ function preConfirmarInd(monto) {
     let textoResumen = "";
 
     if (monto === '0') {
-        // Lógica para Salida Manual
         const casa = parseInt(document.getElementById('ind_casa_manual').value) || 0;
         const chica = parseInt(document.getElementById('ind_chica_manual').value) || 0;
         total = casa + chica;
         textoResumen = "SALIDA MANUAL";
         document.getElementById('input_individual_tier_precio').value = 0;
     } else {
-        // Lógica para Tragos Normales
         const tragoNombre = document.getElementById('buscTragoInd').value.trim();
         if (!tragoNombre) {
             alert("⚠️ ES OBLIGATORIO SELECCIONAR UN TRAGO DE LA LISTA (PUEDE SER TRAGO BÁSICO)");
@@ -923,8 +994,13 @@ function preConfirmarInd(monto) {
     document.getElementById('ind_resumen_total').innerText = "$" + total.toLocaleString('es-CL');
     document.getElementById('ind_resumen_texto').innerText = textoResumen;
 
-    document.getElementById('individual_paso_datos').classList.add('hidden');
-    document.getElementById('individual_resumen_confirmacion').classList.remove('hidden');
+    // =========================================================================
+    // 🍾 CÓDIGO ENVUELTO: Primero verifica el stock, y si es correcto, avanza de pantalla
+    // =========================================================================
+    verificarBotellaAgotada(ventaIndActual.productoId, () => {
+        document.getElementById('individual_paso_datos').classList.add('hidden');
+        document.getElementById('individual_resumen_confirmacion').classList.remove('hidden');
+    });
 }
 
 function abrirSeccionCuentaMesa() {
@@ -1186,6 +1262,12 @@ async function ejecutarAccionBailarina(event, form) {
                     </select>
                 </div>
 
+                <!-- NUEVO CAMPO: MONTO DE APERTURA -->
+                <div class="form-control mt-2 mb-6">
+                    <label class="label"><span class="label-text text-warning font-black uppercase text-[10px] tracking-wider">Monto de Apertura de Caja (Sencillo)</span></label>
+                    <input type="number" name="caja_chica_inicio" value="100000" step="1000" class="input input-bordered w-full bg-black text-center text-white text-xl font-black" required>
+                </div>
+
                 <button type="submit" class="btn btn-success w-full font-black text-lg shadow-lg">
                     ABRIR CLUB AHORA
                 </button>
@@ -1311,6 +1393,25 @@ async function ejecutarAccionBailarina(event, form) {
                 </div>
             </div>
         </div>
+    </div>
+</dialog>
+<!-- MODAL INTELIGENTE: APERTURA DE BOTELLA DE RESPALDO -->
+<dialog id="modal_abrir_respaldo" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box bg-zinc-950 border-2 border-warning p-8 text-center rounded-[40px] max-w-md">
+        <h3 class="font-black text-2xl text-warning uppercase italic tracking-tighter mb-4">🍾 ¿ABRIR BOTELLA?</h3>
+        <p class="text-xs text-zinc-400 uppercase mb-6 leading-relaxed">
+            La botella activa actual se encuentra <span class="text-red-500 font-bold">agotada</span>. Para continuar ingresando el corto, selecciona cuál de tus botellas de respaldo deseas abrir:
+        </p>
+        <form id="form_abrir_respaldo" class="space-y-6">
+            <input type="hidden" id="abrir_corto_id">
+            <select id="select_respaldo_botella" class="select select-bordered w-full bg-black text-white font-black border-zinc-800" required>
+                <!-- Las opciones se cargarán dinámicamente por JS -->
+            </select>
+            <div class="flex gap-2">
+                <button type="button" onclick="document.getElementById('modal_abrir_respaldo').close()" class="btn btn-ghost flex-1 font-bold">CANCELAR</button>
+                <button type="button" onclick="confirmarAperturaBotella()" class="btn btn-warning flex-[2] font-black text-black">DESCORCHAR BOTELLA</button>
+            </div>
+        </form>
     </div>
 </dialog>
 </body>

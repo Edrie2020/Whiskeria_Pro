@@ -130,3 +130,10 @@ class CierreTurno(Base):
     total_comisiones_damas = Column(Float)
     total_bonos = Column(Float)
     utilidad_neta_casa = Column(Float)
+
+class CajaTurno(Base):
+    __tablename__ = "cajas_turno"
+    id = Column(Integer, primary_key=True)
+    fecha = Column(String, index=True)      # "YYYY-MM-DD"
+    turno = Column(String)                 # "Turno 1" o "Turno 2"
+    monto_apertura = Column(Float, default=0.0)

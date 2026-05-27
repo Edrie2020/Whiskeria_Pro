@@ -244,11 +244,17 @@
                     <tbody class="font-bold uppercase text-xs">
                         {% for p in inventario_productos %}
                         <tr class="border-b border-white/5 item-stock">
-                            <td class="text-left text-white pl-1 truncate max-w-[80px] sm:max-w-none nombre-item">{{ p.nombre }}</td>
-                            <td class="text-blue-400 text-sm sm:text-base">+{{ p.reposicion }}</td>
-                            <td class="text-red-400 text-sm sm:text-base" title="Desglose: Ventas Enteras + Proporción por cortos">{{ p.salida_visual }}</td>
-                            <td class="text-orange-400 text-sm sm:text-base">{{ p.faltante }}</td>
-                            <td class="text-base sm:text-lg text-cyan-400 font-black">{{ p.saldo_visual }}</td>
+    <td class="text-left text-white pl-1 truncate max-w-[80px] sm:max-w-none nombre-item">{{ p.nombre }}</td>
+    <td class="text-blue-400 text-sm sm:text-base">+{{ p.reposicion }}</td>
+    <td class="text-red-400 text-sm sm:text-base" title="Desglose: Ventas Enteras + Proporción por cortos">{{ p.salida_visual }}</td>
+    <td class="text-orange-400 text-sm sm:text-base">{{ p.faltante }}</td>
+    <!-- Alerta de Stock Crítico: Saldo 0 = Rojo, Saldo 1 o 2 = Amarillo, Saldo Normal = Cyan/Dorado -->
+    <td class="text-base sm:text-lg font-black 
+        {% if p.saldo <= 0 %} text-red-500 
+        {% elif p.saldo <= 2 %} text-amber-500 
+        {% else %}{% if p.tipo == 'PRODUCTO' %} text-cyan-400 {% else %} text-warning {% endif %}{% endif %}">
+        {{ p.saldo_visual }}
+    </td>
                             
                             {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
 <td class="flex gap-1 justify-end pr-1 pt-2 no-print">
