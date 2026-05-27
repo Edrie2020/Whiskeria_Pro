@@ -45,7 +45,7 @@
         <div class="flex items-center gap-2 justify-center sm:justify-end w-full sm:w-auto">
             
             <!-- 1. GESTIÓN DE TURNO (Solo Roles de Mando) -->
-            {% if role in ['admin1', 'cajera'] %}
+            {% if role in ['admin1', 'administrador', 'cajera'] %}
 <button onclick="document.getElementById('modal_turno_fijo').showModal()" 
         class="btn btn-xs sm:btn-sm rounded-full {% if estado_club == 'ABIERTO' %} btn-error {% else %} bg-emerald-500 hover:bg-emerald-600 text-black {% endif %} font-black uppercase px-3 sm:px-4 shadow-lg h-8 min-h-0 text-[10px] sm:text-xs">
     {{ 'CERRAR TURNO' if estado_club == 'ABIERTO' else 'ABRIR TURNO' }}
@@ -53,7 +53,7 @@
 {% endif %}
 
             <!-- 2. BOTÓN ACCESOS (Solo Roles de Mando) -->
-            {% if role in ['admin1', 'jefe_guillermo'] %}
+            {% if role in ['admin1', 'administrador', 'jefe_guillermo'] %}
             <a href="/usuarios" class="btn btn-xs sm:btn-sm btn-warning rounded-full font-black px-3 sm:px-4 shadow-lg text-black uppercase h-8 min-h-0 text-[10px] sm:text-xs">
                 ACCESOS
             </a>
@@ -142,7 +142,7 @@
         </div>
 
         {% if estado_club == 'ABIERTO' %}
-<div id="damas_salon_grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-2 {% if role not in ['admin1', 'administrador', 'cajera'] %} pointer-events-none opacity-80 {% endif %}">
+<div id="damas_salon_grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-2 {% if role not in ['admin1', 'administrador', 'cajera', 'garzon'] %} pointer-events-none opacity-80 {% endif %}">
             <div onclick="document.getElementById('modal_cliente').showModal()" class="flex flex-col items-center cursor-pointer transition-all hover:scale-110">
                 <div class="w-20 h-20 md:w-28 md:h-28 rounded-full p-1 border-4 glow-cyan flex items-center justify-center">
                     <span class="text-4xl md:text-5xl">👔</span>
@@ -1268,17 +1268,21 @@ async function ejecutarAccionBailarina(event, form) {
                         <form onsubmit="ejecutarAccionBailarina(event, this)" action="/registrar_pago_show" method="post" class="flex items-center gap-3">
                             <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
                             
-                            <!-- Contenedor Estado Normal -->
-                            <div class="flex items-center gap-3 normal-state">
-                                <div class="flex flex-col items-center">
-                                    <span class="text-[8px] text-zinc-500 mb-1 uppercase font-bold">Monto Show</span>
-                                    <input name="monto_total" type="number" value="30000" required
-                                           class="input input-bordered input-xs w-20 bg-black text-center text-green-400 font-black">
-                                </div>
-                                <button type="button" onclick="mostrarConfirmacionTarjeta(this)" class="btn btn-xs btn-success font-black uppercase text-[9px] px-4 rounded-full h-8 mt-4">
-                                    SUBIR
-                                </button>
-                            </div>
+                            <!-- Contenedor Estado Normal (Solo interactivo para operacionales) -->
+<div class="flex items-center gap-3 normal-state">
+    <div class="flex flex-col items-center">
+        <span class="text-[8px] text-zinc-500 mb-1 uppercase font-bold">Monto Show</span>
+        <input name="monto_total" type="number" value="30000" required {% if role not in ['admin1', 'administrador', 'cajera'] %} disabled {% endif %}
+               class="input input-bordered input-xs w-20 bg-black text-center text-green-400 font-black">
+    </div>
+    {% if role in ['admin1', 'administrador', 'cajera'] %}
+    <button type="button" onclick="mostrarConfirmacionTarjeta(this)" class="btn btn-xs btn-success font-black uppercase text-[9px] px-4 rounded-full h-8 mt-4">
+        SUBIR
+    </button>
+    {% else %}
+    <span class="text-[9px] font-bold text-zinc-600 uppercase mt-4">🔒 LECTURA</span>
+    {% endif %}
+</div>
 
                             <!-- Contenedor 2: Estado de Confirmación (Oculto al inicio) -->
                             <div class="hidden flex flex-col items-end gap-1 confirm-state">

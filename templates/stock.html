@@ -174,7 +174,7 @@
         {% endif %}
 
         <!-- FORMULARIO DE REGISTRO COLAPSABLE -->
-        {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'cajera'] %}
+{% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
         <div class="collapse collapse-plus bg-cyan-500/10 border border-cyan-500/30 mb-6 rounded-2xl no-print">
             <input type="checkbox" /> 
             <div class="collapse-title text-[10px] font-black text-cyan-400 uppercase tracking-[2px]">
@@ -250,17 +250,17 @@
                             <td class="text-orange-400 text-sm sm:text-base">{{ p.faltante }}</td>
                             <td class="text-base sm:text-lg text-cyan-400 font-black">{{ p.saldo_visual }}</td>
                             
-                            {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' %}
-                            <td class="flex gap-1 justify-end pr-1 pt-2 no-print">
-                                <button onclick="abrirModalMov('{{ p.id }}', '{{ p.nombre }}')" class="btn btn-xs btn-circle btn-ghost" title="Ajustar Stock">⚙️</button>
-                                <form action="/eliminar_producto/{{ p.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ p.nombre }} DEL SISTEMA?')">
-                                    <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
-                                    <button class="btn btn-xs btn-error btn-outline btn-square">✕</button>
-                                </form>
-                            </td>
-                            {% else %}
-                            <td class="text-zinc-600 text-[10px] uppercase font-bold text-right pr-2 no-print">🔒 LECTURA</td>
-                            {% endif %}
+                            {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
+<td class="flex gap-1 justify-end pr-1 pt-2 no-print">
+    <button onclick="abrirModalMov('{{ p.id }}', '{{ p.nombre }}')" class="btn btn-xs btn-circle btn-ghost" title="Ajustar Stock">⚙️</button>
+    <form action="/eliminar_producto/{{ p.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ p.nombre }} DEL SISTEMA?')">
+        <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
+        <button class="btn btn-xs btn-error btn-outline btn-square">✕</button>
+    </form>
+</td>
+{% else %}
+<td class="text-zinc-600 text-[10px] uppercase font-bold text-right pr-2 no-print">🔒 LECTURA</td>
+{% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>

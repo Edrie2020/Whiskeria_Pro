@@ -59,9 +59,11 @@
                     {% for dama in activas %}
 
                     <div class="bg-zinc-900/80 border border-zinc-800 p-4 rounded-[35px] flex flex-col items-center relative shadow-2xl">
-                        <form action="/eliminar_dama/{{ dama.id }}" method="post" class="absolute top-4 right-4">
-                            <button type="submit" class="btn btn-circle btn-xs btn-error btn-outline" onclick="return confirm('¿Eliminar ficha?')">✕</button>
-                        </form>
+                        {% if role in ['admin1', 'administrador', 'cajera'] %}
+<form action="/eliminar_dama/{{ dama.id }}" method="post" class="absolute top-4 right-4">
+    <button type="submit" class="btn btn-circle btn-xs btn-error btn-outline" onclick="return confirm('¿Eliminar ficha?')">✕</button>
+</form>
+{% endif %}
                         <img src="{{ dama.foto_url }}" 
      class="w-24 h-24 rounded-full object-cover border-4 border-pink-500 cursor-pointer" 
      data-real="{{ dama.nombre_real }}"
@@ -80,8 +82,12 @@
                             <span class="text-xs font-black text-pink-400">T1: {{ dama.dias_t1 }}</span>
                             <span class="text-xs font-black text-blue-400">T2: {{ dama.dias_t2 }}</span>
                         </div>
-                        <button onclick="prepararEdicion('{{ dama.id }}', '{{ dama.nombre_artistico }}', '{{ dama.nombre_real }}', '{{ dama.rut }}', '{{ dama.whatsapp }}', '{{ dama.es_bailarina }}')" 
-                                class="btn btn-secondary btn-xs w-full mt-5 rounded-xl font-black uppercase tracking-widest">Editar Ficha</button>
+                        {% if role in ['admin1', 'administrador', 'cajera'] %}
+<button onclick="prepararEdicion('{{ dama.id }}', '{{ dama.nombre_artistico }}', '{{ dama.nombre_real }}', '{{ dama.rut }}', '{{ dama.whatsapp }}', '{{ dama.es_bailarina }}')" 
+        class="btn btn-secondary btn-xs w-full mt-5 rounded-xl font-black uppercase tracking-widest">Editar Ficha</button>
+{% else %}
+<div class="text-zinc-600 text-[10px] mt-6 font-bold uppercase tracking-wider">🔒 Vista de Lectura</div>
+{% endif %}
                     </div>
                     {% endfor %}
                 </div>

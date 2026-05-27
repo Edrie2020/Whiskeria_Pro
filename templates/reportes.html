@@ -356,10 +356,14 @@
                                     <td class="text-pink-500 uppercase truncate max-w-[80px]">{{ v.destino }}</td>
                                     <td class="text-right font-bold text-zinc-200">${{ "{:,.0f}".format(v.monto).replace(",", ".") }}</td>
                                     <td class="text-right no-print">
-                                        <button type="button" onclick="prepararBorrado('{{ v.id }}', '{{ v.servicio }}')" class="btn btn-circle btn-xs btn-error btn-outline" title="Eliminar Venta">
-                                            ✕
-                                        </button>
-                                    </td>
+    {% if role in ['admin1', 'administrador', 'cajera'] %}
+    <button type="button" onclick="prepararBorrado('{{ v.id }}', '{{ v.servicio }}')" class="btn btn-circle btn-xs btn-error btn-outline" title="Eliminar Venta">
+        ✕
+    </button>
+    {% else %}
+    <span class="text-[9px] text-zinc-600">🔒</span>
+    {% endif %}
+</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -454,12 +458,16 @@
                             </td>
 
                             <td>
-                                {% if d.liquidada %}
-                                <input type="checkbox" checked disabled class="checkbox checkbox-success checkbox-xs border-2 opacity-50 cursor-not-allowed">
-                                {% else %}
-                                <input type="checkbox" onchange="confirmarPagoDama(this, '{{d.dama_id}}', '{{d.nombre}}', '{{ d.total_pagar }}', '{{ d.fecha }}')" class="checkbox checkbox-success checkbox-xs border-2">
-                                {% endif %}
-                            </td>
+    {% if d.liquidada %}
+    <input type="checkbox" checked disabled class="checkbox checkbox-success checkbox-xs border-2 opacity-50 cursor-not-allowed">
+    {% else %}
+        {% if role in ['admin1', 'administrador', 'cajera'] %}
+        <input type="checkbox" onchange="confirmarPagoDama(this, '{{d.dama_id}}', '{{d.nombre}}', '{{ d.total_pagar }}', '{{ d.fecha }}')" class="checkbox checkbox-success checkbox-xs border-2">
+        {% else %}
+        <input type="checkbox" disabled class="checkbox checkbox-success checkbox-xs border-2 opacity-30 cursor-not-allowed" title="Sin permisos de pago">
+        {% endif %}
+    {% endif %}
+</td>
                         </tr>
                         {% endif %}
                         {% endfor %}
@@ -513,11 +521,15 @@
                 
                 <div class="text-right shrink-0">
                     <p class="text-sm font-black text-yellow-500">${{ "{:,.0f}".format(d.monto).replace(",", ".") }}</p>
-                    <form action="/cobrar_deuda/{{ d.id }}" method="post" class="mt-1" onsubmit="return confirm('¿CONFIRMAR PAGO?')">
-                        <button type="submit" name="metodo_pago_final" value="EFECTIVO" class="btn btn-[8px] btn-success h-6 min-h-0 px-2 font-black">
-                            💵 COBRAR
-                        </button>
-                    </form>
+                    {% if role in ['admin1', 'administrador', 'cajera'] %}
+<form action="/cobrar_deuda/{{ d.id }}" method="post" class="mt-1" onsubmit="return confirm('¿CONFIRMAR PAGO?')">
+    <button type="submit" name="metodo_pago_final" value="EFECTIVO" class="btn btn-[8px] btn-success h-6 min-h-0 px-2 font-black">
+        💵 COBRAR
+    </button>
+</form>
+{% else %}
+<span class="text-[9px] text-yellow-500 uppercase block mt-1 font-bold">🔒 Deuda Pendiente</span>
+{% endif %}
                 </div>
             </div>
             {% endfor %}
