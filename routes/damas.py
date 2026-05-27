@@ -16,11 +16,10 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 # ---------------------------------------------------------
-# 1. PANEL DE ADMINISTRACIÓN DE PERSONAL (SOLO JEFE)
+# 1. PANEL DE ADMINISTRACIÓN DE PERSONAL (VER TODOS LOS ROLES PERMITIDOS)
 # ---------------------------------------------------------
 @router.get("/admin_personal")
 def admin_personal(request: Request, db: Session = Depends(get_db)):
-    # 🔒 SEGURIDAD: Solo el rol 'jefe' puede ver esta página
     user_role = obtener_usuario_sesion(request)[1]
     if user_role not in ["admin1", "jefe_guillermo", "admin2", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
@@ -44,7 +43,7 @@ def admin_personal(request: Request, db: Session = Depends(get_db)):
     )
 
 # ---------------------------------------------------------
-# 2. AGREGAR NUEVA DAMA (SOLO JEFE)
+# 2. AGREGAR NUEVA DAMA (SOLO ADMIN1)
 # ---------------------------------------------------------
 @router.post("/agregar_dama")
 async def agregar_dama(
@@ -58,7 +57,7 @@ async def agregar_dama(
     foto: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    # 🔒 SEGURIDAD
+    # 🔒 SEGURIDAD DE ROL MAESTRO
     if obtener_usuario_sesion(request)[1] != "admin1":
         return RedirectResponse(url="/", status_code=303)
 
@@ -95,7 +94,7 @@ async def agregar_dama(
     return RedirectResponse(url="/admin_personal", status_code=303)
 
 # ---------------------------------------------------------
-# 3. EDITAR FICHA (SOLO JEFE)
+# 3. EDITAR FICHA (SOLO ADMIN1)
 # ---------------------------------------------------------
 @router.post("/editar_dama/{dama_id}")
 async def editar_dama(
@@ -108,7 +107,7 @@ async def editar_dama(
     es_bailarina: str = Form("off"),
     db: Session = Depends(get_db)
 ):
-    # 🔒 SEGURIDAD
+    # 🔒 SEGURIDAD DE ROL MAESTRO
     if obtener_usuario_sesion(request)[1] != "admin1":
         return RedirectResponse(url="/", status_code=303)
 
@@ -123,10 +122,11 @@ async def editar_dama(
     return RedirectResponse(url="/admin_personal", status_code=303)
 
 # ---------------------------------------------------------
-# 4. REACTIVAR (SOLO JEFE)
+# 4. REACTIVAR (SOLO ADMIN1)
 # ---------------------------------------------------------
 @router.post("/reactivar_dama/{dama_id}")
 async def reactivar_dama(request: Request, dama_id: int, db: Session = Depends(get_db)):
+    # 🔒 SEGURIDAD DE ROL MAESTRO
     if obtener_usuario_sesion(request)[1] != "admin1":
         return RedirectResponse(url="/", status_code=303)
 
@@ -147,8 +147,6 @@ async def activar_baile(
     baila: str = Form("off"), 
     db: Session = Depends(get_db)
 ):
-    # 🔒 SEGURIDAD (Incluso garzones podrían usar esto si les das permiso, 
-    # pero por ahora lo dejamos bajo login general)
     if not request.cookies.get("session_user"):
         return RedirectResponse(url="/login", status_code=303)
 
@@ -161,11 +159,10 @@ async def activar_baile(
     return RedirectResponse(url="/", status_code=303)
 
 # ---------------------------------------------------------
-# ELIMINAR DAMA (SÓLO NIVELES DE MANDO)
+# ELIMINAR DAMA (SÓLO ADMIN1)
 # ---------------------------------------------------------
 @router.post("/eliminar_dama/{dama_id}")
 async def eliminar_dama(request: Request, dama_id: int, db: Session = Depends(get_db)):
-    # 🔒 SEGURIDAD: Solo Jefe, Admin o Cajera
     user_role = obtener_usuario_sesion(request)[1]
     username = request.cookies.get("session_user")
     
@@ -174,14 +171,12 @@ async def eliminar_dama(request: Request, dama_id: int, db: Session = Depends(ge
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
     if dama:
-        # 📝 AUDITORÍA: Guardamos quién borró a quién
+        # 📝 AUDITORÍA
         log = models.LogAuditoria(
             usuario=username, 
             accion=f"ELIMINÓ FICHA DE DAMA: {dama.nombre_artistico}"
         )
         db.add(log)
-        
-        # Borramos la dama
         db.delete(dama)
         db.commit()
 
