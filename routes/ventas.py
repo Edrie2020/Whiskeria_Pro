@@ -1,16 +1,12 @@
-from fastapi import APIRouter, Form, Depends, Request # <--- Añadimos Request
+from fastapi import APIRouter, Form, Depends, Request
 from typing import Optional, List
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
-from database import SessionLocal
 import models
 from services.config_service import obtener_config
 from services.ventas_service import calcular_venta_detallada
-from datetime import datetime
 from services.time_service import obtener_ahora_local
 from database import get_db
-
-# Importación de seguridad necesaria para la firma de cookies de sesión y roles
 from services.auth_service import obtener_usuario_sesion
 
 router = APIRouter()
@@ -20,7 +16,7 @@ router = APIRouter()
 # ---------------------------------------------------------
 @router.post("/registrar_venta")
 async def registrar_venta(
-    request: Request, # <--- Importante para la seguridad
+    request: Request,
     dama_id: Optional[int] = Form(None), 
     mesero: Optional[str] = Form(None),  
     metodo_pago: Optional[str] = Form(None), 
@@ -32,7 +28,6 @@ async def registrar_venta(
     cliente_nombre: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
-    # 🔒 VERIFICACIÓN DE SESIÓN Y ROLES DE ESCRITURA
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["admin1", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
@@ -42,7 +37,6 @@ async def registrar_venta(
 
     conf = obtener_config(db)
     
-    # Cálculos de dinero (Lógica de negocio)
     total, pago_chica, pago_casa = calcular_venta_detallada(
         tier_precio, extra_tipo, monto_casa_manual, monto_chica_manual
     )
@@ -66,10 +60,10 @@ async def registrar_venta(
         metodo_pago=metodo_pago,
         cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
         producto_id=producto_id,
-        fecha=obtener_ahora_local()
+        fecha=obtener_ahora_local() # fecha_operativa se calcula por defecto en el modelo
     )
     db.add(nueva_venta)
-    db.commit() # <--- ¡Perfecto, ya estaba aquí!
+    db.commit()
     return RedirectResponse(url="/", status_code=303)
 
 # ---------------------------------------------------------
@@ -77,7 +71,7 @@ async def registrar_venta(
 # ---------------------------------------------------------
 @router.post("/registrar_ronda_mesa")
 async def registrar_ronda_mesa(
-    request: Request, # <--- Seguridad
+    request: Request,
     ids_chicas: List[int] = Form(...), 
     mesero: str = Form(...),
     metodo_pago: str = Form(...),
@@ -87,7 +81,6 @@ async def registrar_ronda_mesa(
     cliente_nombre: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
-    # 🔒 VERIFICACIÓN DE SESIÓN Y ROLES DE ESCRITURA
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["admin1", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
@@ -99,7 +92,8 @@ async def registrar_ronda_mesa(
         total, chica, casa = calcular_venta_detallada(tier_precio, extra_tipo)
         
         nombre_serv = f"MESA: TRAGO {tier_precio//1000}K"
-        if extra_tipo: nombre_serv += f" + {extra_tipo}"
+        if extra_tipo: 
+            nombre_serv += f" + {extra_tipo}"
 
         nueva_v = models.Venta(
             dama_id=d_id,
@@ -112,7 +106,7 @@ async def registrar_ronda_mesa(
             metodo_pago=metodo_pago,
             cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
             producto_id=producto_id,
-            fecha=ahora
+            fecha=ahora # fecha_operativa se calcula por defecto en el modelo
         )
         db.add(nueva_v)
 
@@ -120,7 +114,7 @@ async def registrar_ronda_mesa(
     return RedirectResponse(url="/", status_code=303)
 
 # ---------------------------------------------------------
-# 3. VENTA CLIENTE SOLO (CORREGIDA PARA DEBITAR STOCK)
+# 3. VENTA CLIENTE SOLO
 # ---------------------------------------------------------
 @router.post("/registrar_venta_cliente")
 async def registrar_venta_cliente(
@@ -130,10 +124,9 @@ async def registrar_venta_cliente(
     trago: Optional[str] = Form(None),
     metodo_pago: str = Form(...),
     cliente_nombre: Optional[str] = Form(None),
-    producto_id: Optional[int] = Form(None), # 📦 1. AÑADIMOS ESTO
+    producto_id: Optional[int] = Form(None),
     db: Session = Depends(get_db)
 ):
-    # 🔒 VERIFICACIÓN DE SESIÓN Y ROLES DE ESCRITURA
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["admin1", "cajera"]:
         return RedirectResponse(url="/", status_code=303)
@@ -149,7 +142,7 @@ async def registrar_venta_cliente(
         
     nueva_venta = models.Venta(
         dama_id=None, 
-        servicio=f"CLIENTE: {trago}".upper(), 
+        servicio=f"CLIENTE: {trago}".upper() if trago else "CLIENTE SOLO", 
         monto=val_monto, 
         comision_chica=0, 
         ganancia_casa=val_monto, 
@@ -157,8 +150,8 @@ async def registrar_venta_cliente(
         mesero=mesero,
         metodo_pago=metodo_pago,
         cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
-        producto_id=producto_id, # 📦 2. GUARDAMOS EL ID DEL PRODUCTO PARA EL STOCK
-        fecha=obtener_ahora_local()
+        producto_id=producto_id,
+        fecha=obtener_ahora_local() # fecha_operativa se calcula por defecto en el modelo
     )
     db.add(nueva_venta)
     db.commit()

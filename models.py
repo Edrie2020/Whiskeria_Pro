@@ -4,6 +4,13 @@ from datetime import datetime
 from services.time_service import obtener_ahora_local
 
 
+def calcular_fecha_operativa_defecto():
+    ahora = obtener_ahora_local()
+    if ahora.time() < time(6, 0):  # Madrugada
+        return (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
+    return ahora.strftime("%Y-%m-%d")
+
+
 class Dama(Base):
     __tablename__ = "damas"
     id = Column(Integer, primary_key=True, index=True)
@@ -31,6 +38,7 @@ class Venta(Base):
     mesero = Column(String) 
     metodo_pago = Column(String, default="EFECTIVO") 
     fecha = Column(DateTime, default=obtener_ahora_local)
+    fecha_operativa = Column(String, default=calcular_fecha_operativa_defecto, index=True)
     cliente_nombre = Column(String, nullable=True)
     liquidada = Column(Boolean, default=False) 
     producto_id = Column(Integer, ForeignKey("productos.id"), nullable=True) 

@@ -140,9 +140,9 @@ async def home(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
 
     # Si las cookies no existen o la firma criptográfica fue alterada por un hacker:
-    if not username or not user_role:
+    if not username or user_role not in ["admin1", "cajera", "jefe_guillermo", "administrador",]:
         return RedirectResponse(url="/login", status_code=303)
-    
+        
     # 2. OBTENER CONFIGURACIÓN DEL CLUB
     conf = obtener_config(db)
     
@@ -304,11 +304,8 @@ async def gestionar_club(request: Request, accion: str = Form(...), turno: str =
 @app.get("/contabilidad", response_class=HTMLResponse)  
 async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
-
-    # Permite ver a los dueños, administradores y cajeras
-    if not username or user_role not in ["admin1", "cajera", "jefe_guillermo", "admin2"]:
+    if not username or user_role not in ["admin1", "cajera", "jefe_guillermo", "administrador"]:
         return RedirectResponse(url="/login?error=no_autorizado", status_code=303)
-    
     # --- LÓGICA DE FILTROS SEGURA ---
     hoy_dt = obtener_fecha_operativa()
     fecha_param = request.query_params.get("fecha", hoy_dt.strftime("%Y-%m-%d"))
@@ -332,6 +329,11 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         models.Asistencia.turno == turno_filter
     ).all()
 
+    # Rangos para logs (único elemento que conserva rango real)
+    fecha_obj = datetime.strptime(fecha_param, "%Y-%m-%d")
+    inicio_dia = datetime.combine(fecha_obj.date(), time.min)
+    fin_dia = datetime.combine(fecha_obj.date(), time.max)
+
     # 3. Resumen General
     resumen = {
         "bruto": sum(v.monto for v in ventas_hoy),
@@ -340,7 +342,6 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         "transferencia": sum(v.monto for v in ventas_hoy if v.metodo_pago == "TRANSFERENCIA"),
     }
 
-    # 4. Cálculo detallado por Dama (Liquidaciones)
     # 4. Cálculo detallado por Dama (Liquidaciones en múltiples Fichas)
     detalle_damas = []
     for asis in asistencias_hoy:
