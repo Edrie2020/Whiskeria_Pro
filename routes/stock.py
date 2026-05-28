@@ -70,7 +70,7 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
 
         falts = db.query(func.sum(models.StockMovimiento.cantidad)).filter(
             models.StockMovimiento.producto_id == p.id,
-            models.StockMovimiento.tipo_movimiento == 'FALTANTE',
+            models.StockMovimiento.tipo_movimiento.in_(['FALTANTE', 'APERTURA BOTELLA']),
             models.StockMovimiento.fecha == fecha_f,
             models.StockMovimiento.turno == turno_f
         ).scalar() or 0
