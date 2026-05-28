@@ -18,6 +18,8 @@ templates = Jinja2Templates(directory="templates")
 # ---------------------------------------------------------
 # routes/asistencia.py (Líneas de la ruta /asistencia)
 
+# routes/asistencia.py
+
 @router.get("/asistencia", response_class=HTMLResponse)
 async def asistencia_page(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
@@ -43,15 +45,22 @@ async def asistencia_page(request: Request, db: Session = Depends(get_db)):
     
     # EVITAR FILTRADO INCORRECTO SI LA LISTA ESTÁ VACÍA
     if ids_presentes:
+        # Se ocultan las damas borradas (borrada == False) del listado de ausentes
         ausentes = db.query(models.Dama).filter(
             models.Dama.esta_activa == True, 
+            models.Dama.borrada == False, 
             ~models.Dama.id.in_(ids_presentes)
         ).all()
+
         presentes = db.query(models.Dama).filter(
             models.Dama.id.in_(ids_presentes)
         ).all()
     else:
-        ausentes = db.query(models.Dama).filter(models.Dama.esta_activa == True).all()
+        # Si no hay presentes, se listan todas las damas activas y no borradas
+        ausentes = db.query(models.Dama).filter(
+            models.Dama.esta_activa == True, 
+            models.Dama.borrada == False
+        ).all()
         presentes = []
 
     return templates.TemplateResponse(

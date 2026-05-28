@@ -194,7 +194,8 @@ async def home(request: Request, db: Session = Depends(get_db)):
     if conf.turno_activo == "Turno 1":
         todas_b = db.query(models.Dama).filter(
             models.Dama.es_bailarina == True, 
-            models.Dama.esta_activa == True
+            models.Dama.esta_activa == True,
+            models.Dama.borrada == False # <-- FILTRO SUAVE
         ).all()
 
         for b in todas_b:
@@ -512,8 +513,16 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 "liquidada": False
             })
 
-    # 5. Cálculo detallado por Garzón
-    damas_lookup = {d.id: d.nombre_artistico for d in db.query(models.Dama).all()}
+    # =========================================================================
+    # 5. Cálculo detallado por Garzón (Preservando nombres de damas borradas)
+    # =========================================================================
+    damas_lookup = {}
+    for d in db.query(models.Dama).all():
+        nombre_lookup = d.nombre_artistico
+        if d.borrada:
+            nombre_lookup += " (ELIMINADA)"
+        damas_lookup[d.id] = nombre_lookup
+
     detalle_garzones = {}
     for v in ventas_hoy:
         if v.mesero not in detalle_garzones:
@@ -538,7 +547,6 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     resumen["pagos_damas"] = sum(d["total_pagar"] for d in detalle_damas)
     resumen["neto"] = resumen["bruto"] - resumen["pagos_damas"]
 
-    
     logs = db.query(models.LogAuditoria).filter(
         models.LogAuditoria.fecha >= inicio_dia, 
         models.LogAuditoria.fecha <= fin_dia,
@@ -644,7 +652,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 # Mensaje personalizado según el estado de la ficha (Ficha 1 o Ficha 2)
                 if asis_p.liquidada:
                     msg_p = (
-                        f"⭐ *LIQUIDACIÓN PENDIENTE - {nombre_ficha_label}* ⭐\n"
+                        f"⭐ *DETALLE DE LIQUIDACIÓN - {nombre_ficha_label}* ⭐\n"
                         f"📅 *Fecha:* {asis_p.fecha} | 🕒 *Turno:* {asis_p.turno}\n"
                         f"--------------------------------\n"
                         f"💼 *COMISIONES DE TRAGOS:*\n"
@@ -663,7 +671,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                     )
                 else:
                     msg_p = (
-                        f"⭐ *LIQUIDACIÓN PENDIENTE - {nombre_ficha_label}* ⭐\n"
+                        f"⭐ *DETALLE DE LIQUIDACIÓN - {nombre_ficha_label}* ⭐\n"
                         f"📅 *Fecha:* {asis_p.fecha} | 🕒 *Turno:* {asis_p.turno}\n"
                         f"-----------------------------------------\n"
                         f"💼 *COMISIONES DE TRAGOS:*\n"
@@ -692,7 +700,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
 
                 pendientes_global.append({
                     "dama_id": dama_p.id,
-                    "nombre": nombre_ficha_label,
+                    "nombre": f"{dama_p.nombre_artistico} (ELIMINADA) (FICHA 2)" if dama_p.borrada and asis_p.liquidada else (f"{dama_p.nombre_artistico} (ELIMINADA) (FICHA 1)" if dama_p.borrada else nombre_ficha_label),
                     "fecha": asis_p.fecha,
                     "turno": asis_p.turno,
                     "total_pagar": total_chica_p,
@@ -714,9 +722,10 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
             "username": username,   
             "fecha_filtro": fecha_param, 
             "turno_filtro": turno_filter,
-            "pendientes_global": pendientes_global # <--- AÑADE ESTA LÍNEA AQUÍ
+            "pendientes_global": pendientes_global
         }
     )
+
 # ---------------------------------------------------------
 # ACCIONES DE VENTA Y PAGOS
 # ---------------------------------------------------------
@@ -728,7 +737,6 @@ async def eliminar_venta(request: Request, venta_id: int, motivo: str = Form(...
 
     venta = db.query(models.Venta).filter(models.Venta.id == venta_id).first()
     if venta:
-        # 💡 Corregido: Guardamos el usuario verificado que borró la venta con su motivo en el log de auditoría
         log = models.LogAuditoria(
             usuario=username, 
             accion=f"ELIMINÓ VENTA: {venta.servicio} (Garzón: {venta.mesero}) - MOTIVO: {motivo}",
@@ -744,11 +752,6 @@ async def registrar_pago_dama(request: Request, dama_id: int, fecha: str = Form(
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["admin1", "administrador", "cajera"]:
         raise HTTPException(status_code=403, detail="No autorizado.")
-    
-    # 2. PROCESO DE FECHAS (Tu lógica original)
-    f_obj = datetime.strptime(fecha, "%Y-%m-%d")
-    ini = datetime.combine(f_obj.date(), time.min)
-    fn = datetime.combine(f_obj.date(), time.max)
     
     # 3. Liquidar ventas de ese turno usando la columna fecha_operativa exacta
     ventas_pendientes = db.query(models.Venta).filter(
@@ -773,11 +776,10 @@ async def registrar_pago_dama(request: Request, dama_id: int, fecha: str = Form(
 
     # 5. AUDITORÍA REAL
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
-    # Registramos exactamente quién hizo el pago
     log = models.LogAuditoria(
         usuario=username, 
         accion=f"PAGO PERSONAL: {dama.nombre_artistico} - FECHA: {fecha} - TURNO: {turno}",
-        turno=turno  # 💡 <-- AGREGAR ESTA LÍNEA
+        turno=turno  
     )
     db.add(log)
     db.commit()
@@ -791,28 +793,23 @@ async def cobrar_deuda(
     metodo_pago_final: str = Form(...), 
     db: Session = Depends(get_db)
 ):
-    # 🔒 1. VERIFICACIÓN DE SEGURIDAD
     from services.auth_service import obtener_usuario_sesion
     username, user_role = obtener_usuario_sesion(request)
 
     if not username or user_role not in ["admin1", "administrador", "cajera"]:
         raise HTTPException(status_code=403, detail="No autorizado.")
     
-    # Obtener configuración del club para conocer el turno activo de hoy
     conf = obtener_config(db)
     
-    # 2. PROCESO DE COBRO
     venta = db.query(models.Venta).filter(models.Venta.id == venta_id).first()
     if venta:
         metodo_anterior = venta.metodo_pago
         fecha_anterior = venta.fecha.strftime("%d/%m/%Y %H:%M") if venta.fecha else "N/A"
         
         venta.metodo_pago = metodo_pago_final
-        venta.fecha = obtener_ahora_local()            # Registramos el cobro contablemente HOY
-        venta.turno = conf.turno_activo          # Lo metemos al turno activo de hoy
-        # -------------------------------------
+        venta.fecha = obtener_ahora_local()            
+        venta.turno = conf.turno_activo          
         
-        # 📝 3. AUDITORÍA COMPLETA
         log = models.LogAuditoria(
             usuario=username, 
             accion=(
@@ -820,7 +817,7 @@ async def cobrar_deuda(
                 f"| ANTES: {metodo_anterior} ({fecha_anterior}) "
                 f"-> COBRADO HOY COMO: {metodo_pago_final} (Turno: {conf.turno_activo})"
             ),
-            turno=conf.turno_activo  # 💡 <-- AGREGAR ESTA LÍNEA
+            turno=conf.turno_activo  
         )
         db.add(log)
         db.commit()
@@ -835,28 +832,24 @@ async def registrar_pago_show(
     monto_total: float = Form(...), 
     db: Session = Depends(get_db)
 ):
-    # 🔒 1. SEGURIDAD SEGURA CONTRA HACKERS (Verifica la firma digital)
     username, user_role = obtener_usuario_sesion(request)
     
-    if not username:
+    if not username or user_role not in ["admin1", "administrador", "cajera"]:
         return {"status": "error", "message": "No autorizado"}
 
-    # 2. TU LÓGICA DE NEGOCIO ORIGINAL (Permanecerá intacta)
     asis = db.query(models.Asistencia).filter(models.Asistencia.id == asistencia_id).first()
     
     if asis:
         asis.bono_show = monto_total
-        # 🔄 Si el monto es mayor a 0, está bailando. Si es 0, vuelve a espera.
         asis.bailando_hoy = (monto_total > 0)
         
         dama = db.query(models.Dama).filter(models.Dama.id == asis.dama_id).first()
         accion_txt = f"ACTUALIZÓ SHOWS {dama.nombre_artistico}: ${monto_total:,.0f}" if monto_total > 0 else f"QUITÓ DE PISTA A {dama.nombre_artistico}"
         
-        # Guardamos la auditoría con el username verificado y seguro
         db.add(models.LogAuditoria(
             usuario=username, 
             accion=accion_txt,
-            turno=asis.turno  # 💡 <-- AGREGAR ESTA LÍNEA
+            turno=asis.turno  
         ))
         db.commit()
 

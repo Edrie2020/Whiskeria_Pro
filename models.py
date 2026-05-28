@@ -22,6 +22,7 @@ class Dama(Base):
     foto_url = Column(String)
     es_bailarina = Column(Boolean, default=False)
     esta_activa = Column(Boolean, default=True)
+    borrada = Column(Boolean, default=False, index=True) # <-- NUEVO CAMPO DE SEGURIDAD
     dias_t1 = Column(Integer, default=0)
     dias_t2 = Column(Integer, default=0)
     ultima_asistencia = Column(DateTime, default=obtener_ahora_local)

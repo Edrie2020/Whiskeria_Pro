@@ -27,7 +27,7 @@ def admin_personal(request: Request, db: Session = Depends(get_db)):
     if user_role not in ["admin1", "administrador", "cajera", "jefe_guillermo", "encargado"]:
         return RedirectResponse(url="/", status_code=303)
 
-    todas = db.query(models.Dama).all()
+    todas = db.query(models.Dama).filter(models.Dama.borrada == False).all()
     ahora = obtener_ahora_local()
     
     activas = []
@@ -173,6 +173,8 @@ async def activar_baile(
 # ---------------------------------------------------------
 # ELIMINAR DAMA (SÓLO ADMIN1, ADMINISTRADOR, CAJERA)
 # ---------------------------------------------------------
+# routes/damas.py
+
 @router.post("/eliminar_dama/{dama_id}")
 async def eliminar_dama(request: Request, dama_id: int, db: Session = Depends(get_db)):
     user_role = obtener_usuario_sesion(request)[1]
@@ -183,13 +185,13 @@ async def eliminar_dama(request: Request, dama_id: int, db: Session = Depends(ge
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
     if dama:
-        # 📝 AUDITORÍA
+        # SOFT DELETE: Oculta la dama del salón pero preserva su registro para reportes históricos
+        dama.borrada = True
         log = models.LogAuditoria(
             usuario=username, 
-            accion=f"ELIMINÓ FICHA DE DAMA: {dama.nombre_artistico}"
+            accion=f"ELIMINÓ FICHA DE DAMA: {dama.nombre_artistico} (ELIMINACIÓN SUAVE)"
         )
         db.add(log)
-        db.delete(dama)
         db.commit()
 
     return RedirectResponse(url="/admin_personal", status_code=303)
