@@ -346,12 +346,21 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     inicio_dia = datetime.combine(fecha_obj.date(), time.min)
     fin_dia = datetime.combine(fecha_obj.date(), time.max)
 
+    # Obtener el monto de apertura para la fecha y el turno seleccionados desde la nueva tabla
+    caja_info = db.query(models.CajaTurno).filter(
+        models.CajaTurno.fecha == fecha_param,
+        models.CajaTurno.turno == turno_filter
+    ).first()
+    monto_ap_valor = caja_info.monto_apertura if caja_info else 0.0
+
     # 3. Resumen General
     resumen = {
         "bruto": sum(v.monto for v in ventas_hoy),
         "efectivo": sum(v.monto for v in ventas_hoy if v.metodo_pago == "EFECTIVO"),
         "tarjeta": sum(v.monto for v in ventas_hoy if v.metodo_pago == "TARJETA"),
         "transferencia": sum(v.monto for v in ventas_hoy if v.metodo_pago == "TRANSFERENCIA"),
+        "monto_apertura": monto_ap_valor,
+        "efectivo_total_gaveta": sum(v.monto for v in ventas_hoy if v.metodo_pago == "EFECTIVO") + monto_ap_valor
     }
 
     # 4. Cálculo detallado por Dama (Liquidaciones en múltiples Fichas)
