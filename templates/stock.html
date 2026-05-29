@@ -174,7 +174,7 @@
         {% endif %}
 
         <!-- FORMULARIO DE REGISTRO COLAPSABLE -->
-{% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
+        {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
         <div class="collapse collapse-plus bg-cyan-500/10 border border-cyan-500/30 mb-6 rounded-2xl no-print">
             <input type="checkbox" /> 
             <div class="collapse-title text-[10px] font-black text-cyan-400 uppercase tracking-[2px]">
@@ -244,29 +244,29 @@
                     <tbody class="font-bold uppercase text-xs">
                         {% for p in inventario_productos %}
                         <tr class="border-b border-white/5 item-stock">
-    <td class="text-left text-white pl-1 truncate max-w-[80px] sm:max-w-none nombre-item">{{ p.nombre }}</td>
-    <td class="text-blue-400 text-sm sm:text-base">+{{ p.reposicion }}</td>
-    <td class="text-red-400 text-sm sm:text-base" title="Desglose: Ventas Enteras + Proporción por cortos">{{ p.salida_visual }}</td>
-    <td class="text-orange-400 text-sm sm:text-base">{{ p.faltante }}</td>
-    <!-- Alerta de Stock Crítico: Saldo 0 = Rojo, Saldo 1 o 2 = Amarillo, Saldo Normal = Cyan/Dorado -->
-    <td class="text-base sm:text-lg font-black 
-        {% if p.saldo <= 0 %} text-red-500 
-        {% elif p.saldo <= 2 %} text-amber-500 
-        {% else %}{% if p.tipo == 'PRODUCTO' %} text-cyan-400 {% else %} text-warning {% endif %}{% endif %}">
-        {{ p.saldo_visual }}
-    </td>
+                            <td class="text-left text-white pl-1 truncate max-w-[80px] sm:max-w-none nombre-item">{{ p.nombre }}</td>
+                            <td class="text-blue-400 text-sm sm:text-base">+{{ p.reposicion }}</td>
+                            <td class="text-red-400 text-sm sm:text-base" title="Desglose: Ventas Enteras + Proporción por cortos">{{ p.salida_visual }}</td>
+                            <td class="text-orange-400 text-sm sm:text-base">{{ p.faltante }}</td>
+                            <!-- Alerta de Stock Crítico: Saldo 0 = Rojo, Saldo 1 o 2 = Amarillo, Saldo Normal = Cyan/Dorado -->
+                            <td class="text-base sm:text-lg font-black 
+                                {% if p.saldo <= 0 %} text-red-500 
+                                {% elif p.saldo <= 2 %} text-amber-500 
+                                {% else %}{% if p.tipo == 'PRODUCTO' %} text-cyan-400 {% else %} text-warning {% endif %}{% endif %}">
+                                {{ p.saldo_visual }}
+                            </td>
                             
                             {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
-<td class="flex gap-1 justify-end pr-1 pt-2 no-print">
-    <button onclick="abrirModalMov('{{ p.id }}', '{{ p.nombre }}')" class="btn btn-xs btn-circle btn-ghost" title="Ajustar Stock">⚙️</button>
-    <form action="/eliminar_producto/{{ p.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ p.nombre }} DEL SISTEMA?')">
-        <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
-        <button class="btn btn-xs btn-error btn-outline btn-square">✕</button>
-    </form>
-</td>
-{% else %}
-<td class="text-zinc-600 text-[10px] uppercase font-bold text-right pr-2 no-print">🔒 LECTURA</td>
-{% endif %}
+                            <td class="flex gap-1 justify-end pr-1 pt-2 no-print">
+                                <button onclick="abrirModalMov('{{ p.id }}', '{{ p.nombre }}')" class="btn btn-xs btn-circle btn-ghost" title="Ajustar Stock">⚙️</button>
+                                <form action="/eliminar_producto/{{ p.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ p.nombre }} DEL SISTEMA?')">
+                                    <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
+                                    <button class="btn btn-xs btn-error btn-outline btn-square">✕</button>
+                                </form>
+                            </td>
+                            {% else %}
+                            <td class="text-zinc-600 text-[10px] uppercase font-bold text-right pr-2 no-print">🔒 LECTURA</td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -299,9 +299,15 @@
                             <td class="text-blue-400 text-sm sm:text-base">+{{ b.reposicion }}</td>
                             <td class="text-red-400 text-sm sm:text-base" title="Desglose: Ventas Enteras + Proporción por cortos">{{ b.salida_visual }}</td>
                             <td class="text-orange-400 text-sm sm:text-base">{{ b.faltante }}</td>
-                            <td class="text-base sm:text-lg text-warning font-black">{{ b.saldo_visual }}</td>
+                            <!-- Alerta de Stock Crítico en Botellas: Saldo 0 = Rojo, Saldo 1 o 2 = Amarillo, Saldo Normal = warning -->
+                            <td class="text-base sm:text-lg font-black 
+                                {% if b.saldo <= 0 %} text-red-500 
+                                {% elif b.saldo <= 2 %} text-amber-500 
+                                {% else %} text-warning {% endif %}">
+                                {{ b.saldo_visual }}
+                            </td>
                             
-                            {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' %}
+                            {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
                             <td class="flex gap-1 justify-end pr-1 pt-2 no-print">
                                 <button onclick="abrirModalMov('{{ b.id }}', '{{ b.nombre }}')" class="btn btn-xs btn-circle btn-ghost" title="Ajustar Stock">⚙️</button>
                                 <form action="/eliminar_producto/{{ b.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ b.nombre }} DEL SISTEMA?')">

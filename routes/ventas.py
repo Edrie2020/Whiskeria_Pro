@@ -41,13 +41,16 @@ async def registrar_venta(
         tier_precio, extra_tipo, monto_casa_manual, monto_chica_manual
     )
 
-    if tier_precio == 0:
-        nombre_serv = "SALIDA MANUAL"
-    else:
-        nombre_serv = f"TRAGO {tier_precio // 1000}K"
-    
+    # CONSTRUCCIÓN DINÁMICA DE LA DESCRIPCIÓN DEL SERVICIO
+    servicios_lista = []
+    if tier_precio > 0:
+        servicios_lista.append(f"TRAGO {tier_precio // 1000}K")
     if extra_tipo:
-        nombre_serv += f" + {extra_tipo}"
+        servicios_lista.append(extra_tipo)
+    if monto_casa_manual > 0 or monto_chica_manual > 0:
+        servicios_lista.append("SALIDA MANUAL")
+        
+    nombre_serv = " + ".join(servicios_lista) if servicios_lista else "VENTA INDIVIDUAL"
 
     nueva_venta = models.Venta(
         dama_id=dama_id,
@@ -154,5 +157,96 @@ async def registrar_venta_cliente(
         fecha=obtener_ahora_local()
     )
     db.add(nueva_venta)
+    db.commit()
+    return RedirectResponse(url="/", status_code=303)
+# routes/ventas.py
+import json
+
+@router.post("/registrar_venta_multi_cliente")
+async def registrar_venta_multi_cliente(
+    request: Request,
+    mesero: str = Form(...),
+    monto_total: float = Form(...),
+    productos_json: str = Form(...),  # Recibe el carrito serializado en JSON desde el frontend
+    metodo_pago: str = Form(...),
+    cliente_nombre: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
+):
+    username, user_role = obtener_usuario_sesion(request)
+    if not username or user_role not in ["admin1", "administrador", "cajera"]:
+        return RedirectResponse(url="/", status_code=303)
+
+    conf = obtener_config(db)
+    ahora = obtener_ahora_local()
+
+    try:
+        items = json.loads(productos_json)  # Lista de objetos [{"id": int, "nombre": str, "cantidad": int}]
+    except Exception:
+        return RedirectResponse(url="/?error=json_invalido", status_code=303)
+
+    if not items:
+        return RedirectResponse(url="/?error=boleta_vacia", status_code=303)
+
+    # 1. Separamos el primer item para registrarlo como la transacción comercial principal (lleva el monto cobrado)
+    primer_item = items[0]
+    id_principal = primer_item["id"]
+    cant_principal = primer_item["cantidad"]
+    
+    # Construimos la descripción resumida del servicio
+    nombres_servicios = [f"{it['cantidad']}x {it['nombre']}" for it in items]
+    descripcion_boleta = f"BOLETA: " + " + ".join(nombres_servicios)
+
+    venta_principal = models.Venta(
+        dama_id=None,
+        servicio=descripcion_boleta.upper(),
+        monto=monto_total,
+        comision_chica=0.0,
+        ganancia_casa=monto_total,
+        turno=conf.turno_activo,
+        mesero=mesero,
+        metodo_pago=metodo_pago,
+        cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
+        producto_id=id_principal,
+        fecha=ahora
+    )
+    db.add(venta_principal)
+
+    # 2. Si el producto principal se consumió en cantidad superior a 1, registramos el resto con valor $0 para el stock
+    for _ in range(cant_principal - 1):
+        venta_extra = models.Venta(
+            dama_id=None,
+            servicio=f"CANT. EXTRA: {primer_item['nombre']}".upper(),
+            monto=0.0,
+            comision_chica=0.0,
+            ganancia_casa=0.0,
+            turno=conf.turno_activo,
+            mesero=mesero,
+            metodo_pago=metodo_pago,
+            cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
+            producto_id=id_principal,
+            fecha=ahora
+        )
+        db.add(venta_extra)
+
+    # 3. Registramos todos los productos secundarios del carrito con valor $0 para descontar stock
+    for extra_item in items[1:]:
+        id_extra = extra_item["id"]
+        cant_extra = extra_item["cantidad"]
+        for _ in range(cant_extra):
+            venta_extra = models.Venta(
+                dama_id=None,
+                servicio=f"ACOMPAÑAMIENTO: {extra_item['nombre']}".upper(),
+                monto=0.0,
+                comision_chica=0.0,
+                ganancia_casa=0.0,
+                turno=conf.turno_activo,
+                mesero=mesero,
+                metodo_pago=metodo_pago,
+                cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
+                producto_id=id_extra,
+                fecha=ahora
+            )
+            db.add(venta_extra)
+
     db.commit()
     return RedirectResponse(url="/", status_code=303)

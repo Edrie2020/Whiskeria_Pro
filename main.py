@@ -1,8 +1,8 @@
 # =========================================================
 # 1. IMPORTACIONES DEL SISTEMA (Librerías externas)
 # =========================================================
-from fastapi import FastAPI, Request, Depends, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Request, Depends, Form, HTTPException, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -10,6 +10,8 @@ from sqlalchemy import func
 from datetime import date, datetime, time, timedelta
 import uvicorn
 import urllib.parse
+import os 
+import shutil
 
 # =========================================================
 # 2. IMPORTACIONES LOCALES (Base de Datos, Modelos y Servicios)
@@ -37,6 +39,7 @@ def obtener_fecha_operativa() -> datetime:
         return ahora - timedelta(days=1)
     return ahora
 
+
 async def verificar_sesion(request: Request):
     """Verificador de sesión seguro con firmas criptográficas."""
     user, _ = obtener_usuario_sesion(request)
@@ -44,7 +47,12 @@ async def verificar_sesion(request: Request):
         raise HTTPException(status_code=303, detail="No autorizado")
     return user
 
+
 def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str):
+    """
+    Inicializa el inventario para el nuevo turno de forma aislada.
+    Solo inicializa productos que pertenezcan históricamente a este turno específico.
+    """
     existe = db.query(models.InventarioTurno).filter(
         models.InventarioTurno.fecha == fecha_hoy,
         models.InventarioTurno.turno == turno_nuevo
@@ -55,17 +63,31 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
 
     productos = db.query(models.Producto).all()
     for p in productos:
+        # Se filtra para buscar el último registro del mismo turno
         ultimo_registro = db.query(models.InventarioTurno).filter(
-            models.InventarioTurno.producto_id == p.id
+            models.InventarioTurno.producto_id == p.id,
+            models.InventarioTurno.turno == turno_nuevo
         ).order_by(models.InventarioTurno.fecha.desc(), models.InventarioTurno.id.desc()).first()
         
-        stock_inicial = p.inicio
-        
-        if ultimo_registro:
-            # 1. Salidas directas de botellas enteras o productos
+        if not ultimo_registro:
+            # 🔍 FILTRO CLAVE: Verificamos si este producto tiene algún registro histórico en este turno.
+            tiene_registro_en_este_turno = db.query(models.InventarioTurno).filter(
+                models.InventarioTurno.producto_id == p.id,
+                models.InventarioTurno.turno == turno_nuevo
+            ).first()
+            
+            if not tiene_registro_en_este_turno:
+                continue  # Ignoramos por completo el producto para este turno
+            
+            if turno_nuevo == "Turno 2":
+                stock_inicial = 0
+            else:
+                stock_inicial = p.inicio
+        else:
+            # 1. Salidas directas de licores / productos
             salida_directa = db.query(func.count(models.Venta.id)).filter(
                 models.Venta.producto_id == p.id,
-                func.strftime("%Y-%m-%d", models.Venta.fecha) == ultimo_registro.fecha,
+                models.Venta.fecha_operativa == ultimo_registro.fecha,
                 models.Venta.turno == ultimo_registro.turno
             ).scalar() or 0
             
@@ -76,7 +98,7 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
                 if corto_vinculado:
                     cortos_consumidos = db.query(func.count(models.Venta.id)).filter(
                         models.Venta.producto_id == corto_vinculado.id,
-                        func.strftime("%Y-%m-%d", models.Venta.fecha) == ultimo_registro.fecha,
+                        models.Venta.fecha_operativa == ultimo_registro.fecha,
                         models.Venta.turno == ultimo_registro.turno
                     ).scalar() or 0
                     botellas_debitadas_por_cortos = cortos_consumidos // p.capacidad_cortos
@@ -92,7 +114,7 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
 
             falts = db.query(func.sum(models.StockMovimiento.cantidad)).filter(
                 models.StockMovimiento.producto_id == p.id,
-                models.StockMovimiento.tipo_movimiento == 'FALTANTE',
+                models.StockMovimiento.tipo_movimiento.in_(['FALTANTE', 'APERTURA BOTELLA']),
                 models.StockMovimiento.fecha == ultimo_registro.fecha,
                 models.StockMovimiento.turno == ultimo_registro.turno
             ).scalar() or 0
@@ -109,6 +131,7 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
         db.add(nuevo_inventario)
         
     db.commit()
+
 # =========================================================
 # 4. CONFIGURACIÓN E INICIALIZACIÓN DE LA APLICACIÓN
 # =========================================================
@@ -132,28 +155,24 @@ app.include_router(auth.router)
 app.include_router(usuarios.router)
 
 # ---------------------------------------------------------
-# RUTA PRINCIPAL (DASHBOARD)
+# RUTA PRINCIPAL (DASHBOARD) - FILTRADO DINÁMICO POR TURNO
 # ---------------------------------------------------------
 @app.get("/")
 async def home(request: Request, db: Session = Depends(get_db)):
-    # 🔒 1. VERIFICACIÓN DE SEGURIDAD SEGURA CONTRA HACKERS (Verifica firma digital)
+    # 🔒 1. VERIFICACIÓN DE SEGURIDAD
     username, user_role = obtener_usuario_sesion(request)
 
-    # Si las cookies no existen o la firma criptográfica fue alterada por un hacker:
     if not username or user_role not in ["admin1", "administrador", "cajera", "jefe_guillermo", "encargado"]:
         return RedirectResponse(url="/login", status_code=303)
+    
     # 2. OBTENER CONFIGURACIÓN DEL CLUB
     conf = obtener_config(db)
     
     # --- FECHA OPERATIVA NOCTURNA Y LOCAL ---
-    hoy_dt = obtener_fecha_operativa()  #  CORREGIDO: Usa la hora local y la jornada nocturna
-    # ----------------------------------------
-    
-    inicio_dia = datetime.combine(hoy_dt.date(), time.min)
-    fin_dia = datetime.combine(hoy_dt.date(), time.max)
+    hoy_dt = obtener_fecha_operativa()
     fecha_hoy_str = hoy_dt.strftime("%Y-%m-%d")
     
-    # 3. SUMAR VENTAS DEL TURNO ACTIVO (Filtro contable por Fecha Operativa)
+    # 3. SUMAR VENTAS DEL TURNO ACTIVO
     total_ventas = db.query(func.sum(models.Venta.monto)).filter(
         models.Venta.fecha_operativa == fecha_hoy_str,
         models.Venta.turno == conf.turno_activo
@@ -186,7 +205,7 @@ async def home(request: Request, db: Session = Depends(get_db)):
                 "bailando_hoy": asis.bailando_hoy if asis else False
             })
     
-    # 7. LÓGICA DE BAILARINAS DIVIDIDA (LA CORRECCIÓN ESTÁ AQUÍ)
+    # 7. LÓGICA DE BAILARINAS DIVIDIDA
     bailando_hoy = []
     en_espera = []
     ausentes_b = []
@@ -195,7 +214,7 @@ async def home(request: Request, db: Session = Depends(get_db)):
         todas_b = db.query(models.Dama).filter(
             models.Dama.es_bailarina == True, 
             models.Dama.esta_activa == True,
-            models.Dama.borrada == False # <-- FILTRO SUAVE
+            models.Dama.borrada == False
         ).all()
 
         for b in todas_b:
@@ -223,7 +242,24 @@ async def home(request: Request, db: Session = Depends(get_db)):
     if porcentaje > 100: 
         porcentaje = 100
 
-    # 9. RETORNO DE LA RESPUESTA (ACTUALIZADO CON LAS NUEVAS LISTAS)
+    # 🔍 9. FILTRADO EXCLUSIVO DE PRODUCTOS ACTIVOS PARA EL TURNO EN CURSO
+    # Obtener el conjunto de IDs de productos que pertenecen al turno activo
+    productos_turno_ids = [
+        r[0] for r in db.query(models.InventarioTurno.producto_id).filter(
+            models.InventarioTurno.turno == conf.turno_activo
+        ).distinct().all()
+    ]
+
+    productos_cooler_filtrados = db.query(models.Producto).filter(
+        models.Producto.tipo == "PRODUCTO",
+        models.Producto.id.in_(productos_turno_ids)
+    ).all()
+
+    productos_todos_filtrados = db.query(models.Producto).filter(
+        models.Producto.id.in_(productos_turno_ids)
+    ).all()
+
+    # 10. RETORNO DE LA RESPUESTA
     return templates.TemplateResponse(
         request=request,
         name="index.html", 
@@ -237,27 +273,26 @@ async def home(request: Request, db: Session = Depends(get_db)):
             "porcentaje": porcentaje,
             "total_deudas": total_deudas,
             "damas": damas_pantalla,
-            "bailando_hoy": bailando_hoy,   # <--- Cambio
-            "en_espera": en_espera,         # <--- Cambio
-            "ausentes_b": ausentes_b,       # <--- Cambio
+            "bailando_hoy": bailando_hoy,   
+            "en_espera": en_espera,         
+            "ausentes_b": ausentes_b,       
             "dict_bailando": {a.dama_id: a.bailando_hoy for a in asistencias},
             "garzones": db.query(models.Mesero).all(),
-            "productos_cooler": db.query(models.Producto).filter(models.Producto.tipo == "PRODUCTO").all(),
-            "productos_todos": db.query(models.Producto).all()
+            "productos_cooler": productos_cooler_filtrados,  # <--- Aplicado filtro dinámico por turno
+            "productos_todos": productos_todos_filtrados      # <--- Aplicado filtro dinámico por turno
         }
     )
 
 # ---------------------------------------------------------
 # GESTIÓN DE TURNO (ABRIR/CERRAR) - UNIFICADO Y SEGURO
 # ---------------------------------------------------------
-# main.py
 
 @app.post("/gestionar_club")
 async def gestionar_club(
     request: Request, 
     accion: str = Form(...), 
     turno: str = Form(None), 
-    caja_chica_inicio: float = Form(0.0), # <-- NUEVO PARÁMETRO
+    caja_chica_inicio: float = Form(0.0), 
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -341,11 +376,6 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         models.Asistencia.fecha == fecha_param, 
         models.Asistencia.turno == turno_filter
     ).all()
-
-    # Rangos para logs (único elemento que conserva rango real)
-    fecha_obj = datetime.strptime(fecha_param, "%Y-%m-%d")
-    inicio_dia = datetime.combine(fecha_obj.date(), time.min)
-    fin_dia = datetime.combine(fecha_obj.date(), time.max)
 
     # Obtener el monto de apertura para la fecha y el turno seleccionados desde la nueva tabla
     caja_info = db.query(models.CajaTurno).filter(
@@ -854,3 +884,41 @@ async def registrar_pago_show(
         db.commit()
 
     return {"status": "ok"}
+
+@app.get("/descargar_respaldo_secreto")
+async def descargar_respaldo_secreto(clave: str):
+    # Esto protege el enlace para que solo usted pueda usarlo
+    if clave != "whiskeria9981":
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+    
+    # El sistema busca dónde está guardada la base de datos real en Render
+    ruta_disco_persistente = "/data/whiskeria.db"
+    ruta_servidor_gratuito = "./whiskeria.db"
+    
+    if os.path.exists(ruta_disco_persistente):
+        return FileResponse(ruta_disco_persistente, filename="whiskeria_backup.db")
+    elif os.path.exists(ruta_servidor_gratuito):
+        return FileResponse(ruta_servidor_gratuito, filename="whiskeria_backup.db")
+    else:
+        raise HTTPException(status_code=404, detail="Base de datos no encontrada")
+    
+@app.post("/subir_respaldo_secreto")
+async def subir_respaldo_secreto(clave: str, archivo: UploadFile = File(...)):
+    if clave != "whiskeria9981":
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+    
+    # Detectamos la ruta de producción o la local de pruebas
+    ruta_disco_persistente = "/data"
+    
+    if os.path.exists(ruta_disco_persistente):
+        ruta_destino = "/data/whiskeria.db"
+    else:
+        ruta_destino = "./whiskeria.db"
+
+    try:
+        # Reemplaza físicamente el archivo en el servidor
+        with open(ruta_destino, "wb") as buffer:
+            shutil.copyfileobj(archivo.file, buffer)
+        return {"status": "success", "message": "Base de datos subida y actualizada con éxito."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir el archivo: {str(e)}")

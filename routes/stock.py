@@ -20,6 +20,8 @@ templates = Jinja2Templates(directory="templates")
 # ---------------------------------------------------------
 # 1. VER EL PANEL DE STOCK
 # ---------------------------------------------------------
+# routes/stock.py
+
 @router.get("/stock", response_class=HTMLResponse)
 async def stock_page(request: Request, fecha: str = None, turno: str = None, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
@@ -39,7 +41,15 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
     fecha_f = fecha if fecha else fecha_actual
     turno_f = turno if turno else turno_actual
 
-    productos_db = db.query(models.Producto).all()
+    # 🔍 FILTRADO CLAVE: Solo consultamos productos que tengan historial en el turno seleccionado (turno_f)
+    productos_db = db.query(models.Producto).filter(
+        models.Producto.id.in_(
+            db.query(models.InventarioTurno.producto_id).filter(
+                models.InventarioTurno.turno == turno_f
+            ).subquery()
+        )
+    ).all()
+
     inv_productos = []
     inv_botellas = []
     
@@ -53,11 +63,25 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
             models.InventarioTurno.turno == turno_f
         ).first()
         
-        inicio_stock = inv_turno.inicio if inv_turno else p.inicio
+        # 💡 MEJORA: Si la jornada seleccionada aún no ha sido inicializada hoy,
+        # heredamos el stock inicial calculándolo de la última ejecución registrada de este turno.
+        if inv_turno:
+            inicio_stock = inv_turno.inicio
+        else:
+            ultimo_registro = db.query(models.InventarioTurno).filter(
+                models.InventarioTurno.producto_id == p.id,
+                models.InventarioTurno.turno == turno_f
+            ).order_by(models.InventarioTurno.fecha.desc(), models.InventarioTurno.id.desc()).first()
+            
+            if ultimo_registro:
+                inicio_stock = ultimo_registro.inicio
+            else:
+                inicio_stock = p.inicio if p.inicio else 0
         
+        # Cálculo de ventas filtrado estrictamente por la fecha operativa contable del turno
         salida_directa = db.query(func.count(models.Venta.id)).filter(
             models.Venta.producto_id == p.id,
-            func.strftime("%Y-%m-%d", models.Venta.fecha) == fecha_f,
+            models.Venta.fecha_operativa == fecha_f,
             models.Venta.turno == turno_f
         ).scalar() or 0
         
@@ -68,6 +92,7 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
             models.StockMovimiento.turno == turno_f
         ).scalar() or 0
 
+        # Sumamos pérdidas tradicionales y las botellas descorchadas de licores en barra
         falts = db.query(func.sum(models.StockMovimiento.cantidad)).filter(
             models.StockMovimiento.producto_id == p.id,
             models.StockMovimiento.tipo_movimiento.in_(['FALTANTE', 'APERTURA BOTELLA']),
@@ -78,23 +103,18 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
         botellas_debitadas_por_cortos = 0
         cortos_sueltos_restantes = 0
         
-        # DETECTAR SI ES UNA BOTELLA RESPALDO SELLADA
         es_sellada = False
         if p.tipo == "BOTELLA" and p.capacidad_cortos:
-            # Extraemos la marca base del nombre de la botella (ej: "JACK")
             marca_base = p.nombre.split(" ")[0]
-            # Buscamos si existe un corto de esa marca
             corto_vinculado = db.query(models.Producto).filter(models.Producto.nombre == f"CORTO {marca_base}").first()
             
             if corto_vinculado:
-                # Si el corto apunta a OTRA botella, esta botella actual está SELLADA
                 if corto_vinculado.parent_botella_id != p.id:
                     es_sellada = True
                 else:
-                    # Si es la botella activa actual, calculamos los cortos del turno
                     cortos_consumidos = db.query(func.count(models.Venta.id)).filter(
                         models.Venta.producto_id == corto_vinculado.id,
-                        func.strftime("%Y-%m-%d", models.Venta.fecha) == fecha_f,
+                        models.Venta.fecha_operativa == fecha_f,
                         models.Venta.turno == turno_f
                     ).scalar() or 0
                     
@@ -154,6 +174,10 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
 # ---------------------------------------------------------
 from typing import Optional
 
+# routes/stock.py
+
+# routes/stock.py
+
 @router.post("/agregar_producto_stock")
 async def agregar_producto(
     request: Request, 
@@ -168,79 +192,128 @@ async def agregar_producto(
     if not username or user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/stock", status_code=303)
 
-    capacidad = None
     nombre_original_limpio = nombre.strip().upper()
     
-    # Auto-formateo del nombre de la botella concatenando su capacidad (CC)
+    # Construcción de nombre según volumen
     if tipo == "BOTELLA" and volumen:
         nombre_sistema = f"{nombre_original_limpio} {volumen}CC"
         mapeo = {"750": 10, "1000": 13, "1500": 20, "2000": 26}
         capacidad = mapeo.get(volumen, 10)
     else:
         nombre_sistema = nombre_original_limpio
-
-    nuevo = models.Producto(
-        nombre=nombre_sistema, 
-        tipo=tipo, 
-        inicio=inicio,
-        capacidad_cortos=capacidad
-    )
-    db.add(nuevo)
-    db.commit()
-    db.refresh(nuevo)
-
-    # Si se venden cortos, se genera un único corto genérico (ej: CORTO JACK)
-    # que quedará enlazado a esta primera botella (la más antigua en el sistema)
-    if tipo == "BOTELLA" and vende_cortos == "on":
-        nombre_corto = f"CORTO {nombre_original_limpio}"
-        existe_corto = db.query(models.Producto).filter(models.Producto.nombre == nombre_corto).first()
-        if not existe_corto:
-            nuevo_corto = models.Producto(
-                nombre=nombre_corto,
-                tipo="PRODUCTO",
-                inicio=0,
-                es_corto=True,
-                parent_botella_id=nuevo.id
-            )
-            db.add(nuevo_corto)
-            db.commit()
+        capacidad = None
 
     conf = obtener_config(db)
-    if conf.estado_club == "ABIERTO":
-        ahora = obtener_ahora_local()
-        if ahora.time() < time(6, 0):
-            fecha_actual = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
-        else:
-            fecha_actual = ahora.strftime("%Y-%m-%d")
-        
-        nuevo_inv = models.InventarioTurno(
-            producto_id=nuevo.id,
-            fecha=fecha_actual,
-            turno=conf.turno_activo,
-            inicio=inicio
-        )
-        db.add(nuevo_inv)
+    ahora = obtener_ahora_local()
+    if ahora.time() < time(6, 0):
+        fecha_actual = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        fecha_actual = ahora.strftime("%Y-%m-%d")
 
-        if tipo == "BOTELLA" and vende_cortos == "on":
-            corto_db = db.query(models.Producto).filter(models.Producto.nombre == f"CORTO {nombre_original_limpio}").first()
+    try:
+        # 1. Verificar si el producto ya existe en el catálogo general de la base de datos
+        existe_producto_global = db.query(models.Producto).filter(models.Producto.nombre == nombre_sistema).first()
+
+        if existe_producto_global:
+            # Caso A: El producto ya existe de forma global en el catálogo.
+            # Verificamos si ya tiene registro de inventario en este turno específico
+            existe_en_este_turno = db.query(models.InventarioTurno).filter(
+                models.InventarioTurno.producto_id == existe_producto_global.id,
+                models.InventarioTurno.turno == conf.turno_activo
+            ).first()
+
+            if existe_en_este_turno:
+                # Si ya existe inventario en este turno, advertimos al usuario
+                return RedirectResponse(url="/stock?error=producto_ya_existe_en_este_turno", status_code=303)
+            
+            # Si existe en catálogo pero no en este turno, lo enlazamos al turno activo con su propio stock inicial
+            nuevo_inv = models.InventarioTurno(
+                producto_id=existe_producto_global.id,
+                fecha=fecha_actual,
+                turno=conf.turno_activo,
+                inicio=inicio
+            )
+            db.add(nuevo_inv)
+
+            # Si es botella y tiene cortos globales, también los enlazamos a este turno (con inicio en 0)
+            if existe_producto_global.tipo == "BOTELLA":
+                nombre_corto = f"CORTO {nombre_original_limpio}"
+                corto_global = db.query(models.Producto).filter(models.Producto.nombre == nombre_corto).first()
+                if corto_global:
+                    existe_corto_en_este_turno = db.query(models.InventarioTurno).filter(
+                        models.InventarioTurno.producto_id == corto_global.id,
+                        models.InventarioTurno.turno == conf.turno_activo
+                    ).first()
+                    if not existe_corto_en_este_turno:
+                        nuevo_inv_corto = models.InventarioTurno(
+                            producto_id=corto_global.id,
+                            fecha=fecha_actual,
+                            turno=conf.turno_activo,
+                            inicio=0
+                        )
+                        db.add(nuevo_inv_corto)
+
+        else:
+            # Caso B: El producto es nuevo a nivel global (no está en el catálogo)
+            nuevo = models.Producto(
+                nombre=nombre_sistema, 
+                tipo=tipo, 
+                inicio=inicio,
+                capacidad_cortos=capacidad
+            )
+            db.add(nuevo)
+            db.flush()  # Genera el ID del producto de forma provisional
+
+            # Crear el corto si es botella y se solicita
+            corto_db = None
+            if tipo == "BOTELLA" and vende_cortos == "on":
+                nombre_corto = f"CORTO {nombre_original_limpio}"
+                corto_db = db.query(models.Producto).filter(models.Producto.nombre == nombre_corto).first()
+                if not corto_db:
+                    corto_db = models.Producto(
+                        nombre=nombre_corto,
+                        tipo="PRODUCTO",
+                        inicio=0,
+                        es_corto=True,
+                        parent_botella_id=nuevo.id
+                    )
+                    db.add(corto_db)
+                    db.flush()
+
+            # Enlazar el producto nuevo al turno activo
+            nuevo_inv = models.InventarioTurno(
+                producto_id=nuevo.id,
+                fecha=fecha_actual,
+                turno=conf.turno_activo,
+                inicio=inicio
+            )
+            db.add(nuevo_inv)
+
             if corto_db:
-                db.add(models.InventarioTurno(
+                nuevo_inv_corto = models.InventarioTurno(
                     producto_id=corto_db.id,
                     fecha=fecha_actual,
                     turno=conf.turno_activo,
                     inicio=0
-                ))
-                
+                )
+                db.add(nuevo_inv_corto)
+
+        # Commit único de la transacción
         db.commit()
-        
+
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Error al registrar o enlazar el producto: {str(e)}")
+        return RedirectResponse(url="/stock?error=error_transaccion", status_code=303)
+
     return RedirectResponse(url="/stock", status_code=303)
 
 @router.post("/registrar_movimiento_stock")
 async def registrar_mov(
     request: Request,
     producto_id: int = Form(...), 
-    cantidad_repo: int = Form(0), 
-    cantidad_falt: int = Form(0), 
+    offset_repo: int = Form(0, alias="cantidad_repo"), 
+    offset_falt: int = Form(0, alias="cantidad_falt"), 
     fecha: str = Form(...), 
     turno: str = Form(...), 
     db: Session = Depends(get_db)
@@ -262,11 +335,11 @@ async def registrar_mov(
 
     hora = ahora.strftime("%H:%M")
     
-    if cantidad_repo > 0:
+    if offset_repo > 0:
         mov = models.StockMovimiento(
             producto_id=producto_id, 
             tipo_movimiento='REPOSICION', 
-            cantidad=cantidad_repo, 
+            cantidad=offset_repo, 
             usuario=username,
             fecha=fecha, 
             turno=turno, 
@@ -274,11 +347,11 @@ async def registrar_mov(
         )
         db.add(mov)
     
-    if cantidad_falt > 0:
+    if offset_falt > 0:
         mov = models.StockMovimiento(
             producto_id=producto_id, 
             tipo_movimiento='FALTANTE', 
-            cantidad=cantidad_falt, 
+            cantidad=offset_falt, 
             usuario=username,
             fecha=fecha, 
             turno=turno, 
@@ -341,7 +414,6 @@ async def estado_corto(corto_id: int, db: Session = Depends(get_db)):
     ahora = obtener_ahora_local()
     fecha_hoy = ahora.strftime("%Y-%m-%d") if ahora.time() >= time(6, 0) else (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
     
-    # Calcular stock actual de la botella activa de forma precisa
     inv_turno = db.query(models.InventarioTurno).filter(
         models.InventarioTurno.producto_id == padre.id,
         models.InventarioTurno.fecha == fecha_hoy,
@@ -364,14 +436,11 @@ async def estado_corto(corto_id: int, db: Session = Depends(get_db)):
     botellas_debitadas = cortos_consumidos // padre.capacidad_cortos
     saldo = inicio - (salidas + botellas_debitadas)
     
-    # Si la botella padre ya se agotó por completo (saldo <= 0)
     vacia = (saldo <= 0)
     
     respaldos = []
     if vacia:
-        # Extraer la marca base (ej: "JACK")
         marca_base = padre.nombre.split(" ")[0]
-        # Buscar botellas de la misma marca que permanezcan selladas (que no sean el padre actual)
         respaldos_db = db.query(models.Producto).filter(
             models.Producto.tipo == "BOTELLA",
             models.Producto.nombre.like(f"{marca_base}%"),
@@ -399,10 +468,8 @@ async def abrir_botella_respaldo(
     nueva_botella = db.query(models.Producto).filter(models.Producto.id == nueva_botella_id).first()
     
     if corto and nueva_botella:
-        # Enlazamos el corto a la nueva botella para que empiece a debitar de ella
         corto.parent_botella_id = nueva_botella.id
         
-        # Registramos la acción en la auditoría del turno
         ahora = obtener_ahora_local()
         fecha_hoy = ahora.strftime("%Y-%m-%d") if ahora.time() >= time(6, 0) else (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
         conf = obtener_config(db)

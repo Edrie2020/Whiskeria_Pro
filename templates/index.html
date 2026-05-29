@@ -176,7 +176,7 @@
         {% endif %}
     </div>
 
-<!-- MODAL VENTA INDIVIDUAL (CORREGIDO) -->
+<!-- MODAL VENTA INDIVIDUAL (UNIFICADO: TRAGO + EXTRAS + SALIDA EN MISMA BOLETA) -->
 <dialog id="modal_venta" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box bg-zinc-950 border-2 border-pink-500 p-8 text-center rounded-[40px] max-w-lg">
         <form id="form_registro_venta" action="/registrar_venta" method="post" class="space-y-6">
@@ -185,8 +185,8 @@
             
             <input type="hidden" name="dama_id" id="input_dama_id">
             <input type="hidden" name="producto_id" id="input_individual_producto_id">
-            <input type="hidden" name="tier_precio" id="input_individual_tier_precio">
-            <input type="hidden" name="extra_tipo" id="input_individual_extra_tipo">
+            <input type="hidden" name="tier_precio" id="input_individual_tier_precio" value="0">
+            <input type="hidden" name="extra_tipo" id="input_individual_extra_tipo" value="">
 
             <div id="individual_paso_datos" class="space-y-6">
                 <select name="mesero" id="individual_mesero_select" class="select select-bordered w-full bg-black text-white font-black border-zinc-800" required>
@@ -207,39 +207,51 @@
                         </div>
                         {% endif %}
                         {% endfor %}
-                    </div> <!-- Cierre correcto de menuTragosInd -->
-                </div> <!-- Cierre correcto de containerDropTragoInd -->
-
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button" id="btn_ind_extra_vip" onclick="toggleExtraInd('VIP')" class="btn btn-xs btn-outline btn-secondary font-black">✨ + VIP (50K)</button>
-                    <button type="button" id="btn_ind_extra_priv" onclick="toggleExtraInd('PRIVADO')" class="btn btn-xs btn-outline btn-accent font-black">🔒 + PRIVADO (200K)</button>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2 pt-2 border-b border-white/5 pb-4">
-                    <button type="button" onclick="preConfirmarInd('25000')" class="btn btn-outline border-zinc-700 font-black text-lg h-14">T-25</button>
-                    <button type="button" onclick="preConfirmarInd('35000')" class="btn btn-outline border-zinc-700 font-black text-lg h-14">T-35</button>
-                    <button type="button" onclick="preConfirmarInd('50000')" class="btn btn-outline border-zinc-700 font-black text-lg h-14">T-50</button>
-                    <button type="button" onclick="preConfirmarInd('100000')" class="btn btn-outline border-zinc-700 font-black text-lg h-14">T-100</button>
+                <!-- SELECTOR DE PRECIO TIER (VISUAL E INTERACTIVO) -->
+                <div>
+                    <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Seleccione Trago (Opcional):</span>
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <button type="button" id="btn_tier_25" onclick="seleccionarPrecioTier('25000', this)" class="btn btn-outline btn-sm border-zinc-700 font-black text-xs">T-25</button>
+                        <button type="button" id="btn_tier_35" onclick="seleccionarPrecioTier('35000', this)" class="btn btn-outline btn-sm border-zinc-700 font-black text-xs">T-35</button>
+                        <button type="button" id="btn_tier_50" onclick="seleccionarPrecioTier('50000', this)" class="btn btn-outline btn-sm border-zinc-700 font-black text-xs">T-50</button>
+                        <button type="button" id="btn_tier_100" onclick="seleccionarPrecioTier('100000', this)" class="btn btn-outline btn-sm border-zinc-700 font-black text-xs">T-100</button>
+                    </div>
                 </div>
 
-                <!-- SECCIÓN SALIDA (Restaurada) -->
-                <div class="space-y-4 bg-zinc-900/50 p-4 rounded-3xl border border-orange-500/20">
-                    <h4 class="text-orange-500 font-black uppercase italic text-[10px]">Configuración de Salida</h4>
+                <!-- SELECTOR DE EXTRAS (VIP / PRIVADO) -->
+                <div>
+                    <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Adicionales (Opcional):</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btn_ind_extra_vip" onclick="toggleExtraInd('VIP')" class="btn btn-xs btn-outline btn-secondary font-black">✨ + VIP (50K)</button>
+                        <button type="button" id="btn_ind_extra_priv" onclick="toggleExtraInd('PRIVADO')" class="btn btn-xs btn-outline btn-accent font-black">🔒 + PRIVADO (200K)</button>
+                    </div>
+                </div>
+
+                <!-- CONFIGURACIÓN DE SALIDA (OPCIONAL EN LA MISMA BOLETA) -->
+                <div class="space-y-3 bg-zinc-900/50 p-4 rounded-3xl border border-orange-500/20">
+                    <h4 class="text-orange-500 font-black uppercase italic text-[10px]">Salida / Salón Manual (Opcional):</h4>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="form-control">
-                            <label class="label"><span class="label-text text-[9px] font-bold text-zinc-500">CASA</span></label>
-                            <input type="number" name="monto_casa_manual" id="ind_casa_manual" value="150000" class="input input-bordered input-sm bg-black text-center font-black">
+                            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">CASA</span></label>
+                            <input type="number" name="monto_casa_manual" id="ind_casa_manual" value="0" class="input input-bordered input-sm bg-black text-center font-black">
                         </div>
                         <div class="form-control">
-                            <label class="label"><span class="label-text text-[9px] font-bold text-zinc-500">DAMA</span></label>
+                            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">DAMA</span></label>
                             <input type="number" name="monto_chica_manual" id="ind_chica_manual" value="0" class="input input-bordered input-sm bg-black text-center font-black text-pink-500">
                         </div>
                     </div>
-                    <button type="button" onclick="preConfirmarInd('0')" class="btn btn-sm btn-warning w-full font-black text-black">CONFIRMAR SALIDA</button>
                 </div>
+
+                <!-- BOTÓN UNIFICADO DE CONTINUAR -->
+                <button type="button" onclick="procesarSiguientePasoInd()" class="btn btn-success w-full font-black text-sm shadow-lg shadow-green-500/10">
+                    SIGUIENTE: DETALLE DE PAGO →
+                </button>
             </div>
 
-            <!-- PASO 2: PAGO -->
+            <!-- PASO 2: CONFIRMACIÓN Y PAGO -->
             <div id="individual_resumen_confirmacion" class="hidden space-y-6">
                 <div class="bg-pink-500/10 p-6 rounded-[30px] border-2 border-pink-500/30">
                     <p id="ind_resumen_texto" class="text-2xl font-black text-pink-500 uppercase italic"></p>
@@ -258,7 +270,7 @@
                 <button type="button" onclick="volverAEditarInd()" class="btn btn-ghost w-full font-bold text-xs uppercase">← Volver a precios</button>
             </div>
 
-            <!-- BOTÓN CANCELAR AL FINAL (Punto 1) -->
+            <!-- CANCELAR -->
             <div class="mt-4 pt-4 border-t border-white/5">
                 <button type="button" onclick="document.getElementById('modal_venta').close()" class="btn btn-ghost btn-xs w-full text-zinc-600 font-black uppercase">← CANCELAR Y SALIR</button>
             </div>
@@ -407,39 +419,49 @@
  
 <!-- MODAL CLIENTE -->
 <dialog id="modal_cliente" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box bg-zinc-950 border-2 border-cyan-500 p-8 text-center rounded-[40px] max-w-lg">
+    <div class="modal-box bg-zinc-950 border-2 border-cyan-500 p-6 sm:p-8 text-center rounded-[40px] max-w-xl">
+        
+        <!-- HEADER -->
+        <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-3">
+            <h3 class="font-black text-2xl text-cyan-400 uppercase tracking-tighter italic">Venta Cliente</h3>
+            <button type="button" onclick="document.getElementById('modal_cliente').close()" class="btn btn-circle btn-xs btn-outline btn-error">✕</button>
+        </div>
+
+        <!-- TABS DE NAVEGACIÓN -->
+        <div class="flex gap-2 justify-center mb-6">
+            <button type="button" id="tab_venta_directa" onclick="activarTabCliente('directa')" class="btn btn-xs sm:btn-sm btn-cyan font-black uppercase tracking-wider rounded-full px-4">
+                ⚡ Venta Rápida
+            </button>
+            <button type="button" id="tab_venta_multi" onclick="activarTabCliente('multi')" class="btn btn-xs sm:btn-sm btn-outline btn-cyan font-black uppercase tracking-wider rounded-full px-4">
+                🛒 Boleta Detallada / Combo
+            </button>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 1: VENTA DIRECTA (Original de 1 Solo Producto) -->
+        <!-- ================================================================= -->
         <form id="form_venta_cliente" action="/registrar_venta_cliente" method="post" class="space-y-6">
-            <h3 class="font-black text-3xl text-cyan-400 uppercase tracking-tighter italic">Trago Cliente Solo</h3>
-            
-            <!-- PASO 1: DATOS -->
             <div id="cliente_paso_1" class="space-y-6">
-                <!-- 1. GARZÓN -->
+                <!-- GARZÓN -->
                 <select name="mesero" id="cliente_mesero" class="select select-bordered w-full bg-black text-white font-black border-zinc-800">
                     <option value="" disabled selected>👤 ¿QUIÉN VENDE?</option>
                     {% for g in garzones %}<option>{{ g.nombre }}</option>{% endfor %}
                 </select>
 
-                <!-- 2. MONTO -->
+                <!-- MONTO -->
                 <div class="space-y-1">
                     <p class="text-[10px] font-black text-zinc-500 uppercase italic text-left ml-2">Monto de la Venta:</p>
-                    <input name="monto" id="cliente_monto" type="number" placeholder="$ 0" 
-                           class="input input-bordered w-full bg-black text-cyan-400 text-3xl font-black text-center" required />
+                    <input name="monto" id="cliente_monto" type="number" placeholder="$ 0" class="input input-bordered w-full bg-black text-cyan-400 text-3xl font-black text-center" required />
                 </div>
 
-                <!-- 3. BUSCADOR FLOTANTE -->
+                <!-- BUSCADOR -->
                 <div class="space-y-2 text-left relative">
                     <p class="text-[10px] font-black text-zinc-500 uppercase italic ml-2">¿Qué producto es?</p>
                     <div class="relative w-full" id="containerDropCliente">
-                        <input type="text" id="buscTragoCliente" onkeyup="filtrarTragosCliente()" 
-                               onfocus="mostrarMenuTragosCliente()"
-                               placeholder="🔍 BUSCAR TRAGO O BOTELLA..." 
-                               class="input input-bordered input-sm w-full bg-black border-zinc-700 text-center uppercase font-black text-cyan-400">
-                        
-                        <div id="menuTragosCliente" class="hidden absolute bottom-full left-0 w-full mb-2 bg-zinc-900 border-2 border-zinc-700 rounded-2xl shadow-2xl z-[100] max-h-48 overflow-y-auto animate-fade-in">
+                        <input type="text" id="buscTragoCliente" onkeyup="filtrarTragosCliente()" onfocus="mostrarMenuTragosCliente()" placeholder="🔍 BUSCAR TRAGO O BOTELLA..." class="input input-bordered input-sm w-full bg-black border-zinc-700 text-center uppercase font-black text-cyan-400">
+                        <div id="menuTragosCliente" class="hidden absolute bottom-full left-0 w-full mb-2 bg-zinc-900 border-2 border-zinc-700 rounded-2xl shadow-2xl z-[100] max-h-48 overflow-y-auto">
                             {% for p in productos_todos %}
-                            <div onclick="seleccionarTragoCliente(this, '{{p.id}}', '{{p.nombre}}')" 
-                                 class="trago-cliente-item p-3 hover:bg-cyan-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-white"
-                                 data-nombre="{{p.nombre}}">
+                            <div onclick="seleccionarTragoCliente(this, '{{p.id}}', '{{p.nombre}}')" class="trago-cliente-item p-3 hover:bg-cyan-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-white" data-nombre="{{p.nombre}}">
                                 {{ p.nombre }}
                             </div>
                             {% endfor %}
@@ -447,20 +469,17 @@
                     </div>
                 </div>
 
-                <!-- ESTOS SON LOS INPUTS QUE FALTABAN O TENÍAN IDS DIFERENTES -->
                 <input type="hidden" name="trago" id="input_cliente_trago">
                 <input type="hidden" name="producto_id" id="input_cliente_producto_id">
                 
                 <div class="flex flex-col gap-2 pt-2 border-t border-white/5">
                     <button type="button" onclick="irAPagoCliente()" class="btn btn-info w-full font-black text-sm">CONTINUAR COMPRA →</button>
-                    <!-- Botón de cortesía directo sin ingresar valor -->
                     <button type="button" onclick="registrarCortesiaCliente()" class="btn btn-secondary w-full font-black text-sm">🎁 REGISTRAR CORTESÍA ($0)</button>
-                    <button type="button" onclick="document.getElementById('modal_cliente').close()" class="btn btn-ghost btn-xs text-zinc-500 uppercase">← CANCELAR Y SALIR</button>
                 </div>
             </div>
 
-            <!-- PASO 2: RESUMEN Y PAGO -->
-            <div id="cliente_paso_pago" class="hidden space-y-6 animate-fade-in">
+            <!-- PASO DE PAGO VENTA DIRECTA -->
+            <div id="cliente_paso_pago" class="hidden space-y-6">
                 <div class="bg-cyan-500/10 p-6 rounded-[30px] border-2 border-cyan-500/30">
                     <p id="resumen_cliente_texto" class="text-xs font-black text-zinc-400 uppercase mb-2"></p>
                     <p id="resumen_cliente_monto" class="text-5xl font-black text-white italic"></p>
@@ -473,21 +492,86 @@
                     <button type="button" onclick="activarDeudaCliente()" class="btn btn-lg bg-zinc-700 text-white font-black italic">📔 CUENTA</button>
                 </div>
 
-                <div id="campo_nombre_cliente" class="hidden space-y-4 animate-fade-in">
-                    <input type="text" name="cliente_nombre" id="input_cliente_cuenta" 
-                           placeholder="NOMBRE DEL CLIENTE (DEUDOR)" 
-                           class="input input-bordered w-full bg-black text-yellow-500 font-bold border-yellow-500 uppercase">
-                    
-                    <button type="button" onclick="validarYConfirmarDeudaCliente()" class="btn btn-warning w-full font-black text-black">
-                        CONFIRMAR DEUDA Y REGISTRAR
-                    </button>
+                <div id="campo_nombre_cliente" class="hidden space-y-4">
+                    <input type="text" name="cliente_nombre" id="input_cliente_cuenta" placeholder="NOMBRE DEL CLIENTE (DEUDOR)" class="input input-bordered w-full bg-black text-yellow-500 font-bold border-yellow-500 uppercase">
+                    <button type="button" onclick="validarYConfirmarDeudaCliente()" class="btn btn-warning w-full font-black text-black">CONFIRMAR DEUDA Y REGISTRAR</button>
                 </div>
-
                 <button type="button" onclick="volverAEditarCliente()" class="btn btn-ghost w-full font-bold text-xs">← VOLVER ATRÁS</button>
             </div>
         </form>
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 2: BOLETA DETALLADA / COMBO (CARRITO DE COMPRAS) -->
+        <!-- ================================================================= -->
+        <form id="form_venta_multi_cliente" action="/registrar_venta_multi_cliente" method="post" class="hidden space-y-6 text-left">
+            <input type="hidden" name="productos_json" id="input_productos_json">
+
+            <div id="multi_paso_1" class="space-y-6">
+                <!-- GARZÓN -->
+                <div>
+                    <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-1 ml-2">👤 ¿Quién realiza la venta?</span>
+                    <select name="mesero" id="multi_mesero" class="select select-bordered w-full bg-black text-white font-black border-zinc-800" required>
+                        <option value="" disabled selected>SELECCIONE GARZÓN</option>
+                        {% for g in garzones %}<option>{{ g.nombre }}</option>{% endfor %}
+                    </select>
+                </div>
+
+                <!-- BUSCADOR FLOTANTE PARA AÑADIR AL CARRITO -->
+                <div class="space-y-2 relative">
+                    <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block ml-2">🔍 Buscar y añadir productos (Bebidas, Licores, etc.):</span>
+                    <div class="relative w-full" id="containerDropCart">
+                        <input type="text" id="buscTragoCart" onkeyup="filtrarTragosCart()" onfocus="mostrarMenuTragosCart()" placeholder="ESCRIBIR NOMBRE PARA AÑADIR..." class="input input-bordered input-sm w-full bg-black border-zinc-700 text-center uppercase font-black text-cyan-400">
+                        <div id="menuTragosCart" class="hidden absolute bottom-full left-0 w-full mb-2 bg-zinc-900 border-2 border-zinc-700 rounded-2xl shadow-2xl z-[100] max-h-48 overflow-y-auto">
+                            {% for p in productos_todos %}
+                            <div onclick="agregarAlCarrito('{{p.id}}', '{{p.nombre}}')" class="trago-cart-item p-3 hover:bg-cyan-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-white" data-nombre="{{p.nombre}}">
+                                {{ p.nombre }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LISTA VISUAL DEL CARRITO DE COMPRAS -->
+                <div class="space-y-2">
+                    <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block ml-2">Lista de productos en esta boleta:</span>
+                    <div id="lista_carrito_productos" class="space-y-2 max-h-44 overflow-y-auto p-3 bg-black/40 rounded-3xl border border-white/5">
+                        <!-- El carrito se generará dinámicamente con JavaScript -->
+                    </div>
+                </div>
+
+                <!-- MONTO TOTAL COMBINADO -->
+                <div class="space-y-1">
+                    <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block ml-2">Monto Total de la Boleta Cobrada:</span>
+                    <input name="monto_total" id="multi_monto" type="number" placeholder="$ 0" class="input input-bordered w-full bg-black text-cyan-400 text-2xl font-black text-center" required />
+                </div>
+
+                <button type="button" onclick="irAPagoMulti()" class="btn btn-info w-full font-black text-sm">CONTINUAR AL PAGO →</button>
+            </div>
+
+            <!-- PASO DE PAGO DE CARRITO -->
+            <div id="multi_paso_pago" class="hidden space-y-6 text-center">
+                <div class="bg-cyan-500/10 p-6 rounded-[30px] border-2 border-cyan-500/30">
+                    <p id="resumen_multi_texto" class="text-xs font-black text-zinc-400 uppercase mb-2"></p>
+                    <p id="resumen_multi_monto" class="text-5xl font-black text-white italic"></p>
+                </div>
+
+                <div id="botones_pago_multi_div" class="grid grid-cols-2 gap-3">
+                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+                    <button type="button" onclick="activarDeudaMulti()" class="btn btn-lg bg-zinc-700 text-white font-black italic">📔 CUENTA</button>
+                </div>
+
+                <div id="campo_nombre_multi_cliente" class="hidden space-y-4">
+                    <input type="text" name="cliente_nombre" id="input_multi_cuenta" placeholder="NOMBRE DEL CLIENTE (DEUDOR)" class="input input-bordered w-full bg-black text-yellow-500 font-bold border-yellow-500 uppercase">
+                    <button type="button" onclick="validarYConfirmarDeudaMulti()" class="btn btn-warning w-full font-black text-black">CONFIRMAR DEUDA MULTI-BOLETA</button>
+                </div>
+                <button type="button" onclick="volverAEditarMulti()" class="btn btn-ghost w-full font-bold text-xs">← VOLVER ATRÁS</button>
+            </div>
+        </form>
+
     </div>
-</dialog> <!-- Cierre del modal anterior -->
+</dialog>
 
 <script>
 // =========================================================================
@@ -581,56 +665,105 @@ if (fG) {
 // 2. VENTAS INDIVIDUALES
 // ==========================================
 let ventaIndActual = { idDama: '', nombreDama: '', productoId: null, productoNombre: 'TRAGO BÁSICO', extra: '', montoTier: 0 };
-
-function filtrarProductosModal() {
-    let filter = document.getElementById("buscadorProdModal").value.toUpperCase();
-    let btns = document.querySelectorAll(".btn-producto-modal");
-    btns.forEach(btn => {
-        btn.hidden = !btn.innerText.toUpperCase().includes(filter);
-    });
-}
+let montoTierSeleccionado = 0;
 
 function abrirVenta(id, nombre) {
     ventaIndActual = { idDama: id, nombreDama: nombre, productoId: null, productoNombre: 'TRAGO BÁSICO', extra: '', montoTier: 0 };
+    montoTierSeleccionado = 0;
     
-    // Estos IDs son seguros
     document.getElementById('input_dama_id').value = id;
     document.getElementById('modal_titulo').innerText = nombre;
     
+    // Reset visual de los botones de precio
+    document.querySelectorAll('[id^="btn_tier_"]').forEach(btn => {
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-outline');
+    });
+
     const meseroSelect = document.getElementById('individual_mesero_select');
     if(meseroSelect) meseroSelect.selectedIndex = 0;
 
     document.getElementById('buscTragoInd').value = "";
     document.getElementById('input_individual_extra_tipo').value = "";
+    document.getElementById('input_individual_tier_precio').value = "0";
+    document.getElementById('ind_casa_manual').value = "0";
+    document.getElementById('ind_chica_manual').value = "0";
     
-    // Cambiamos classList por este modo más seguro:
     const buscTrago = document.getElementById('buscTragoInd');
     if (buscTrago) {
         buscTrago.classList.remove('border-pink-500');
         buscTrago.classList.add('border-zinc-700');
     }
     
-    // Mostrar/Ocultar secciones (con validación de existencia)
-    const pasoDatos = document.getElementById('individual_paso_datos');
-    const resumen = document.getElementById('individual_resumen_confirmacion');
-    const salidaManual = document.getElementById('seccion_salida_manual');
-    const menuTragos = document.getElementById('menuTragosInd');
-
-    if(pasoDatos) pasoDatos.classList.remove('hidden');
-    if(resumen) resumen.classList.add('hidden');
-    if(salidaManual) salidaManual.classList.add('hidden');
-    if(menuTragos) menuTragos.classList.add('hidden');
+    // Reset de vistas
+    document.getElementById('individual_paso_datos').classList.remove('hidden');
+    document.getElementById('individual_resumen_confirmacion').classList.add('hidden');
+    document.getElementById('menuTragosInd').classList.add('hidden');
     
-    // Reset visual de botones (con validación)
     const btnVip = document.getElementById('btn_ind_extra_vip');
     const btnPriv = document.getElementById('btn_ind_extra_priv');
-
     if(btnVip) { btnVip.classList.remove('btn-secondary'); btnVip.classList.add('btn-outline'); }
     if(btnPriv) { btnPriv.classList.remove('btn-accent'); btnPriv.classList.add('btn-outline'); }
 
     document.getElementById('modal_venta').showModal();
 }
 
+function abrirVenta(id, nombre) {
+    ventaIndActual = { idDama: id, nombreDama: nombre, productoId: null, productoNombre: 'TRAGO BÁSICO', extra: '', montoTier: 0 };
+    montoTierSeleccionado = 0;
+    
+    document.getElementById('input_dama_id').value = id;
+    document.getElementById('modal_titulo').innerText = nombre;
+    
+    // Reset visual de los botones de precio
+    document.querySelectorAll('[id^="btn_tier_"]').forEach(btn => {
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-outline');
+    });
+
+    const meseroSelect = document.getElementById('individual_mesero_select');
+    if(meseroSelect) meseroSelect.selectedIndex = 0;
+
+    document.getElementById('buscTragoInd').value = "";
+    document.getElementById('input_individual_extra_tipo').value = "";
+    document.getElementById('input_individual_tier_precio').value = "0";
+    document.getElementById('ind_casa_manual').value = "0";
+    document.getElementById('ind_chica_manual').value = "0";
+    
+    const buscTrago = document.getElementById('buscTragoInd');
+    if (buscTrago) {
+        buscTrago.classList.remove('border-pink-500');
+        buscTrago.classList.add('border-zinc-700');
+    }
+    
+    // Reset de vistas
+    document.getElementById('individual_paso_datos').classList.remove('hidden');
+    document.getElementById('individual_resumen_confirmacion').classList.add('hidden');
+    document.getElementById('menuTragosInd').classList.add('hidden');
+    
+    const btnVip = document.getElementById('btn_ind_extra_vip');
+    const btnPriv = document.getElementById('btn_ind_extra_priv');
+    if(btnVip) { btnVip.classList.remove('btn-secondary'); btnVip.classList.add('btn-outline'); }
+    if(btnPriv) { btnPriv.classList.remove('btn-accent'); btnPriv.classList.add('btn-outline'); }
+
+    document.getElementById('modal_venta').showModal();
+}
+
+function seleccionarPrecioTier(monto, btn) {
+    if (montoTierSeleccionado === parseInt(monto)) {
+        montoTierSeleccionado = 0;
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-outline');
+    } else {
+        montoTierSeleccionado = parseInt(monto);
+        document.querySelectorAll('[id^="btn_tier_"]').forEach(b => {
+            b.classList.remove('btn-secondary');
+            b.classList.add('btn-outline');
+        });
+        btn.classList.remove('btn-outline');
+        btn.classList.add('btn-secondary');
+    }
+}
 function seleccionarFlujo(f) {
     ventaActual.tipo = f;
     document.getElementById('seccion_inicio').classList.add('hidden');
@@ -931,8 +1064,11 @@ function preConfirmarMesa(tier) {
     if (mesaActual.ids.length === 0) { alert("⚠️ SELECCIONE CHICAS"); return; }
     
     const tragoNombreMesa = document.getElementById('buscTragoMesa').value.trim();
-    if (!tragoNombreMesa) {
-        alert("⚠️ ES OBLIGATORIO SELECCIONAR UN TRAGO DE LA LISTA (PUEDE SER TRAGO BÁSICO)");
+    const extraMesa = mesaActual.extra;
+
+    // MODIFICADO: Deja pasar si hay un trago seleccionado O si se eligió un extra (VIP/PRIVADO)
+    if (!tragoNombreMesa && !extraMesa) {
+        alert("⚠️ DEBE SELECCIONAR UN TRAGO O UN ADICIONAL (VIP/PRIVADO)");
         return;
     }
 
@@ -948,15 +1084,24 @@ function preConfirmarMesa(tier) {
     document.getElementById('input_mesa_tier_precio').value = mesaActual.montoTier;
     document.getElementById('input_mesa_extra_tipo').value = mesaActual.extra;
     document.getElementById('input_mesa_producto_id').value = mesaActual.productoId || '';
-    let texto = (mesaActual.productoNombre || "TRAGO") + " " + tier;
+    
+    let texto = (mesaActual.productoNombre || (mesaActual.montoTier > 0 ? "TRAGO" : "")) + " " + tier;
     if (mesaActual.extra) texto += " + " + mesaActual.extra;
+    
     document.getElementById('resumen_texto_servicio').innerText = texto.toUpperCase();
     document.getElementById('resumen_chicas_lista').innerHTML = mesaActual.nombres.map(n => `<span class="badge badge-secondary font-black">${n}</span>`).join('');
+    
     let unitario = mesaActual.montoTier;
     if(mesaActual.extra === 'VIP') unitario += 50000;
     if(mesaActual.extra === 'PRIVADO') unitario += 200000;
+    
     document.getElementById('resumen_total_mesa').innerText = `TOTAL RONDA: $${(unitario * mesaActual.ids.length).toLocaleString('es-CL')}`;
     
+    verificarBotellaAgotada(mesaActual.productoId, () => {
+        document.getElementById('mesa_paso_datos').classList.add('hidden');
+        document.getElementById('mesa_resumen_confirmacion').classList.remove('hidden');
+    });
+}
     // =========================================================================
     // 🍾 CÓDIGO ENVUELTO: Primero verifica el stock, y si es correcto, avanza de pantalla
     // =========================================================================
@@ -964,40 +1109,47 @@ function preConfirmarMesa(tier) {
         document.getElementById('mesa_paso_datos').classList.add('hidden');
         document.getElementById('mesa_resumen_confirmacion').classList.remove('hidden');
     });
-}
 
-function preConfirmarInd(monto) {
+function procesarSiguientePasoInd() {
     const garzon = document.getElementById('individual_mesero_select').value;
     if (!garzon) { alert("⚠️ SELECCIONE GARZÓN"); return; }
 
-    let total = 0;
-    let textoResumen = "";
+    const tragoNombre = document.getElementById('buscTragoInd').value.trim();
+    const extra = ventaIndActual.extra;
+    const casaManual = parseInt(document.getElementById('ind_casa_manual').value) || 0;
+    const chicaManual = parseInt(document.getElementById('ind_chica_manual').value) || 0;
 
-    if (monto === '0') {
-        const casa = parseInt(document.getElementById('ind_casa_manual').value) || 0;
-        const chica = parseInt(document.getElementById('ind_chica_manual').value) || 0;
-        total = casa + chica;
-        textoResumen = "SALIDA MANUAL";
-        document.getElementById('input_individual_tier_precio').value = 0;
-    } else {
-        const tragoNombre = document.getElementById('buscTragoInd').value.trim();
-        if (!tragoNombre) {
-            alert("⚠️ ES OBLIGATORIO SELECCIONAR UN TRAGO DE LA LISTA (PUEDE SER TRAGO BÁSICO)");
-            return;
-        }
-        total = parseInt(monto);
-        if (ventaIndActual.extra === 'VIP') total += 50000;
-        if (ventaIndActual.extra === 'PRIVADO') total += 200000;
-        textoResumen = ventaIndActual.productoNombre;
-        document.getElementById('input_individual_tier_precio').value = monto;
+    // Validación: Prevenir registros completamente vacíos de $0
+    if (montoTierSeleccionado === 0 && !extra && casaManual === 0 && chicaManual === 0) {
+        alert("⚠️ DEBE SELECCIONAR AL MENOS UN TRAGO, UN EXTRA (VIP/PRIVADO) O INGRESAR UN MONTO DE SALIDA");
+        return;
     }
-    
-    document.getElementById('ind_resumen_total').innerText = "$" + total.toLocaleString('es-CL');
-    document.getElementById('ind_resumen_texto').innerText = textoResumen;
 
-    // =========================================================================
-    // 🍾 CÓDIGO ENVUELTO: Primero verifica el stock, y si es correcto, avanza de pantalla
-    // =========================================================================
+    // Guardar valores finales en los campos ocultos
+    document.getElementById('input_individual_tier_precio').value = montoTierSeleccionado;
+    document.getElementById('input_individual_extra_tipo').value = extra;
+
+    // Calcular el total consolidado
+    let total = montoTierSeleccionado;
+    let textoResumen = tragoNombre || (montoTierSeleccionado > 0 ? "TRAGO" : "");
+
+    if (extra === 'VIP') {
+        total += 50000;
+        textoResumen += (textoResumen ? " + " : "") + "VIP";
+    } else if (extra === 'PRIVADO') {
+        total += 200000;
+        textoResumen += (textoResumen ? " + " : "") + "PRIVADO";
+    }
+
+    if (casaManual > 0 || chicaManual > 0) {
+        total += casaManual + chicaManual;
+        textoResumen += (textoResumen ? " + " : "") + "SALIDA MANUAL";
+    }
+
+    document.getElementById('ind_resumen_total').innerText = "$" + total.toLocaleString('es-CL');
+    document.getElementById('ind_resumen_texto').innerText = textoResumen.toUpperCase();
+
+    // Validar si la botella del corto se terminó antes de avanzar
     verificarBotellaAgotada(ventaIndActual.productoId, () => {
         document.getElementById('individual_paso_datos').classList.add('hidden');
         document.getElementById('individual_resumen_confirmacion').classList.remove('hidden');
@@ -1229,6 +1381,196 @@ async function ejecutarAccionBailarina(event, form) {
         form.appendChild(inputMetodo);
         form.submit();
     }
+}
+
+// ==========================================
+// 4. CONTROL DEL MÓDULO "CLIENTE" (CARRITO DE COMPRAS)
+// ==========================================
+let carrito = [];
+
+function activarTabCliente(tipo) {
+    const btnDirecta = document.getElementById('tab_venta_directa');
+    const btnMulti = document.getElementById('tab_venta_multi');
+    const formDirecta = document.getElementById('form_venta_cliente');
+    const formMulti = document.getElementById('form_venta_multi_cliente');
+
+    if (tipo === 'directa') {
+        btnDirecta.classList.remove('btn-outline');
+        btnMulti.classList.add('btn-outline');
+        formDirecta.classList.remove('hidden');
+        formMulti.classList.add('hidden');
+    } else {
+        btnMulti.classList.remove('btn-outline');
+        btnDirecta.classList.add('btn-outline');
+        formDirecta.classList.add('hidden');
+        formMulti.classList.remove('hidden');
+        actualizarVistaCarrito();
+    }
+}
+
+function mostrarMenuTragosCart() {
+    document.getElementById('menuTragosCart').classList.remove('hidden');
+}
+
+function filtrarTragosCart() {
+    const menu = document.getElementById('menuTragosCart');
+    const input = document.getElementById("buscTragoCart").value.toUpperCase();
+    const items = document.querySelectorAll(".trago-cart-item");
+    
+    menu.classList.remove('hidden');
+    items.forEach(item => {
+        const nombre = item.getAttribute("data-nombre").toUpperCase();
+        item.style.display = nombre.includes(input) ? "block" : "none";
+    });
+}
+
+function agregarAlCarrito(id, nombre) {
+    id = parseInt(id);
+    let item = carrito.find(it => it.id === id);
+    if (item) {
+        item.cantidad += 1;
+    } else {
+        carrito.push({ id: id, nombre: nombre, cantidad: 1 });
+    }
+    
+    // Limpiar buscador
+    document.getElementById('menuTragosCart').classList.add('hidden');
+    document.getElementById('buscTragoCart').value = '';
+    
+    actualizarVistaCarrito();
+}
+
+function actualizarVistaCarrito() {
+    const contenedor = document.getElementById('lista_carrito_productos');
+    contenedor.innerHTML = '';
+    
+    if (carrito.length === 0) {
+        contenedor.innerHTML = `<p class="text-[10px] text-zinc-600 uppercase font-bold py-4 text-center">El carrito está vacío</p>`;
+        return;
+    }
+    
+    carrito.forEach((it, index) => {
+        const html = `
+            <div class="flex justify-between items-center bg-black/60 p-2 text-xs rounded-xl border border-white/5">
+                <span class="font-bold text-white uppercase truncate max-w-[150px]">${it.nombre}</span>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="modificarCantidadCarrito(${index}, -1)" class="btn btn-xs btn-circle btn-outline">-</button>
+                    <span class="font-black text-cyan-400 w-6 text-center">${it.cantidad}</span>
+                    <button type="button" onclick="modificarCantidadCarrito(${index}, 1)" class="btn btn-xs btn-circle btn-outline">+</button>
+                    <button type="button" onclick="eliminarDelCarrito(${index})" class="btn btn-xs btn-circle btn-error btn-outline ml-1">✕</button>
+                </div>
+            </div>
+        `;
+        contenedor.insertAdjacentHTML('beforeend', html);
+    });
+    
+    // Guardar en input oculto
+    document.getElementById('input_productos_json').value = JSON.stringify(carrito);
+}
+
+function modificarCantidadCarrito(index, delta) {
+    carrito[index].cantidad += delta;
+    if (carrito[index].cantidad <= 0) {
+        carrito.splice(index, 1);
+    }
+    actualizarVistaCarrito();
+}
+
+function eliminarDelCarrito(index) {
+    carrito.splice(index, 1);
+    actualizarVistaCarrito();
+}
+
+// Cierre de dropdown al hacer click afuera
+document.addEventListener('click', function(e) {
+    const container = document.getElementById('containerDropCart');
+    if (container && !container.contains(e.target)) {
+        document.getElementById('menuTragosCart').classList.add('hidden');
+    }
+});
+
+// Navegación de Flujos Multi-Producto
+function irAPagoMulti() {
+    const mesero = document.getElementById('multi_mesero').value;
+    const monto = document.getElementById('multi_monto').value;
+    
+    if (!mesero) {
+        alert("⚠️ SELECCIONE EL GARZÓN QUE REALIZA LA VENTA");
+        return;
+    }
+    if (carrito.length === 0) {
+        alert("⚠️ EL CARRITO DEBE TENER AL MENOS UN PRODUCTO");
+        return;
+    }
+    if (!monto || parseInt(monto) <= 0) {
+        alert("⚠️ INGRESE EL MONTO TOTAL DE LA BOLETA");
+        return;
+    }
+
+    document.getElementById('resumen_multi_texto').innerText = "BOLETA DETALLADA: " + carrito.map(it => `${it.cantidad}x ${it.nombre}`).join(' + ');
+    document.getElementById('resumen_multi_monto').innerText = "$" + parseInt(monto).toLocaleString('es-CL');
+
+    document.getElementById('multi_paso_1').classList.add('hidden');
+    document.getElementById('multi_paso_pago').classList.remove('hidden');
+}
+
+function volverAEditarMulti() {
+    document.getElementById('multi_paso_1').classList.remove('hidden');
+    document.getElementById('multi_paso_pago').classList.add('hidden');
+    document.getElementById('campo_nombre_multi_cliente').classList.add('hidden');
+    document.getElementById('botones_pago_multi_div').classList.remove('hidden');
+}
+
+function activarDeudaMulti() {
+    document.getElementById('botones_pago_multi_div').classList.add('hidden');
+    document.getElementById('campo_nombre_multi_cliente').classList.remove('hidden');
+    document.getElementById('input_multi_cuenta').focus();
+}
+
+function validarYConfirmarDeudaMulti() {
+    const nombre = document.getElementById('input_multi_cuenta').value.trim();
+    if (nombre.length < 3) {
+        alert("⚠️ INGRESE EL NOMBRE DEL CLIENTE (DEUDOR)");
+        return;
+    }
+    const form = document.getElementById('form_venta_multi_cliente');
+    const inputMetodo = document.createElement("input");
+    inputMetodo.type = "hidden";
+    inputMetodo.name = "metodo_pago";
+    inputMetodo.value = "CUENTA";
+    form.appendChild(inputMetodo);
+    form.submit();
+}
+
+// Modificar la inicialización para resetear el carrito al abrir
+function abrirModalCliente() {
+    // Resetear pestaña
+    activarTabCliente('directa');
+    carrito = [];
+    
+    // Limpiar campos directos
+    const meseroSel = document.getElementById('cliente_mesero');
+    if (meseroSel) meseroSel.selectedIndex = 0;
+    document.getElementById('cliente_monto').value = "";
+    document.getElementById('buscTragoCliente').value = "";
+    document.getElementById('input_cliente_trago').value = "";
+    document.getElementById('input_cliente_producto_id').value = "";
+    document.getElementById('cliente_paso_1').classList.remove('hidden');
+    document.getElementById('cliente_paso_pago').classList.add('hidden');
+    document.getElementById('campo_nombre_cliente').classList.add('hidden');
+    document.getElementById('botones_pago_cliente_div').classList.remove('hidden');
+    
+    // Limpiar campos detallados
+    const multiMesero = document.getElementById('multi_mesero');
+    if (multiMesero) multiMesero.selectedIndex = 0;
+    document.getElementById('multi_monto').value = "";
+    document.getElementById('buscTragoCart').value = "";
+    document.getElementById('multi_paso_1').classList.remove('hidden');
+    document.getElementById('multi_paso_pago').classList.add('hidden');
+    document.getElementById('campo_nombre_multi_cliente').classList.add('hidden');
+    document.getElementById('botones_pago_multi_div').classList.remove('hidden');
+
+    document.getElementById('modal_cliente').showModal();
 }
 
 
