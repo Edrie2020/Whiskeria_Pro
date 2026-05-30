@@ -39,13 +39,14 @@ class Venta(Base):
     mesero = Column(String) 
     metodo_pago = Column(String, default="EFECTIVO") 
     fecha = Column(DateTime, default=obtener_ahora_local)
-    
-    # Campo clave de control contable nocturno
     fecha_operativa = Column(String, default=calcular_fecha_operativa_defecto, index=True)
-    
     cliente_nombre = Column(String, nullable=True)
     liquidada = Column(Boolean, default=False) 
-    producto_id = Column(Integer, ForeignKey("productos.id"), nullable=True) 
+    producto_id = Column(Integer, ForeignKey("productos.id"), nullable=True)
+    
+    # 💡 Nuevas columnas para control de cobro Mixto (Efectivo + Tarjeta)
+    monto_efectivo = Column(Float, default=0.0, nullable=True)
+    monto_tarjeta = Column(Float, default=0.0, nullable=True)
 
 class Asistencia(Base):
     __tablename__ = "asistencias"
@@ -84,7 +85,7 @@ class Mesero(Base):
 class Producto(Base):
     __tablename__ = "productos"
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, unique=True)
+    nombre = Column(String, index=True) # 💡 Removido unique=True para evitar bloqueos
     tipo = Column(String) 
     inicio = Column(Integer, default=0)
     reposicion = Column(Integer, default=0)
@@ -92,6 +93,7 @@ class Producto(Base):
     capacidad_cortos = Column(Integer, nullable=True) 
     es_corto = Column(Boolean, default=False)
     parent_botella_id = Column(Integer, ForeignKey("productos.id", ondelete="CASCADE"), nullable=True)
+    turno = Column(String, default="Turno 1", nullable=True) # 💡 Nueva columna para aislar el catálogo
 
 class StockMovimiento(Base):
     __tablename__ = "stock_movimientos"

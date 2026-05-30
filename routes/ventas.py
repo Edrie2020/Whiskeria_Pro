@@ -29,6 +29,8 @@ async def registrar_venta(
     monto_casa_manual: int = Form(0),
     monto_chica_manual: int = Form(0),
     cliente_nombre: Optional[str] = Form(None),
+    monto_efectivo: Optional[float] = Form(0.0), # Recibimos Efectivo Mixto
+    monto_tarjeta: Optional[float] = Form(0.0), # Recibimos Tarjeta Mixto
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -66,7 +68,9 @@ async def registrar_venta(
         cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
         producto_id=producto_id,
         fecha=obtener_ahora_local(),
-        fecha_operativa=calcular_fecha_operativa_defecto()  # Alineado
+        fecha_operativa=calcular_fecha_operativa_defecto(),
+        monto_efectivo=monto_efectivo if metodo_pago == "MIXTO" else 0.0,
+        monto_tarjeta=monto_tarjeta if metodo_pago == "MIXTO" else 0.0
     )
     db.add(nueva_venta)
     db.commit()
@@ -86,6 +90,8 @@ async def registrar_ronda_mesa(
     tier_precio: Optional[int] = Form(None),           
     extra_tipo: Optional[str] = Form(None),
     producto_id: Optional[int] = Form(None),
+    monto_efectivo: Optional[float] = Form(0.0), # Recibimos Efectivo Mixto
+    monto_tarjeta: Optional[float] = Form(0.0), # Recibimos Tarjeta Mixto
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -94,7 +100,7 @@ async def registrar_ronda_mesa(
 
     conf = obtener_config(db)
     ahora = obtener_ahora_local()
-    f_operativa = calcular_fecha_operativa_defecto()  # Garantiza cuadratura de stock y reportes
+    f_operativa = calcular_fecha_operativa_defecto()
 
     # CASO A: RONDA DETALLADA POR FILAS
     if ronda_json:
@@ -103,44 +109,63 @@ async def registrar_ronda_mesa(
         except Exception:
             return RedirectResponse(url="/?error=json_mesa_invalido", status_code=303)
 
+        total_ronda = 0
+        desglose_calculos = []
         for item in items:
-            d_id = item["dama_id"]
-            p_id = item.get("producto_id")
             t_precio = item["tier_precio"]
             ex_tipo = item.get("extra_tipo")
+            tot, chica, casa = calcular_venta_detallada(t_precio, ex_tipo)
+            total_ronda += tot
+            desglose_calculos.append((tot, chica, casa))
 
-            total, chica, casa = calcular_venta_detallada(t_precio, ex_tipo)
-            
+        factor_efectivo = (monto_efectivo / total_ronda) if metodo_pago == "MIXTO" and total_ronda > 0 else 0.0
+
+        for idx, item in enumerate(items):
+            d_id = item["dama_id"]
+            p_id = item.get("producto_id")
+            tot_v, chica_v, casa_v = desglose_calculos[idx]
+
             prod_nombre = ""
             if p_id:
                 prod = db.query(models.Producto).filter(models.Producto.id == p_id).first()
-                if prod:
-                    prod_nombre = prod.nombre
+                if prod: prod_nombre = prod.nombre
 
-            nombre_serv = f"MESA: {prod_nombre or 'TRAGO'} {t_precio // 1000}K"
-            if ex_tipo:
-                nombre_serv += f" + {ex_tipo}"
+            nombre_serv = f"MESA: {prod_nombre or 'TRAGO'} {item['tier_precio'] // 1000}K"
+            if item.get("extra_tipo"):
+                nombre_serv += f" + {item['extra_tipo']}"
+
+            efec_prop = tot_v * factor_efectivo if metodo_pago == "MIXTO" else 0.0
+            tarj_prop = tot_v * (1 - factor_efectivo) if metodo_pago == "MIXTO" else 0.0
 
             nueva_v = models.Venta(
                 dama_id=d_id,
                 servicio=nombre_serv.upper(),
-                monto=total,
-                comision_chica=chica,
-                ganancia_casa=casa,
+                monto=tot_v,
+                comision_chica=chica_v,
+                ganancia_casa=casa_v,
                 turno=conf.turno_activo,
                 mesero=mesero,
                 metodo_pago=metodo_pago,
                 cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
                 producto_id=p_id if p_id else None,
                 fecha=ahora,
-                fecha_operativa=f_operativa  # Alineado
+                fecha_operativa=f_operativa,
+                monto_efectivo=efec_prop,
+                monto_tarjeta=tarj_prop
             )
             db.add(nueva_v)
+            
+        # ─── AGREGAR ESTAS DOS LÍNEAS AL FINAL DEL BLOQUE "if" (Misma indentación que el "for") ───
+        db.commit()
+        return RedirectResponse(url="/", status_code=303)
 
     # CASO B: RONDA MASIVA TRADICIONAL
     else:
         if not ids_chicas or tier_precio is None:
             return RedirectResponse(url="/", status_code=303)
+
+        total_ronda = len(ids_chicas) * tier_precio
+        factor_efectivo = (monto_efectivo / total_ronda) if metodo_pago == "MIXTO" and total_ronda > 0 else 0.0
 
         for d_id in ids_chicas:
             total, chica, casa = calcular_venta_detallada(tier_precio, extra_tipo)
@@ -148,31 +173,35 @@ async def registrar_ronda_mesa(
             prod_nombre = ""
             if producto_id:
                 prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
-                if prod:
-                    prod_nombre = prod.nombre
+                if prod: prod_nombre = prod.nombre
 
-            nombre_serv = f"MESA: {prod_nombre or 'TRAGO'} {tier_precio // 1000}K"
-            if extra_tipo: 
-                nombre_serv += f" + {extra_tipo}"
+                nombre_serv = f"MESA: {prod_nombre or 'TRAGO'} {tier_precio // 1000}K"
+                if extra_tipo: 
+                    nombre_serv += f" + {extra_tipo}"
 
-            nueva_v = models.Venta(
-                dama_id=d_id,
-                servicio=nombre_serv.upper(),
-                monto=total,
-                comision_chica=chica,
-                ganancia_casa=casa,
-                turno=conf.turno_activo,
-                mesero=mesero,
-                metodo_pago=metodo_pago,
-                cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
-                producto_id=producto_id,
-                fecha=ahora,
-                fecha_operativa=f_operativa  # Alineado
-            )
-            db.add(nueva_v)
+                efec_prop = total * factor_efectivo if metodo_pago == "MIXTO" else 0.0
+                tarj_prop = total * (1 - factor_efectivo) if metodo_pago == "MIXTO" else 0.0
 
-    db.commit()
-    return RedirectResponse(url="/", status_code=303)
+                nueva_v = models.Venta(
+                    dama_id=d_id,
+                    servicio=nombre_serv.upper(),
+                    monto=total,
+                    comision_chica=chica,
+                    ganancia_casa=casa,
+                    turno=conf.turno_activo,
+                    mesero=mesero,
+                    metodo_pago=metodo_pago,
+                    cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
+                    producto_id=producto_id,
+                    fecha=ahora,
+                    fecha_operativa=f_operativa,
+                    monto_efectivo=efec_prop,
+                    monto_tarjeta=tarj_prop
+                )
+                db.add(nueva_v)
+
+        db.commit()
+        return RedirectResponse(url="/", status_code=303)
 
 # ---------------------------------------------------------
 # 3. VENTA CLIENTE SOLO
@@ -186,6 +215,8 @@ async def registrar_venta_cliente(
     metodo_pago: str = Form(...),
     cliente_nombre: Optional[str] = Form(None),
     producto_id: Optional[int] = Form(None),
+    monto_efectivo: Optional[float] = Form(0.0), # Recibimos Efectivo Mixto
+    monto_tarjeta: Optional[float] = Form(0.0), # Recibimos Tarjeta Mixto
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -213,7 +244,9 @@ async def registrar_venta_cliente(
         cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
         producto_id=producto_id,
         fecha=obtener_ahora_local(),
-        fecha_operativa=calcular_fecha_operativa_defecto()  # Alineado
+        fecha_operativa=calcular_fecha_operativa_defecto(),
+        monto_efectivo=monto_efectivo if metodo_pago == "MIXTO" else 0.0,
+        monto_tarjeta=monto_tarjeta if metodo_pago == "MIXTO" else 0.0
     )
     db.add(nueva_venta)
     db.commit()
@@ -230,6 +263,8 @@ async def registrar_venta_multi_cliente(
     productos_json: str = Form(...),  
     metodo_pago: str = Form(...),
     cliente_nombre: Optional[str] = Form(None),
+    monto_efectivo: Optional[float] = Form(0.0), # Recibimos Efectivo Mixto
+    monto_tarjeta: Optional[float] = Form(0.0), # Recibimos Tarjeta Mixto
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -267,7 +302,9 @@ async def registrar_venta_multi_cliente(
         cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
         producto_id=id_principal,
         fecha=ahora,
-        fecha_operativa=f_operativa  # Alineado
+        fecha_operativa=f_operativa,
+        monto_efectivo=monto_efectivo if metodo_pago == "MIXTO" else 0.0,
+        monto_tarjeta=monto_tarjeta if metodo_pago == "MIXTO" else 0.0
     )
     db.add(venta_principal)
 
@@ -284,7 +321,7 @@ async def registrar_venta_multi_cliente(
             cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
             producto_id=id_principal,
             fecha=ahora,
-            fecha_operativa=f_operativa  # Alineado
+            fecha_operativa=f_operativa
         )
         db.add(venta_extra)
 
@@ -304,7 +341,7 @@ async def registrar_venta_multi_cliente(
                 cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
                 producto_id=id_extra,
                 fecha=ahora,
-                fecha_operativa=f_operativa  # Alineado
+                fecha_operativa=f_operativa
             )
             db.add(venta_extra)
 

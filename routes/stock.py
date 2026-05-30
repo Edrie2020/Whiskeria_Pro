@@ -20,8 +20,6 @@ templates = Jinja2Templates(directory="templates")
 # ---------------------------------------------------------
 # 1. VER EL PANEL DE STOCK
 # ---------------------------------------------------------
-# routes/stock.py
-
 @router.get("/stock", response_class=HTMLResponse)
 async def stock_page(request: Request, fecha: str = None, turno: str = None, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
@@ -41,44 +39,40 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
     fecha_f = fecha if fecha else fecha_actual
     turno_f = turno if turno else turno_actual
 
-    # 🔍 FILTRADO CLAVE: Solo consultamos productos que tengan historial en el turno seleccionado (turno_f)
+    # 💡 Obtenemos solo los licores y productos activos de este turno específico
     productos_db = db.query(models.Producto).filter(
-        models.Producto.id.in_(
-            db.query(models.InventarioTurno.producto_id).filter(
-                models.InventarioTurno.turno == turno_f
-            ).subquery()
-        )
+        models.Producto.es_corto == False,
+        models.Producto.turno == turno_f  # Filtrado por turno seleccionado
     ).all()
 
     inv_productos = []
     inv_botellas = []
     
     for p in productos_db:
-        if p.es_corto:
-            continue
-
         inv_turno = db.query(models.InventarioTurno).filter(
             models.InventarioTurno.producto_id == p.id,
             models.InventarioTurno.fecha == fecha_f,
             models.InventarioTurno.turno == turno_f
         ).first()
         
-        # 💡 MEJORA: Si la jornada seleccionada aún no ha sido inicializada hoy,
-        # heredamos el stock inicial calculándolo de la última ejecución registrada de este turno.
         if inv_turno:
             inicio_stock = inv_turno.inicio
         else:
+            # Búsqueda del último estado del producto filtrando estrictamente por el mismo nombre de turno
             ultimo_registro = db.query(models.InventarioTurno).filter(
                 models.InventarioTurno.producto_id == p.id,
                 models.InventarioTurno.turno == turno_f
-            ).order_by(models.InventarioTurno.fecha.desc(), models.InventarioTurno.id.desc()).first()
+            ).order_by(
+                models.InventarioTurno.fecha.desc(), 
+                models.InventarioTurno.id.desc()
+            ).first()
             
             if ultimo_registro:
                 inicio_stock = ultimo_registro.inicio
             else:
-                inicio_stock = p.inicio if p.inicio else 0
+                inicio_stock = 0
         
-        # Cálculo de ventas filtrado estrictamente por la fecha operativa contable del turno
+        # Movimientos y consumos en el turno activo
         salida_directa = db.query(func.count(models.Venta.id)).filter(
             models.Venta.producto_id == p.id,
             models.Venta.fecha_operativa == fecha_f,
@@ -92,7 +86,6 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
             models.StockMovimiento.turno == turno_f
         ).scalar() or 0
 
-        # Sumamos pérdidas tradicionales y las botellas descorchadas de licores en barra
         falts = db.query(func.sum(models.StockMovimiento.cantidad)).filter(
             models.StockMovimiento.producto_id == p.id,
             models.StockMovimiento.tipo_movimiento.in_(['FALTANTE', 'APERTURA BOTELLA']),
@@ -106,7 +99,10 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
         es_sellada = False
         if p.tipo == "BOTELLA" and p.capacidad_cortos:
             marca_base = p.nombre.split(" ")[0]
-            corto_vinculado = db.query(models.Producto).filter(models.Producto.nombre == f"CORTO {marca_base}").first()
+            corto_vinculado = db.query(models.Producto).filter(
+                models.Producto.nombre == f"CORTO {marca_base}",
+                models.Producto.turno == turno_f
+            ).first()
             
             if corto_vinculado:
                 if corto_vinculado.parent_botella_id != p.id:
@@ -128,15 +124,16 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
         if es_sellada:
             saldo_visual = f"{saldo} (🔒 SELLADA)"
         elif cortos_sueltos_restantes > 0 and saldo > 0:
-            saldo_visual = f"{saldo} (Abierta: {cortos_sueltos_restantes} de {p.capacidad_cortos} cortos servidos)"
+            saldo_visual = f"{saldo} (Abierta: {cortos_sueltos_restantes} de {p.capacidad_cortos} cortos)"
 
         salida_visual = f"{salida_directa}"
         if botellas_debitadas_por_cortos > 0:
-            salida_visual = f"{salida_directa} + {botellas_debitadas_por_cortos} (Por Cortos)"
+            salida_visual = f"{salida_directa} + {botellas_debitadas_por_cortos} (Cortos)"
 
         datos = {
             "id": p.id, 
             "nombre": p.nombre, 
+            "inicio_stock": inicio_stock,  
             "reposicion": repos,
             "salida": salida_total, 
             "salida_visual": salida_visual, 
@@ -162,10 +159,16 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
             "cantidad": a.cantidad, "usuario": a.usuario
         })
 
+    # 💡 CORRECCIÓN DE CLAVES CONTEXTUALES: Alineado con stock.html
     return templates.TemplateResponse(request=request, name="stock.html", context={
-        "inventario_productos": inv_productos, "inventario_botellas": inv_botellas,
-        "auditoria": auditoria, "fecha_filtro": fecha_f, "turno_filtro": turno_f,
-        "fecha_actual": fecha_actual, "turno_actual": turno_actual, "estado_club": estado_club,
+        "inv_productos": inv_productos, 
+        "inv_botellas": inv_botellas,
+        "auditoria": auditoria, 
+        "fecha_filtro": fecha_f, 
+        "turno_filtro": turno_f, 
+        "fecha_actual": fecha_actual, 
+        "turno_actual": turno_actual, 
+        "estado_club": estado_club,
         "role": user_role  
     })
 
@@ -173,10 +176,6 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
 # 2. ACCIONES DE STOCK (CON CREACIÓN AUTOMÁTICA DE CORTOS)
 # ---------------------------------------------------------
 from typing import Optional
-
-# routes/stock.py
-
-# routes/stock.py
 
 @router.post("/agregar_producto_stock")
 async def agregar_producto(
@@ -211,99 +210,68 @@ async def agregar_producto(
         fecha_actual = ahora.strftime("%Y-%m-%d")
 
     try:
-        # 1. Verificar si el producto ya existe en el catálogo general de la base de datos
-        existe_producto_global = db.query(models.Producto).filter(models.Producto.nombre == nombre_sistema).first()
+        # 1. 💡 Verificar si el producto ya existe en el catálogo de este turno específico
+        existe_producto_global = db.query(models.Producto).filter(
+            models.Producto.nombre == nombre_sistema,
+            models.Producto.turno == conf.turno_activo
+        ).first()
 
         if existe_producto_global:
-            # Caso A: El producto ya existe de forma global en el catálogo.
-            # Verificamos si ya tiene registro de inventario en este turno específico
-            existe_en_este_turno = db.query(models.InventarioTurno).filter(
-                models.InventarioTurno.producto_id == existe_producto_global.id,
-                models.InventarioTurno.turno == conf.turno_activo
+            return RedirectResponse(url="/stock?error=producto_ya_existe_en_este_turno", status_code=303)
+
+        # Caso B: El producto es nuevo en este turno
+        nuevo = models.Producto(
+            nombre=nombre_sistema, 
+            tipo=tipo, 
+            inicio=inicio,
+            capacidad_cortos=capacidad,
+            turno=conf.turno_activo  # 💡 Almacenamos el turno activo
+        )
+        db.add(nuevo)
+        db.flush() 
+
+        # Crear el corto si es botella y se solicita
+        corto_db = None
+        if tipo == "BOTELLA" and vende_cortos == "on":
+            nombre_corto = f"CORTO {nombre_original_limpio}"
+            corto_db = db.query(models.Producto).filter(
+                models.Producto.nombre == nombre_corto,
+                models.Producto.turno == conf.turno_activo
             ).first()
-
-            if existe_en_este_turno:
-                # Si ya existe inventario en este turno, advertimos al usuario
-                return RedirectResponse(url="/stock?error=producto_ya_existe_en_este_turno", status_code=303)
-            
-            # Si existe en catálogo pero no en este turno, lo enlazamos al turno activo con su propio stock inicial
-            nuevo_inv = models.InventarioTurno(
-                producto_id=existe_producto_global.id,
-                fecha=fecha_actual,
-                turno=conf.turno_activo,
-                inicio=inicio
-            )
-            db.add(nuevo_inv)
-
-            # Si es botella y tiene cortos globales, también los enlazamos a este turno (con inicio en 0)
-            if existe_producto_global.tipo == "BOTELLA":
-                nombre_corto = f"CORTO {nombre_original_limpio}"
-                corto_global = db.query(models.Producto).filter(models.Producto.nombre == nombre_corto).first()
-                if corto_global:
-                    existe_corto_en_este_turno = db.query(models.InventarioTurno).filter(
-                        models.InventarioTurno.producto_id == corto_global.id,
-                        models.InventarioTurno.turno == conf.turno_activo
-                    ).first()
-                    if not existe_corto_en_este_turno:
-                        nuevo_inv_corto = models.InventarioTurno(
-                            producto_id=corto_global.id,
-                            fecha=fecha_actual,
-                            turno=conf.turno_activo,
-                            inicio=0
-                        )
-                        db.add(nuevo_inv_corto)
-
-        else:
-            # Caso B: El producto es nuevo a nivel global (no está en el catálogo)
-            nuevo = models.Producto(
-                nombre=nombre_sistema, 
-                tipo=tipo, 
-                inicio=inicio,
-                capacidad_cortos=capacidad
-            )
-            db.add(nuevo)
-            db.flush()  # Genera el ID del producto de forma provisional
-
-            # Crear el corto si es botella y se solicita
-            corto_db = None
-            if tipo == "BOTELLA" and vende_cortos == "on":
-                nombre_corto = f"CORTO {nombre_original_limpio}"
-                corto_db = db.query(models.Producto).filter(models.Producto.nombre == nombre_corto).first()
-                if not corto_db:
-                    corto_db = models.Producto(
-                        nombre=nombre_corto,
-                        tipo="PRODUCTO",
-                        inicio=0,
-                        es_corto=True,
-                        parent_botella_id=nuevo.id
-                    )
-                    db.add(corto_db)
-                    db.flush()
-
-            # Enlazar el producto nuevo al turno activo
-            nuevo_inv = models.InventarioTurno(
-                producto_id=nuevo.id,
-                fecha=fecha_actual,
-                turno=conf.turno_activo,
-                inicio=inicio
-            )
-            db.add(nuevo_inv)
-
-            if corto_db:
-                nuevo_inv_corto = models.InventarioTurno(
-                    producto_id=corto_db.id,
-                    fecha=fecha_actual,
-                    turno=conf.turno_activo,
-                    inicio=0
+            if not corto_db:
+                corto_db = models.Producto(
+                    nombre=nombre_corto,
+                    tipo="PRODUCTO",
+                    inicio=0,
+                    es_corto=True,
+                    parent_botella_id=nuevo.id,
+                    turno=conf.turno_activo  # 💡 Almacenamos el turno activo
                 )
-                db.add(nuevo_inv_corto)
+                db.add(corto_db)
+                db.flush()
 
-        # Commit único de la transacción
+        nuevo_inv = models.InventarioTurno(
+            producto_id=nuevo.id,
+            fecha=fecha_actual,
+            turno=conf.turno_activo,
+            inicio=inicio
+        )
+        db.add(nuevo_inv)
+
+        if corto_db:
+            nuevo_inv_corto = models.InventarioTurno(
+                producto_id=corto_db.id,
+                fecha=fecha_actual,
+                turno=conf.turno_activo,
+                inicio=0
+            )
+            db.add(nuevo_inv_corto)
+
         db.commit()
 
     except Exception as e:
         db.rollback()
-        print(f"❌ Error al registrar o enlazar el producto: {str(e)}")
+        print(f"❌ Error al registrar o enlazar el producto por turnos aislados: {str(e)}")
         return RedirectResponse(url="/stock?error=error_transaccion", status_code=303)
 
     return RedirectResponse(url="/stock", status_code=303)

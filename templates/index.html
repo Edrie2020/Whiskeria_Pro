@@ -257,16 +257,30 @@
                     <p id="ind_resumen_texto" class="text-2xl font-black text-pink-500 uppercase italic"></p>
                     <p id="ind_resumen_total" class="text-4xl font-black text-white mt-2"></p>
                 </div>
+
                 <div id="botones_pago_ind" class="grid grid-cols-2 gap-3">
-                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
-                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
-                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
-                    <button type="button" onclick="abrirSeccionCuentaInd()" class="btn btn-lg bg-zinc-700 text-white font-black italic">📔 CUENTA</button>
-                </div>
-                <div id="seccion_nombre_ind_deuda" class="hidden space-y-4">
-                    <input type="text" name="cliente_nombre" id="input_nombre_ind_deuda" placeholder="NOMBRE DEUDOR" class="input input-bordered w-full bg-black text-yellow-500 font-bold border-yellow-500">
-                    <button type="button" onclick="validarYConfirmarDeudaInd()" class="btn btn-warning w-full font-black text-black">CONFIRMAR VENTA DEUDA</button>
-                </div>
+    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+    <button type="button" onclick="abrirPagoMixtoInd()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
+</div>
+
+<!-- PANEL PAGO MIXTO INDIVIDUAL -->
+<div id="seccion_pago_mixto_ind" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-pink-500/30">
+    <h4 class="text-pink-400 font-black uppercase text-xs italic">Cobrar por Dos Medios de Pago</h4>
+    <div class="grid grid-cols-2 gap-3">
+        <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
+            <input type="number" name="monto_efectivo" id="ind_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoInd()">
+        </div>
+        <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
+            <input type="number" name="monto_tarjeta" id="ind_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoInd()">
+        </div>
+    </div>
+    <p id="msg_error_mixto_ind" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la venta</p>
+    <button type="button" id="btn_confirmar_mixto_ind" onclick="confirmarVentaMixtaInd()" class="btn btn-sm btn-secondary w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
+</div>
                 <button type="button" onclick="volverAEditarInd()" class="btn btn-ghost w-full font-bold text-xs uppercase">← Volver a precios</button>
             </div>
 
@@ -377,16 +391,28 @@
                 </div>
 
                 <div id="botones_pago_mesa" class="grid grid-cols-2 gap-3">
-                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
-                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
-                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
-                    <button type="button" onclick="abrirSeccionCuentaMesa()" class="btn btn-lg bg-zinc-700 text-white font-black italic">📔 CUENTA</button>
-                </div>
+    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+    <button type="button" onclick="abrirPagoMixtoMesa()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
+</div>
 
-                <div id="seccion_nombre_mesa_deuda" class="hidden space-y-4">
-                    <input type="text" name="cliente_nombre" id="input_nombre_mesa_deuda" placeholder="NOMBRE DEL CLIENTE (DEUDOR)" class="input input-bordered w-full bg-black text-yellow-500 font-bold border-yellow-500 uppercase">
-                    <button type="button" onclick="validarYConfirmarDeudaMesa()" class="btn btn-warning w-full font-black text-black">CONFIRMAR DEUDA MESA</button>
-                </div>
+<!-- PANEL PAGO MIXTO MESA -->
+<div id="seccion_pago_mixto_mesa" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-purple-500/30">
+    <h4 class="text-purple-400 font-black uppercase text-xs italic">Cobrar Ronda por Dos Medios</h4>
+    <div class="grid grid-cols-2 gap-3">
+        <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
+            <input type="number" name="monto_efectivo" id="mesa_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMesa()">
+        </div>
+        <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
+            <input type="number" name="monto_tarjeta" id="mesa_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMesa()">
+        </div>
+    </div>
+    <p id="msg_error_mixto_mesa" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la ronda</p>
+    <button type="button" id="btn_confirmar_mixto_mesa" onclick="confirmarVentaMixtaMesa()" class="btn btn-sm btn-purple w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
+</div>
 
                 <button type="button" onclick="volverAEditarMesa()" class="btn btn-ghost w-full font-bold">← VOLVER A EDITAR</button>
             </div>
@@ -490,16 +516,28 @@
                 </div>
 
                 <div id="botones_pago_cliente_div" class="grid grid-cols-2 gap-3">
-                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
-                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
-                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
-                    <button type="button" onclick="activarDeudaCliente()" class="btn btn-lg bg-zinc-700 text-white font-black italic">📔 CUENTA</button>
-                </div>
+    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+    <button type="button" onclick="abrirPagoMixtoCliente()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
+</div>
 
-                <div id="campo_nombre_cliente" class="hidden space-y-4">
-                    <input type="text" name="cliente_nombre" id="input_cliente_cuenta" placeholder="NOMBRE DEL CLIENTE (DEUDOR)" class="input input-bordered w-full bg-black text-yellow-500 font-bold border-yellow-500 uppercase">
-                    <button type="button" onclick="validarYConfirmarDeudaCliente()" class="btn btn-warning w-full font-black text-black">CONFIRMAR DEUDA Y REGISTRAR</button>
-                </div>
+<!-- PANEL PAGO MIXTO CLIENTE DIRECTA -->
+<div id="seccion_pago_mixto_cliente" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-cyan-500/30">
+    <h4 class="text-cyan-400 font-black uppercase text-xs italic">Cobrar Venta por Dos Medios</h4>
+    <div class="grid grid-cols-2 gap-3">
+        <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
+            <input type="number" name="monto_efectivo" id="cliente_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoCliente()">
+        </div>
+        <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
+            <input type="number" name="monto_tarjeta" id="cliente_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoCliente()">
+        </div>
+    </div>
+    <p id="msg_error_mixto_cliente" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la boleta</p>
+    <button type="button" id="btn_confirmar_mixto_cliente" onclick="confirmarVentaMixtaCliente()" class="btn btn-sm btn-info w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
+</div>
                 <button type="button" onclick="volverAEditarCliente()" class="btn btn-ghost w-full font-bold text-xs">← VOLVER ATRÁS</button>
             </div>
         </form>
@@ -560,16 +598,28 @@
                 </div>
 
                 <div id="botones_pago_multi_div" class="grid grid-cols-2 gap-3">
-                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
-                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
-                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
-                    <button type="button" onclick="activarDeudaMulti()" class="btn btn-lg bg-zinc-700 text-white font-black italic">📔 CUENTA</button>
-                </div>
+    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+    <button type="button" onclick="abrirPagoMixtoMulti()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
+</div>
 
-                <div id="campo_nombre_multi_cliente" class="hidden space-y-4">
-                    <input type="text" name="cliente_nombre" id="input_multi_cuenta" placeholder="NOMBRE DEL CLIENTE (DEUDOR)" class="input input-bordered w-full bg-black text-yellow-500 font-bold border-yellow-500 uppercase">
-                    <button type="button" onclick="validarYConfirmarDeudaMulti()" class="btn btn-warning w-full font-black text-black">CONFIRMAR DEUDA MULTI-BOLETA</button>
-                </div>
+<!-- PANEL PAGO MIXTO CLIENTE MULTI -->
+<div id="seccion_pago_mixto_multi" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-cyan-500/30">
+    <h4 class="text-cyan-400 font-black uppercase text-xs italic">Cobrar Boleta por Dos Medios</h4>
+    <div class="grid grid-cols-2 gap-3">
+        <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
+            <input type="number" name="monto_efectivo" id="multi_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMulti()">
+        </div>
+        <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
+            <input type="number" name="monto_tarjeta" id="multi_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMulti()">
+        </div>
+    </div>
+    <p id="msg_error_mixto_multi" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la boleta</p>
+    <button type="button" id="btn_confirmar_mixto_multi" onclick="confirmarVentaMixtaMulti()" class="btn btn-sm btn-info w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
+</div>
                 <button type="button" onclick="volverAEditarMulti()" class="btn btn-ghost w-full font-bold text-xs">← VOLVER ATRÁS</button>
             </div>
         </form>
@@ -1014,7 +1064,10 @@ function abrirModalMesas() {
     // Reset vistas
     document.getElementById('mesa_paso_datos').classList.remove('hidden');
     document.getElementById('mesa_resumen_confirmacion').classList.add('hidden');
-    document.getElementById('seccion_nombre_mesa_deuda').classList.add('hidden');
+    const seccionDeudaMesa = document.getElementById('seccion_nombre_mesa_deuda');
+if (seccionDeudaMesa) {
+    seccionDeudaMesa.classList.add('hidden');
+}
     document.getElementById('botones_pago_mesa').classList.remove('hidden');
     
     document.getElementById('modal_mesas').showModal();
@@ -1706,33 +1759,69 @@ function abrirModalCliente() {
 function abrirModalMesas() {
     mesaActual = { ids: [], nombres: [], montoTier: 0, extra: '', productoId: null, productoNombre: 'TRAGO BÁSICO' };
     
-    // Reset visual de las chicas
+    // Reset visual de las chicas con validación de existencia de imagen
     document.querySelectorAll('.dama-mesa-item').forEach(el => { 
         el.classList.add('opacity-40'); 
         el.style.display = "flex"; 
-        el.querySelector('img').style.borderColor = 'transparent'; 
+        const img = el.querySelector('img');
+        if (img) {
+            img.style.borderColor = 'transparent'; 
+        }
     });
 
     const meseroSelect = document.getElementById('mesa_mesero_select');
-    if (meseroSelect) meseroSelect.selectedIndex = 0;
+    if (meseroSelect) {
+        meseroSelect.selectedIndex = 0;
+    }
 
-    document.getElementById("buscChicaMesa").value = "";
-    document.getElementById('input_ronda_json').value = "";
+    const buscChicaMesa = document.getElementById("buscChicaMesa");
+    if (buscChicaMesa) {
+        buscChicaMesa.value = "";
+    }
+
+    const inputRondaJson = document.getElementById('input_ronda_json');
+    if (inputRondaJson) {
+        inputRondaJson.value = "";
+    }
     
     // Limpiar tabla detallada
-    document.getElementById('ronda_chicas_detalle_filas').innerHTML = `
-        <tr><td colspan="5" class="text-center text-zinc-600 font-bold uppercase text-[9px] py-4">No hay chicas seleccionadas</td></tr>
-    `;
+    const detalleFilas = document.getElementById('ronda_chicas_detalle_filas');
+    if (detalleFilas) {
+        detalleFilas.innerHTML = `
+            <tr><td colspan="5" class="text-center text-zinc-600 font-bold uppercase text-[9px] py-4">No hay chicas seleccionadas</td></tr>
+        `;
+    }
 
-    document.getElementById('monto_total_mesa_visual').innerText = "$0";
+    const montoVisual = document.getElementById('monto_total_mesa_visual');
+    if (montoVisual) {
+        montoVisual.innerText = "$0";
+    }
 
-    // Reset vistas
-    document.getElementById('mesa_paso_datos').classList.remove('hidden');
-    document.getElementById('mesa_resumen_confirmacion').classList.add('hidden');
-    document.getElementById('seccion_nombre_mesa_deuda').classList.add('hidden');
-    document.getElementById('botones_pago_mesa').classList.remove('hidden');
+    // Reset de vistas seguro (con validación para evitar errores de nulos)
+    const mesaPasoDatos = document.getElementById('mesa_paso_datos');
+    if (mesaPasoDatos) {
+        mesaPasoDatos.classList.remove('hidden');
+    }
+
+    const mesaResumenConfirmacion = document.getElementById('mesa_resumen_confirmacion');
+    if (mesaResumenConfirmacion) {
+        mesaResumenConfirmacion.classList.add('hidden');
+    }
+
+    const seccionNombreMesaDeuda = document.getElementById('seccion_nombre_mesa_deuda');
+    if (seccionNombreMesaDeuda) {
+        seccionNombreMesaDeuda.classList.add('hidden');
+    }
+
+    const botonesPagoMesa = document.getElementById('botones_pago_mesa');
+    if (botonesPagoMesa) {
+        botonesPagoMesa.classList.remove('hidden');
+    }
     
-    document.getElementById('modal_mesas').showModal();
+    const modalMesas = document.getElementById('modal_mesas');
+    if (modalMesas) {
+        modalMesas.showModal();
+    }
 }
 
 function toggleFichaMesa(el, id, n) {
@@ -1905,6 +1994,158 @@ function avanzarAPagoMesa() {
 
     document.getElementById('mesa_paso_datos').classList.add('hidden');
     document.getElementById('mesa_resumen_confirmacion').classList.remove('hidden');
+}
+
+// =========================================================================
+// 💵 CONTROLADORES DE COBRO MIXTO (EFECTIVO + TARJETA)
+// =========================================================================
+
+// 1. Venta Individual
+function abrirPagoMixtoInd() {
+    document.getElementById('botones_pago_ind').classList.add('hidden');
+    const panel = document.getElementById('seccion_pago_mixto_ind');
+    panel.classList.remove('hidden');
+
+    const total = parseInt(document.getElementById('ind_resumen_total').innerText.replace(/[^0-9]/g, '')) || 0;
+    document.getElementById('ind_mixto_efectivo').value = total;
+    document.getElementById('ind_mixto_tarjeta').value = 0;
+    calcularMixtoInd();
+}
+
+function calcularMixtoInd() {
+    const total = parseInt(document.getElementById('ind_resumen_total').innerText.replace(/[^0-9]/g, '')) || 0;
+    const efec = parseInt(document.getElementById('ind_mixto_efectivo').value) || 0;
+    const tarjeta = total - efec;
+    document.getElementById('ind_mixto_tarjeta').value = Math.max(0, tarjeta);
+
+    const errorMsg = document.getElementById('msg_error_mixto_ind');
+    const btn = document.getElementById('btn_confirmar_mixto_ind');
+    if (efec + tarjeta !== total || efec < 0 || tarjeta < 0) {
+        errorMsg.classList.remove('hidden');
+        btn.disabled = true;
+    } else {
+        errorMsg.classList.add('hidden');
+        btn.disabled = false;
+    }
+}
+
+function confirmarVentaMixtaInd() {
+    const form = document.getElementById('form_registro_venta');
+    const inputMetodo = document.createElement("input");
+    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "MIXTO";
+    form.appendChild(inputMetodo);
+    form.submit();
+}
+
+// 2. Venta de Mesas
+function abrirPagoMixtoMesa() {
+    document.getElementById('botones_pago_mesa').classList.add('hidden');
+    const panel = document.getElementById('seccion_pago_mixto_mesa');
+    panel.classList.remove('hidden');
+
+    const total = parseInt(document.getElementById('resumen_total_mesa').innerText.replace(/[^0-9]/g, '')) || 0;
+    document.getElementById('mesa_mixto_efectivo').value = total;
+    document.getElementById('mesa_mixto_tarjeta').value = 0;
+    calcularMixtoMesa();
+}
+
+function calcularMixtoMesa() {
+    const total = parseInt(document.getElementById('resumen_total_mesa').innerText.replace(/[^0-9]/g, '')) || 0;
+    const efec = parseInt(document.getElementById('mesa_mixto_efectivo').value) || 0;
+    const tarjeta = total - efec;
+    document.getElementById('mesa_mixto_tarjeta').value = Math.max(0, tarjeta);
+
+    const errorMsg = document.getElementById('msg_error_mixto_mesa');
+    const btn = document.getElementById('btn_confirmar_mixto_mesa');
+    if (efec + tarjeta !== total || efec < 0 || tarjeta < 0) {
+        errorMsg.classList.remove('hidden');
+        btn.disabled = true;
+    } else {
+        errorMsg.classList.add('hidden');
+        btn.disabled = false;
+    }
+}
+
+function confirmarVentaMixtaMesa() {
+    const form = document.getElementById('form_mesa');
+    const inputMetodo = document.createElement("input");
+    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "MIXTO";
+    form.appendChild(inputMetodo);
+    form.submit();
+}
+
+// 3. Venta Cliente Directa
+function abrirPagoMixtoCliente() {
+    document.getElementById('botones_pago_cliente_div').classList.add('hidden');
+    const panel = document.getElementById('seccion_pago_mixto_cliente');
+    panel.classList.remove('hidden');
+
+    const total = parseInt(document.getElementById('resumen_cliente_monto').innerText.replace(/[^0-9]/g, '')) || 0;
+    document.getElementById('cliente_mixto_efectivo').value = total;
+    document.getElementById('cliente_mixto_tarjeta').value = 0;
+    calcularMixtoCliente();
+}
+
+function calcularMixtoCliente() {
+    const total = parseInt(document.getElementById('resumen_cliente_monto').innerText.replace(/[^0-9]/g, '')) || 0;
+    const efec = parseInt(document.getElementById('cliente_mixto_efectivo').value) || 0;
+    const tarjeta = total - efec;
+    document.getElementById('cliente_mixto_tarjeta').value = Math.max(0, tarjeta);
+
+    const errorMsg = document.getElementById('msg_error_mixto_cliente');
+    const btn = document.getElementById('btn_confirmar_mixto_cliente');
+    if (efec + tarjeta !== total || efec < 0 || tarjeta < 0) {
+        errorMsg.classList.remove('hidden');
+        btn.disabled = true;
+    } else {
+        errorMsg.classList.add('hidden');
+        btn.disabled = false;
+    }
+}
+
+function confirmarVentaMixtaCliente() {
+    const form = document.getElementById('form_venta_cliente');
+    const inputMetodo = document.createElement("input");
+    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "MIXTO";
+    form.appendChild(inputMetodo);
+    form.submit();
+}
+
+// 4. Venta Cliente Boleta Multi (Combo)
+function abrirPagoMixtoMulti() {
+    document.getElementById('botones_pago_multi_div').classList.add('hidden');
+    const panel = document.getElementById('seccion_pago_mixto_multi');
+    panel.classList.remove('hidden');
+
+    const total = parseInt(document.getElementById('resumen_multi_monto').innerText.replace(/[^0-9]/g, '')) || 0;
+    document.getElementById('multi_mixto_efectivo').value = total;
+    document.getElementById('multi_mixto_tarjeta').value = 0;
+    calcularMixtoMulti();
+}
+
+function calcularMixtoMulti() {
+    const total = parseInt(document.getElementById('resumen_multi_monto').innerText.replace(/[^0-9]/g, '')) || 0;
+    const efec = parseInt(document.getElementById('multi_mixto_efectivo').value) || 0;
+    const tarjeta = total - efec;
+    document.getElementById('multi_mixto_tarjeta').value = Math.max(0, tarjeta);
+
+    const errorMsg = document.getElementById('msg_error_mixto_multi');
+    const btn = document.getElementById('btn_confirmar_mixto_multi');
+    if (efec + tarjeta !== total || efec < 0 || tarjeta < 0) {
+        errorMsg.classList.remove('hidden');
+        btn.disabled = true;
+    } else {
+        errorMsg.classList.add('hidden');
+        btn.disabled = false;
+    }
+}
+
+function confirmarVentaMixtaMulti() {
+    const form = document.getElementById('form_venta_multi_cliente');
+    const inputMetodo = document.createElement("input");
+    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "MIXTO";
+    form.appendChild(inputMetodo);
+    form.submit();
 }
 
 </script>

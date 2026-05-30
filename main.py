@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import date, datetime, time, timedelta
+from sqlalchemy import text 
 import uvicorn
 import urllib.parse
 import os 
@@ -50,8 +51,7 @@ async def verificar_sesion(request: Request):
 
 def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str):
     """
-    Inicializa el inventario para el nuevo turno de forma aislada.
-    Solo inicializa productos que pertenezcan históricamente a este turno específico.
+    Inicializa el inventario de forma estrictamente aislada por catálogo de turno.
     """
     existe = db.query(models.InventarioTurno).filter(
         models.InventarioTurno.fecha == fecha_hoy,
@@ -61,37 +61,23 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
     if existe:
         return
 
-    productos = db.query(models.Producto).all()
+    # 💡 Cargamos únicamente los productos que pertenecen al catálogo de este turno específico
+    productos = db.query(models.Producto).filter(models.Producto.turno == turno_nuevo).all()
     for p in productos:
-        # Se filtra para buscar el último registro del mismo turno
         ultimo_registro = db.query(models.InventarioTurno).filter(
             models.InventarioTurno.producto_id == p.id,
             models.InventarioTurno.turno == turno_nuevo
         ).order_by(models.InventarioTurno.fecha.desc(), models.InventarioTurno.id.desc()).first()
         
         if not ultimo_registro:
-            # 🔍 FILTRO CLAVE: Verificamos si este producto tiene algún registro histórico en este turno.
-            tiene_registro_en_este_turno = db.query(models.InventarioTurno).filter(
-                models.InventarioTurno.producto_id == p.id,
-                models.InventarioTurno.turno == turno_nuevo
-            ).first()
-            
-            if not tiene_registro_en_este_turno:
-                continue  # Ignoramos por completo el producto para este turno
-            
-            if turno_nuevo == "Turno 2":
-                stock_inicial = 0
-            else:
-                stock_inicial = p.inicio
+            stock_inicial = p.inicio if p.inicio else 0
         else:
-            # 1. Salidas directas de licores / productos
             salida_directa = db.query(func.count(models.Venta.id)).filter(
                 models.Venta.producto_id == p.id,
                 models.Venta.fecha_operativa == ultimo_registro.fecha,
                 models.Venta.turno == ultimo_registro.turno
             ).scalar() or 0
             
-            # 2. Descuento proporcional de cortos para arrastrar el stock correcto
             botellas_debitadas_por_cortos = 0
             if p.tipo == "BOTELLA" and p.capacidad_cortos:
                 corto_vinculado = db.query(models.Producto).filter(models.Producto.parent_botella_id == p.id).first()
@@ -139,9 +125,53 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
 # Crear las tablas de la base de datos al iniciar si no existen
 models.Base.metadata.create_all(bind=engine)
 
+# 💡 MIGRACIÓN AUTOMÁTICA SEGURA PARA PRODUCCIÓN (EVITA PÉRDIDA DE DATOS)
+def ejecutar_migraciones_sqlite_produccion():
+    db = SessionLocal()
+    try:
+        cursor = db.execute(text("PRAGMA table_info(productos)"))
+        columnas_prod = [row[1] for row in cursor.fetchall()]
+        
+        if "turno" not in columnas_prod:
+            db.execute("ALTER TABLE productos ADD COLUMN turno VARCHAR DEFAULT 'Turno 1'")
+            db.commit()
+            print("✅ MIGRACIÓN: Columna 'turno' inyectada en 'productos'.")
+            
+        try:
+            db.execute("DROP INDEX IF EXISTS ix_productos_nombre")
+            db.execute("CREATE INDEX IF NOT EXISTS ix_productos_nombre ON productos (nombre)")
+            db.commit()
+            print("✅ MIGRACIÓN: Índice único de nombres de productos removido.")
+        except Exception as idx_err:
+            print(f"⚠️ MIGRACIÓN (Aviso de índice): {str(idx_err)}")
+
+        # 💡 MIGRACIÓN DE LA TABLA VENTAS PARA COBRO MIXTO
+        cursor_v = db.execute("PRAGMA table_info(ventas)")
+        columnas_ventas = [row[1] for row in cursor_v.fetchall()]
+
+        if "monto_efectivo" not in columnas_ventas:
+            db.execute("ALTER TABLE ventas ADD COLUMN monto_efectivo FLOAT DEFAULT 0.0")
+            db.commit()
+            print("✅ MIGRACIÓN: Columna 'monto_efectivo' inyectada en 'ventas'.")
+
+        if "monto_tarjeta" not in columnas_ventas:
+            db.execute("ALTER TABLE ventas ADD COLUMN monto_tarjeta FLOAT DEFAULT 0.0")
+            db.commit()
+            print("✅ MIGRACIÓN: Columna 'monto_tarjeta' inyectada en 'ventas'.")
+
+    except Exception as e:
+        print(f"⚠️ MIGRACIÓN (Error en migración automática): {str(e)}")
+    finally:
+        db.close()
+
+# Ejecutamos la migración antes de que el servidor FastAPI empiece a recibir peticiones
+ejecutar_migraciones_sqlite_produccion()
+
+
 app = FastAPI()
 
-# Configuración de archivos estáticos y plantillas
+# Configuración de archivos estáticos y plantillas...
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -252,11 +282,11 @@ async def home(request: Request, db: Session = Depends(get_db)):
 
     productos_cooler_filtrados = db.query(models.Producto).filter(
         models.Producto.tipo == "PRODUCTO",
-        models.Producto.id.in_(productos_turno_ids)
+        models.Producto.turno == conf.turno_activo  # Filtrado estricto por turno activo
     ).all()
 
     productos_todos_filtrados = db.query(models.Producto).filter(
-        models.Producto.id.in_(productos_turno_ids)
+        models.Producto.turno == conf.turno_activo  # Filtrado estricto por turno activo
     ).all()
 
     # 10. RETORNO DE LA RESPUESTA
@@ -278,8 +308,8 @@ async def home(request: Request, db: Session = Depends(get_db)):
             "ausentes_b": ausentes_b,       
             "dict_bailando": {a.dama_id: a.bailando_hoy for a in asistencias},
             "garzones": db.query(models.Mesero).all(),
-            "productos_cooler": productos_cooler_filtrados,  # <--- Aplicado filtro dinámico por turno
-            "productos_todos": productos_todos_filtrados      # <--- Aplicado filtro dinámico por turno
+            "productos_cooler": productos_cooler_filtrados,  
+            "productos_todos": productos_todos_filtrados      
         }
     )
 
@@ -387,11 +417,11 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     # 3. Resumen General
     resumen = {
         "bruto": sum(v.monto for v in ventas_hoy),
-        "efectivo": sum(v.monto for v in ventas_hoy if v.metodo_pago == "EFECTIVO"),
-        "tarjeta": sum(v.monto for v in ventas_hoy if v.metodo_pago == "TARJETA"),
+        "efectivo": sum(v.monto for v in ventas_hoy if v.metodo_pago == "EFECTIVO") + sum((v.monto_efectivo or 0) for v in ventas_hoy if v.metodo_pago == "MIXTO"),
+        "tarjeta": sum(v.monto for v in ventas_hoy if v.metodo_pago == "TARJETA") + sum((v.monto_tarjeta or 0) for v in ventas_hoy if v.metodo_pago == "MIXTO"),
         "transferencia": sum(v.monto for v in ventas_hoy if v.metodo_pago == "TRANSFERENCIA"),
         "monto_apertura": monto_ap_valor,
-        "efectivo_total_gaveta": sum(v.monto for v in ventas_hoy if v.metodo_pago == "EFECTIVO") + monto_ap_valor
+        "efectivo_total_gaveta": sum(v.monto for v in ventas_hoy if v.metodo_pago == "EFECTIVO") + sum((v.monto_efectivo or 0) for v in ventas_hoy if v.metodo_pago == "MIXTO") + monto_ap_valor
     }
 
     # 4. Cálculo detallado por Dama (Liquidaciones en múltiples Fichas)

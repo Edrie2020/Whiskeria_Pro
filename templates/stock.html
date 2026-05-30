@@ -10,13 +10,21 @@
     <style>
         .evitar-salto { page-break-inside: avoid; }
         
+        /* Ocultar barra de scroll en navegadores */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(34, 211, 238, 0.3);
+            border-radius: 10px;
+        }
+
         /* --- ESTILOS EXCLUSIVOS PARA IMPRESIÓN SUTIL --- */
         @media print {
-            /* Ocultar elementos interactivos, de búsqueda y formularios */
             .no-print, 
             form, 
             #buscadorStock, 
-            .collapse-title::after, /* Oculta flecha de colapso de DaisyUI */
+            .collapse-title::after, 
             .btn, 
             dialog,
             td form, 
@@ -24,7 +32,6 @@
                 display: none !important;
             }
 
-            /* Forzar fondo blanco y texto negro en todo el documento */
             html, body {
                 background: #ffffff !important;
                 color: #000000 !important;
@@ -33,7 +40,6 @@
                 margin: 0 !important;
             }
 
-            /* Forzar que los collapses de DaisyUI se muestren abiertos al imprimir */
             .collapse {
                 visibility: visible !important;
                 display: block !important;
@@ -57,7 +63,6 @@
                 padding: 5px 0 !important;
             }
 
-            /* Estilo formal para tablas de impresión */
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
@@ -84,13 +89,11 @@
                 text-align: center !important;
             }
 
-            /* Ocultar la columna de acciones (columna de engranaje y cruz) */
             th:last-child, 
             td:last-child {
                 display: none !important;
             }
 
-            /* Sección Auditoría Limpia */
             .bg-zinc-900 {
                 background: transparent !important;
                 border: none !important;
@@ -120,7 +123,7 @@
         }
     </style>
 </head>
-<body class="bg-[#020202] text-white p-3 md:p-8 font-sans">
+<body class="bg-[#020202] text-white p-3 md:p-8 font-sans overflow-x-hidden">
 
     <!-- CABECERA DE IMPRESIÓN (Sólo visible en el PDF generado) -->
     <div class="hidden print:block text-center border-b-2 border-black pb-4 mb-6 text-black">
@@ -229,35 +232,36 @@
             <div class="collapse-title text-xs font-black text-cyan-400 uppercase tracking-widest">
                 📦 PRODUCTOS COOLER (CERVEZAS / JUGOS)
             </div>
-            <div class="collapse-content px-1 sm:px-4 pb-4 overflow-x-hidden">
-                <table class="table w-full text-center table-xs">
+            <div class="collapse-content px-1 sm:px-4 pb-4 overflow-x-auto custom-scrollbar">
+                <table class="table table-xs w-full text-center min-w-[600px] sm:min-w-0">
                     <thead>
                         <tr class="text-zinc-500 uppercase text-[9px] border-b border-white/5">
                             <th class="text-left pl-1">Nombre</th>
-                            <th>Repo</th>
-                            <th>Venta</th>
-                            <th>Falt</th>
-                            <th class="text-cyan-400">Saldo</th>
+                            <th>Inicio (Turno Ant.)</th>
+                            <th>Repo (+)</th>
+                            <th>Venta (-)</th>
+                            <th>Falt (-)</th>
+                            <th class="text-cyan-400 font-black">Saldo En Vivo (Hoy)</th>
                             <th class="text-right pr-1 no-print">Acción</th>
                         </tr>
                     </thead>
                     <tbody class="font-bold uppercase text-xs">
-                        {% for p in inventario_productos %}
+                        {% for p in inv_productos %}
                         <tr class="border-b border-white/5 item-stock">
-                            <td class="text-left text-white pl-1 truncate max-w-[80px] sm:max-w-none nombre-item">{{ p.nombre }}</td>
-                            <td class="text-blue-400 text-sm sm:text-base">+{{ p.reposicion }}</td>
-                            <td class="text-red-400 text-sm sm:text-base" title="Desglose: Ventas Enteras + Proporción por cortos">{{ p.salida_visual }}</td>
-                            <td class="text-orange-400 text-sm sm:text-base">{{ p.faltante }}</td>
-                            <!-- Alerta de Stock Crítico: Saldo 0 = Rojo, Saldo 1 o 2 = Amarillo, Saldo Normal = Cyan/Dorado -->
-                            <td class="text-base sm:text-lg font-black 
+                            <td class="text-left text-white pl-1 truncate max-w-[120px] sm:max-w-none nombre-item">{{ p.nombre }}</td>
+                            <td class="text-zinc-400">{{ p.inicio_stock }}</td>
+                            <td class="text-blue-400">+{{ p.reposicion }}</td>
+                            <td class="text-red-400" title="Ventas del turno">{{ p.salida_visual }}</td>
+                            <td class="text-orange-400">{{ p.faltante }}</td>
+                            <td class="text-base font-black 
                                 {% if p.saldo <= 0 %} text-red-500 
                                 {% elif p.saldo <= 2 %} text-amber-500 
-                                {% else %}{% if p.tipo == 'PRODUCTO' %} text-cyan-400 {% else %} text-warning {% endif %}{% endif %}">
+                                {% else %} text-cyan-400 {% endif %}">
                                 {{ p.saldo_visual }}
                             </td>
                             
                             {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
-                            <td class="flex gap-1 justify-end pr-1 pt-2 no-print">
+                            <td class="flex gap-1 justify-end pr-1 pt-1 no-print">
                                 <button onclick="abrirModalMov('{{ p.id }}', '{{ p.nombre }}')" class="btn btn-xs btn-circle btn-ghost" title="Ajustar Stock">⚙️</button>
                                 <form action="/eliminar_producto/{{ p.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ p.nombre }} DEL SISTEMA?')">
                                     <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
@@ -280,27 +284,28 @@
             <div class="collapse-title text-xs font-black text-warning uppercase tracking-widest">
                 🍾 BOTELLAS BARRA (LICORES)
             </div>
-            <div class="collapse-content px-1 sm:px-4 pb-4 overflow-x-hidden">
-                <table class="table w-full text-center table-xs">
+            <div class="collapse-content px-1 sm:px-4 pb-4 overflow-x-auto custom-scrollbar">
+                <table class="table table-xs w-full text-center min-w-[600px] sm:min-w-0">
                     <thead>
                         <tr class="text-zinc-500 uppercase text-[9px] border-b border-white/5">
                             <th class="text-left pl-1">Nombre</th>
-                            <th>Repo</th>
-                            <th>Venta</th>
-                            <th>Falt</th>
-                            <th class="text-warning">Saldo</th>
+                            <th>Inicio (Turno Ant.)</th>
+                            <th>Repo (+)</th>
+                            <th>Venta (-)</th>
+                            <th>Falt (-)</th>
+                            <th class="text-warning font-black">Saldo En Vivo (Hoy)</th>
                             <th class="text-right pr-1 no-print">Acción</th>
                         </tr>
                     </thead>
                     <tbody class="font-bold uppercase text-xs">
-                        {% for b in inventario_botellas %}
+                        {% for b in inv_botellas %}
                         <tr class="border-b border-white/5 item-stock">
-                            <td class="text-left text-white pl-1 truncate max-w-[80px] sm:max-w-none nombre-item">{{ b.nombre }}</td>
-                            <td class="text-blue-400 text-sm sm:text-base">+{{ b.reposicion }}</td>
-                            <td class="text-red-400 text-sm sm:text-base" title="Desglose: Ventas Enteras + Proporción por cortos">{{ b.salida_visual }}</td>
-                            <td class="text-orange-400 text-sm sm:text-base">{{ b.faltante }}</td>
-                            <!-- Alerta de Stock Crítico en Botellas: Saldo 0 = Rojo, Saldo 1 o 2 = Amarillo, Saldo Normal = warning -->
-                            <td class="text-base sm:text-lg font-black 
+                            <td class="text-left text-white pl-1 truncate max-w-[120px] sm:max-w-none nombre-item">{{ b.nombre }}</td>
+                            <td class="text-zinc-400">{{ b.inicio_stock }}</td>
+                            <td class="text-blue-400">+{{ b.reposicion }}</td>
+                            <td class="text-red-400" title="Ventas del turno">{{ b.salida_visual }}</td>
+                            <td class="text-orange-400">{{ b.faltante }}</td>
+                            <td class="text-base font-black 
                                 {% if b.saldo <= 0 %} text-red-500 
                                 {% elif b.saldo <= 2 %} text-amber-500 
                                 {% else %} text-warning {% endif %}">
@@ -308,7 +313,7 @@
                             </td>
                             
                             {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
-                            <td class="flex gap-1 justify-end pr-1 pt-2 no-print">
+                            <td class="flex gap-1 justify-end pr-1 pt-1 no-print">
                                 <button onclick="abrirModalMov('{{ b.id }}', '{{ b.nombre }}')" class="btn btn-xs btn-circle btn-ghost" title="Ajustar Stock">⚙️</button>
                                 <form action="/eliminar_producto/{{ b.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ b.nombre }} DEL SISTEMA?')">
                                     <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
