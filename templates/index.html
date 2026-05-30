@@ -278,31 +278,49 @@
     </div>
 </dialog>
 
+<!-- Catálogo de auto-búsqueda rápida para las mesas (Solo licores individuales / cooler) -->
+<datalist id="opciones-tragos-mesa">
+    <option value="TRAGO BÁSICO"></option>
+    {% for p in productos_cooler %}
+    <option value="{{ p.nombre }}"></option>
+    {% endfor %}
+</datalist>
+
+<!-- Bloque de datos seguro (Excluye botellas enteras del catálogo de mesas) -->
+<script id="productos-data" type="application/json">
+[
+    {% for p in productos_cooler %}
+    {"id": {{ p.id }}, "nombre": "{{ p.nombre }}"}{% if not loop.last %},{% endif %}
+    {% endfor %}
+]
+</script>
+
 <!-- MODAL MESAS-->
 <dialog id="modal_mesas" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box bg-zinc-950 border-2 border-purple-500 p-8 max-w-2xl rounded-[35px] text-center">
+    <div class="modal-box bg-zinc-950 border-2 border-purple-500 p-6 sm:p-8 max-w-3xl rounded-[35px] text-center">
         <form id="form_mesa" action="/registrar_ronda_mesa" method="post" class="space-y-6">
-            <h3 class="font-black text-3xl text-purple-500 uppercase mb-6 italic tracking-tighter">Ronda de Mesa</h3>
+            <h3 class="font-black text-3xl text-purple-500 uppercase italic tracking-tighter">Ronda de Mesa</h3>
             
-            <div id="mesa_paso_datos">
-                <!-- SELECCIÓN GARZÓN -->
-                <select name="mesero" id="mesa_mesero_select" class="select select-bordered w-full bg-black text-white font-black mb-6">
-                    <option value="" disabled selected>👤 SELECCIONE GARZÓN</option>
-                    {% for g in garzones %}<option>{{ g.nombre }}</option>{% endfor %}
-                </select>
+            <input type="hidden" name="ronda_json" id="input_ronda_json">
 
-                <!-- 1. SECCIÓN DAMAS (Buscador + Grid) -->
-                <div class="space-y-2 mb-6 text-left">
-                    <p class="text-[10px] font-black text-zinc-500 uppercase italic ml-2">1. Seleccione las Damas:</p>
-                    <input type="text" id="buscChicaMesa" onkeyup="filtrarChicasMesa()" 
-                           placeholder="🔍 BUSCAR DAMA..." 
-                           class="input input-bordered input-sm w-full bg-zinc-900 border-purple-500/30 text-center font-bold uppercase mb-2">
+            <div id="mesa_paso_datos" class="space-y-6">
+                <!-- SELECCIÓN GARZÓN -->
+                <div class="text-left">
+                    <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block ml-2">👤 SELECCIONE GARZÓN:</span>
+                    <select name="mesero" id="mesa_mesero_select" class="select select-bordered w-full bg-black text-white font-black border-zinc-800 mt-1">
+                        <option value="" disabled selected>SELECCIONE GARZÓN</option>
+                        {% for g in garzones %}<option>{{ g.nombre }}</option>{% endfor %}
+                    </select>
+                </div>
+
+                <!-- SELECCIÓN DAMAS -->
+                <div class="space-y-2 text-left">
+                    <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block ml-2">1. Seleccione las Chicas de la Mesa:</span>
+                    <input type="text" id="buscChicaMesa" onkeyup="filtrarChicasMesa()" placeholder="🔍 ESCRIBIR NOMBRE DE DAMA..." class="input input-bordered input-sm w-full bg-zinc-900 border-purple-500/30 text-center font-bold uppercase mb-2">
                     
-                    <div id="contenedor_chicas_mesa" class="grid grid-cols-4 gap-3 max-h-40 overflow-y-auto p-4 bg-black/40 rounded-3xl border border-white/5">
+                    <div id="contenedor_chicas_mesa" class="grid grid-cols-4 gap-3 max-h-40 overflow-y-auto p-3 bg-black/40 rounded-3xl border border-white/5">
                         {% for dama in damas %}
-                        <div onclick="toggleFichaMesa(this, '{{ dama.id }}', '{{ dama.nombre_artistico }}')" 
-                             class="dama-mesa-item cursor-pointer flex flex-col items-center opacity-40 transition-all" 
-                             data-nombre="{{ dama.nombre_artistico }}">
+                        <div onclick="toggleFichaMesa(this, '{{ dama.id }}', '{{ dama.nombre_artistico }}')" class="dama-mesa-item cursor-pointer flex flex-col items-center opacity-40 transition-all" data-nombre="{{ dama.nombre_artistico }}">
                             <img src="{{ dama.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-transparent">
                             <span class="text-[8px] font-bold mt-1 uppercase text-white">{{ dama.nombre_artistico }}</span>
                         </div>
@@ -310,66 +328,52 @@
                     </div>
                 </div>
 
-                <!-- 2. SECCIÓN PRODUCTOS (Buscador con Lista Flotante) -->
-                <div class="space-y-2 mb-8 text-left relative">
-                    <p class="text-[10px] font-black text-zinc-500 uppercase italic ml-2">2. Seleccione Producto:</p>
+                <!-- CONFIGURACIÓN DETALLADA POR FILAS (CADA CHICA TIENE SU CONSUMO) -->
+                <div class="space-y-2 text-left">
+                    <div class="flex justify-between items-center px-2">
+                        <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">2. Detalle de Consumos y Valores:</span>
+                        <button type="button" onclick="copiarPrimeroATodas()" class="btn btn-xs btn-purple rounded-lg font-black text-[8px] px-3 shadow-lg">
+                            ✨ COPIAR PRIMERA OPCIÓN A TODAS
+                        </button>
+                    </div>
                     
-                    <div class="relative w-full" id="containerDropTrago">
-                        <input type="text" id="buscTragoMesa" onkeyup="filtrarTragosMesa()" 
-                               onfocus="mostrarMenuTragos()"
-                               placeholder="🔍 ESCRIBIR NOMBRE TRAGO..." 
-                               class="input input-bordered input-sm w-full bg-black border-zinc-700 text-center uppercase font-black text-purple-400">
-                        
-                        <!-- Lista Flotante (Se muestra al escribir o hacer foco) -->
-                        <div id="menuTragosMesa" class="hidden absolute bottom-full left-0 w-full mb-2 bg-zinc-900 border-2 border-zinc-700 rounded-2xl shadow-2xl z-[100] max-h-48 overflow-y-auto animate-fade-in">
-                            <!-- Opción Neutra -->
-                            <div onclick="seleccionarTragoMesaDirecto(this, '0', 'TRAGO BÁSICO')" 
-                                 class="trago-mesa-item p-3 hover:bg-purple-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-zinc-400"
-                                 data-nombre="TRAGO BÁSICO">
-                                TRAGO BÁSICO
-                            </div>
-
-                            {% for p in productos_cooler %}
-                            <div onclick="seleccionarTragoMesaDirecto(this, '{{p.id}}', '{{p.nombre}}')" 
-                                 class="trago-mesa-item p-3 hover:bg-purple-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-white"
-                                 data-nombre="{{p.nombre}}">
-                                {{ p.nombre }}
-                            </div>
-                            {% endfor %}
-                        </div>
+                    <div class="overflow-visible bg-black/40 rounded-3xl border border-white/5 p-3">
+                        <table class="table table-xs w-full text-center">
+                            <thead>
+                                <tr class="text-zinc-500 uppercase text-[9px] border-b border-white/5">
+                                    <th class="text-left">Dama</th>
+                                    <th>Trago / Bebida</th>
+                                    <th>Monto / Valor</th>
+                                    <th>Adicional</th>
+                                    <th class="text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ronda_chicas_detalle_filas">
+                                <!-- Se renderiza dinámicamente con JavaScript -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <!-- INPUTS OCULTOS (Eliminado el duplicado de producto_id) -->
-                <div id="ids_mesa_input_container"></div>
-                <input type="hidden" name="tier_precio" id="input_mesa_tier_precio">
-                <input type="hidden" name="extra_tipo" id="input_mesa_extra_tipo" value="">
-                <input type="hidden" name="producto_id" id="input_mesa_producto_id">
-
-                <!-- EXTRAS PARA MESA (AÑADIR ESTO ARRIBA DE LOS BOTONES T-25) -->
-<div class="grid grid-cols-2 gap-2 mb-4">
-    <button type="button" id="btn_mesa_extra_vip" onclick="toggleExtraMesa('VIP')" class="btn btn-xs btn-outline btn-secondary font-black">✨ + VIP (50K)</button>
-    <button type="button" id="btn_mesa_extra_priv" onclick="toggleExtraMesa('PRIVADO')" class="btn btn-xs btn-outline btn-accent font-black">🔒 + PRIVADO (200K)</button>
-</div>
-
-                <!-- BOTONES DE PRECIO -->
-                <div id="mesa_botones_principales" class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="preConfirmarMesa('T25')" class="btn btn-outline border-zinc-700 font-black">T-25</button>
-                    <button type="button" onclick="preConfirmarMesa('T35')" class="btn btn-outline border-zinc-700 font-black">T-35</button>
-                    <button type="button" onclick="preConfirmarMesa('T50')" class="btn btn-outline border-zinc-700 font-black">T-50</button>
-                    <button type="button" onclick="preConfirmarMesa('T100')" class="btn btn-outline border-zinc-700 font-black">T-100</button>
+                <!-- RESUMEN DE COMPRA MESA -->
+                <div class="flex justify-between items-center bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20">
+                    <span class="text-xs font-black text-zinc-400 uppercase tracking-wider">Monto Total de la Ronda:</span>
+                    <span id="monto_total_mesa_visual" class="text-xl font-black text-purple-400">$0</span>
                 </div>
                 
-                <button type="button" onclick="document.getElementById('modal_mesas').close()" class="btn btn-ghost btn-xs mt-6 uppercase">← Cancelar</button>
+                <div class="flex gap-2 pt-2 border-t border-white/5">
+                    <button type="button" onclick="document.getElementById('modal_mesas').close()" class="btn btn-ghost flex-1 font-bold">CANCELAR</button>
+                    <button type="button" onclick="avanzarAPagoMesa()" class="btn btn-purple flex-[2] font-black text-sm shadow-lg shadow-purple-500/20">CONTINUAR AL PAGO →</button>
+                </div>
             </div>
 
-            <!-- PASO 2: CONFIRMACIÓN Y PAGO -->
+            <!-- PASO de CONFIRMACIÓN Y PAGO DE MESA -->
             <div id="mesa_resumen_confirmacion" class="hidden space-y-6">
                 <div class="bg-purple-500/10 p-6 rounded-[30px] border-2 border-purple-500/30">
                     <h4 class="text-white font-black uppercase text-xl mb-4">Confirmar Ronda</h4>
                     <p id="resumen_texto_servicio" class="text-2xl font-black text-purple-400 uppercase italic mb-2"></p>
                     <div id="resumen_chicas_lista" class="flex flex-wrap justify-center gap-2 mb-4"></div>
-                    <p id="resumen_total_mesa" class="text-sm font-bold text-zinc-400 mb-4"></p>
+                    <p id="resumen_total_mesa" class="text-lg font-black text-white mb-4"></p>
                 </div>
 
                 <div id="botones_pago_mesa" class="grid grid-cols-2 gap-3">
@@ -635,6 +639,114 @@ async function confirmarAperturaBotella() {
         alert("❌ Ocurrió un error al intentar descorchar la botella.");
     }
 }
+function abrirDropdownTragoMesa(input) {
+    // Cerramos cualquier otro dropdown abierto primero
+    document.querySelectorAll('.listado-opciones-trago').forEach(div => div.classList.add('hidden'));
+
+    const container = input.closest('.dropdown-trago-container');
+    const menuDropdown = container.querySelector('.listado-opciones-trago');
+    
+    let listadoProds = [];
+    let errorDeLectura = false;
+
+    try {
+        const el = document.getElementById('productos-data');
+        if (el) {
+            listadoProds = JSON.parse(el.textContent || '[]');
+        }
+    } catch (err) {
+        console.error("Error al recuperar catálogo:", err);
+        errorDeLectura = true;
+    }
+
+    // 1. Siempre inyectamos el Trago Simple al principio
+    menuDropdown.innerHTML = `
+        <div onclick="seleccionarTragoMesaFila(this, '', 'TRAGO BÁSICO')" 
+             class="opcion-trago p-2 hover:bg-purple-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-zinc-400 text-left">
+             🥃 TRAGO BÁSICO (SIMPLE)
+         </div>
+    `;
+
+    // 2. DIAGNÓSTICO: Si hay error de formato JSON
+    if (errorDeLectura) {
+        menuDropdown.innerHTML += `
+            <div class="p-2 font-bold text-[9px] text-red-500 uppercase text-left">
+                ⚠️ Error al procesar catálogo
+            </div>
+        `;
+    } 
+    // 3. DIAGNÓSTICO: Si no hay licores registrados en el turno activo
+    else if (listadoProds.length === 0) {
+        menuDropdown.innerHTML += `
+            <div class="p-2 font-bold text-[9px] text-zinc-500 uppercase text-left italic">
+                ℹ️ Sin licores de cooler en stock
+            </div>
+        `;
+    } 
+    // 4. Si hay productos en stock, los listamos
+    else {
+        listadoProds.forEach(p => {
+            menuDropdown.innerHTML += `
+                <div onclick="seleccionarTragoMesaFila(this, '${p.id}', '${p.nombre}')" 
+                     class="opcion-trago p-2 hover:bg-purple-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-white text-left"
+                     data-nombre="${p.nombre}">
+                     ⚡ ${p.nombre}
+                 </div>
+            `;
+        });
+    }
+
+    menuDropdown.classList.remove('hidden');
+    filtrarDropdownTragoMesa(input);
+}
+
+function filtrarDropdownTragoMesa(input) {
+    const filter = input.value.toUpperCase();
+    const container = input.closest('.dropdown-trago-container');
+    const menuDropdown = container.querySelector('.listado-opciones-trago');
+    const opciones = menuDropdown.querySelectorAll('.opcion-trago');
+
+    opciones.forEach(opcion => {
+        const nombreAttr = opcion.getAttribute('data-nombre');
+        if (!nombreAttr) {
+            opcion.style.display = ""; 
+            return;
+        }
+        if (nombreAttr.toUpperCase().includes(filter)) {
+            opcion.style.display = "";
+        } else {
+            opcion.style.display = "none";
+        }
+    });
+}
+
+function copiarPrimeroATodas() {
+    const contenedor = document.getElementById('ronda_chicas_detalle_filas');
+    const filas = contenedor.querySelectorAll('tr');
+    if (filas.length <= 1) return;
+
+    const primeraFila = filas[0];
+    const primerInput = primeraFila.querySelector('.item-prod-select');
+    
+    const prodVal = primerInput.value;
+    const prodId = primerInput.getAttribute('data-producto-id') || '';
+    
+    const tierVal = primeraFila.querySelector('.item-tier-select').value;
+    const extraVal = primeraFila.querySelector('.item-extra-select').value;
+
+    filas.forEach((fila, idx) => {
+        if (idx === 0) return;
+        const inputDestino = fila.querySelector('.item-prod-select');
+        inputDestino.value = prodVal;
+        inputDestino.setAttribute('data-producto-id', prodId);
+        
+        fila.querySelector('.item-tier-select').value = tierVal;
+        fila.querySelector('.item-extra-select').value = extraVal;
+    });
+
+    actualizarPreciosMesa();
+}
+
 
 // ==========================================
 // 1. GARZONES (AJAX) - (TU CÓDIGO ORIGINAL SIGUE AQUÍ)
@@ -879,27 +991,31 @@ let mesaActual = { ids: [], nombres: [], montoTier: 0, extra: '', productoId: nu
 function abrirModalMesas() {
     mesaActual = { ids: [], nombres: [], montoTier: 0, extra: '', productoId: null, productoNombre: 'TRAGO BÁSICO' };
     
-    // Reset Chicas visual
+    // Reset visual de las chicas
     document.querySelectorAll('.dama-mesa-item').forEach(el => { 
         el.classList.add('opacity-40'); 
         el.style.display = "flex"; 
         el.querySelector('img').style.borderColor = 'transparent'; 
     });
 
-    document.getElementById('btn_mesa_extra_vip').classList.replace('btn-secondary', 'btn-outline');
-    document.getElementById('btn_mesa_extra_priv').classList.replace('btn-accent', 'btn-outline');
-    document.getElementById('input_mesa_extra_tipo').value = '';
-    
-    // Reset Buscadores
+    const meseroSelect = document.getElementById('mesa_mesero_select');
+    if (meseroSelect) meseroSelect.selectedIndex = 0;
+
     document.getElementById("buscChicaMesa").value = "";
-    document.getElementById("buscTragoMesa").value = "";
-    document.getElementById("buscTragoMesa").classList.replace('border-purple-500', 'border-zinc-700');
-    document.getElementById('input_mesa_producto_id').value = '';
+    document.getElementById('input_ronda_json').value = "";
     
-    // Reset de vistas
+    // Limpiar tabla detallada
+    document.getElementById('ronda_chicas_detalle_filas').innerHTML = `
+        <tr><td colspan="5" class="text-center text-zinc-600 font-bold uppercase text-[9px] py-4">No hay chicas seleccionadas</td></tr>
+    `;
+
+    document.getElementById('monto_total_mesa_visual').innerText = "$0";
+
+    // Reset vistas
     document.getElementById('mesa_paso_datos').classList.remove('hidden');
     document.getElementById('mesa_resumen_confirmacion').classList.add('hidden');
-    document.getElementById('menuTragosMesa').classList.add('hidden');
+    document.getElementById('seccion_nombre_mesa_deuda').classList.add('hidden');
+    document.getElementById('botones_pago_mesa').classList.remove('hidden');
     
     document.getElementById('modal_mesas').showModal();
 }
@@ -908,12 +1024,19 @@ function toggleFichaMesa(el, id, n) {
     id = parseInt(id);
     const i = mesaActual.ids.indexOf(id);
     if (i > -1) { 
-        mesaActual.ids.splice(i, 1); mesaActual.nombres.splice(mesaActual.nombres.indexOf(n), 1); 
-        el.classList.add('opacity-40'); el.querySelector('img').style.borderColor = 'transparent'; 
+        mesaActual.ids.splice(i, 1); 
+        mesaActual.nombres.splice(mesaActual.nombres.indexOf(n), 1); 
+        el.classList.add('opacity-40'); 
+        el.querySelector('img').style.borderColor = 'transparent'; 
     } else { 
-        mesaActual.ids.push(id); mesaActual.nombres.push(n); 
-        el.classList.remove('opacity-40'); el.querySelector('img').style.borderColor = '#a855f7'; 
+        mesaActual.ids.push(id); 
+        mesaActual.nombres.push(n); 
+        el.classList.remove('opacity-40'); 
+        el.querySelector('img').style.borderColor = '#a855f7'; 
     }
+
+    // Generamos las filas dinámicamente
+    generarFilasMesaDetalle();
 }
 
 function filtrarChicasMesa() {
@@ -1008,24 +1131,27 @@ function seleccionarTragoInd(el, id, nombre) {
     document.getElementById('buscTragoInd').classList.replace('border-zinc-700', 'border-pink-500');
 }
 
-function seleccionarTragoMesaDirecto(elemento, id, nombre) {
-    // 1. Guardar datos
-    mesaActual.productoId = (id === '0') ? null : id;
-    mesaActual.productoNombre = nombre;
+function seleccionarTragoMesaFila(elementoOpcion, productoId, productoNombre) {
+    const container = elementoOpcion.closest('.dropdown-trago-container');
+    const input = container.querySelector('.item-prod-select');
+    const menuDropdown = container.querySelector('.listado-opciones-trago');
+
+    input.value = productoNombre;
+    input.setAttribute('data-producto-id', productoId);
     
-    // 2. Actualizar el input de búsqueda con el nombre seleccionado
-    const buscador = document.getElementById('buscTragoMesa');
-    buscador.value = nombre;
-    
-    // 3. Actualizar el input hidden real
-    document.getElementById('input_mesa_producto_id').value = mesaActual.productoId || '';
-    
-    // 4. Ocultar el menú flotante
-    document.getElementById('menuTragosMesa').classList.add('hidden');
-    
-    // 5. Feedback visual al buscador
-    buscador.classList.replace('border-zinc-700', 'border-purple-500');
+    menuDropdown.classList.add('hidden');
+    actualizarPreciosMesa();
 }
+
+// Event listener para cerrar dropdowns al cliquear en cualquier parte de la pantalla
+document.addEventListener('click', function(e) {
+    if (!e.target.classList.contains('item-prod-select')) {
+        document.querySelectorAll('.listado-opciones-trago').forEach(div => {
+            div.classList.add('hidden');
+        });
+    }
+});
+
 // Cerrar el menú flotante si el usuario hace click fuera
 document.addEventListener('click', function(event) {
     const container = document.getElementById('containerDropTrago');
@@ -1573,6 +1699,213 @@ function abrirModalCliente() {
     document.getElementById('modal_cliente').showModal();
 }
 
+// =========================================================================
+// 5. CONTROL DEL MÓDULO "MESAS" (VERSIÓN CON AUTO-BÚSQUEDA)
+// =========================================================================
+
+function abrirModalMesas() {
+    mesaActual = { ids: [], nombres: [], montoTier: 0, extra: '', productoId: null, productoNombre: 'TRAGO BÁSICO' };
+    
+    // Reset visual de las chicas
+    document.querySelectorAll('.dama-mesa-item').forEach(el => { 
+        el.classList.add('opacity-40'); 
+        el.style.display = "flex"; 
+        el.querySelector('img').style.borderColor = 'transparent'; 
+    });
+
+    const meseroSelect = document.getElementById('mesa_mesero_select');
+    if (meseroSelect) meseroSelect.selectedIndex = 0;
+
+    document.getElementById("buscChicaMesa").value = "";
+    document.getElementById('input_ronda_json').value = "";
+    
+    // Limpiar tabla detallada
+    document.getElementById('ronda_chicas_detalle_filas').innerHTML = `
+        <tr><td colspan="5" class="text-center text-zinc-600 font-bold uppercase text-[9px] py-4">No hay chicas seleccionadas</td></tr>
+    `;
+
+    document.getElementById('monto_total_mesa_visual').innerText = "$0";
+
+    // Reset vistas
+    document.getElementById('mesa_paso_datos').classList.remove('hidden');
+    document.getElementById('mesa_resumen_confirmacion').classList.add('hidden');
+    document.getElementById('seccion_nombre_mesa_deuda').classList.add('hidden');
+    document.getElementById('botones_pago_mesa').classList.remove('hidden');
+    
+    document.getElementById('modal_mesas').showModal();
+}
+
+function toggleFichaMesa(el, id, n) {
+    id = parseInt(id);
+    const i = mesaActual.ids.indexOf(id);
+    if (i > -1) { 
+        mesaActual.ids.splice(i, 1); 
+        mesaActual.nombres.splice(mesaActual.nombres.indexOf(n), 1); 
+        el.classList.add('opacity-40'); 
+        el.querySelector('img').style.borderColor = 'transparent'; 
+    } else { 
+        mesaActual.ids.push(id); 
+        mesaActual.nombres.push(n); 
+        el.classList.remove('opacity-40'); 
+        el.querySelector('img').style.borderColor = '#a855f7'; 
+    }
+
+    // Generamos las filas dinámicamente
+    generarFilasMesaDetalle();
+}
+
+function generarFilasMesaDetalle() {
+    const contenedor = document.getElementById('ronda_chicas_detalle_filas');
+    if (!contenedor) return;
+    contenedor.innerHTML = '';
+
+    if (mesaActual.ids.length === 0) {
+        contenedor.innerHTML = `<tr><td colspan="5" class="text-center text-zinc-500 font-bold uppercase text-[9px] py-4">No hay chicas seleccionadas</td></tr>`;
+        return;
+    }
+
+    mesaActual.ids.forEach((id, idx) => {
+    const nombre = mesaActual.nombres[idx];
+    const html = `
+        <tr class="border-b border-white/5 align-middle py-1.5" data-dama-id="${id}" data-dama-nombre="${nombre}">
+            <td class="font-black text-white text-[11px] text-left uppercase pl-2">${nombre}</td>
+            <td>
+                <!-- BUSCADOR INTERACTIVO DE TRAGO INDIVIDUAL (DESPLIEGUE HACIA ARRIBA) -->
+                <div class="relative w-full dropdown-trago-container">
+                    <input type="text" 
+                           placeholder="🔍 ESCRIBIR TRAGO..." 
+                           class="input input-bordered input-xs w-full bg-black text-white font-black text-center uppercase item-prod-select" 
+                           value="TRAGO BÁSICO"
+                           data-producto-id=""
+                           onfocus="abrirDropdownTragoMesa(this)"
+                           onkeyup="filtrarDropdownTragoMesa(this)"
+                           autocomplete="off">
+                    <!-- bottom-full mb-1 posiciona el listado hacia arriba de la celda -->
+                    <div class="hidden absolute left-0 w-full bottom-full mb-1 bg-zinc-950 border border-purple-500/50 rounded-xl shadow-2xl z-[100] max-h-32 overflow-y-auto listado-opciones-trago p-1">
+                        <!-- Las opciones se cargan dinámicamente -->
+                    </div>
+                </div>
+            </td>
+            <td>
+                <select class="select select-bordered select-xs w-full bg-black text-white font-black item-tier-select" onchange="actualizarPreciosMesa()">
+                    <option value="25000">T-25</option>
+                    <option value="35000">T-35</option>
+                    <option value="50000">T-50</option>
+                    <option value="100000">T-100</option>
+                </select>
+            </td>
+            <td>
+                <select class="select select-bordered select-xs w-full bg-black text-white font-bold item-extra-select" onchange="actualizarPreciosMesa()">
+                    <option value="">NINGUNO</option>
+                    <option value="VIP">VIP (+50K)</option>
+                    <option value="PRIVADO">PRIVADO (+200K)</option>
+                </select>
+            </td>
+            <td class="text-right text-purple-400 font-black text-xs pr-2 item-subtotal-text">$25.000</td>
+        </tr>
+    `;
+    contenedor.insertAdjacentHTML('beforeend', html);
+});
+
+    actualizarPreciosMesa();
+}
+
+function actualizarPreciosMesa() {
+    const contenedor = document.getElementById('ronda_chicas_detalle_filas');
+    if (!contenedor) return;
+    const filas = contenedor.querySelectorAll('tr');
+    let totalRonda = 0;
+
+    filas.forEach(fila => {
+        const tierSelect = fila.querySelector('.item-tier-select');
+        const extraSelect = fila.querySelector('.item-extra-select');
+        const subtotalText = fila.querySelector('.item-subtotal-text');
+
+        if (tierSelect && extraSelect && subtotalText) {
+            const tierVal = parseInt(tierSelect.value) || 0;
+            const extraVal = extraSelect.value;
+
+            let subtotal = tierVal;
+            if (extraVal === 'VIP') subtotal += 50000;
+            if (extraVal === 'PRIVADO') subtotal += 200000;
+
+            subtotalText.innerText = "$" + subtotal.toLocaleString('es-CL');
+            totalRonda += subtotal;
+        }
+    });
+
+    const totalVisual = document.getElementById('monto_total_mesa_visual');
+    if (totalVisual) {
+        totalVisual.innerText = "$" + totalRonda.toLocaleString('es-CL');
+    }
+}
+
+function avanzarAPagoMesa() {
+    const mesero = document.getElementById('mesa_mesero_select').value;
+    if (!mesero) { alert("⚠️ SELECCIONE GARZÓN"); return; }
+    if (mesaActual.ids.length === 0) { alert("⚠️ SELECCIONE CHICAS"); return; }
+
+    const contenedor = document.getElementById('ronda_chicas_detalle_filas');
+    const filas = contenedor.querySelectorAll('tr');
+    let dataRonda = [];
+    let totalRonda = 0;
+    let resumenItems = [];
+
+    let listadoProds = [];
+    try {
+        const el = document.getElementById('productos-data');
+        if (el) {
+            listadoProds = JSON.parse(el.textContent || '[]');
+        }
+    } catch (err) {
+        console.log("Error al recuperar catálogo:", err);
+    }
+
+    filas.forEach(fila => {
+        const dId = parseInt(fila.getAttribute('data-dama-id'));
+        const dNombre = fila.getAttribute('data-dama-nombre');
+        
+        const inputProd = fila.querySelector('.item-prod-select');
+        const pNombreIngresado = inputProd.value.trim().toUpperCase();
+        
+        const pIdAttr = inputProd.getAttribute('data-producto-id');
+        let pId = pIdAttr ? parseInt(pIdAttr) : null;
+        
+        // Resguardo si no se cargó el ID pero coincide con el texto
+        if (!pId && pNombreIngresado !== "TRAGO BÁSICO") {
+            const foundProduct = listadoProds.find(p => p.nombre.toUpperCase() === pNombreIngresado);
+            pId = foundProduct ? foundProduct.id : null;
+        }
+
+        const pNombreVisual = pId ? pNombreIngresado : "TRAGO BÁSICO";
+        const tierVal = parseInt(fila.querySelector('.item-tier-select').value) || 0;
+        const extraVal = fila.querySelector('.item-extra-select').value || null;
+
+        let subtotal = tierVal;
+        if (extraVal === 'VIP') subtotal += 50000;
+        if (extraVal === 'PRIVADO') subtotal += 200000;
+
+        totalRonda += subtotal;
+
+        resumenItems.push(`${dNombre}: ${pNombreVisual} (${tierVal / 1000}K${extraVal ? ' + ' + extraVal : ''})`);
+
+        dataRonda.push({
+            dama_id: dId,
+            producto_id: pId,
+            tier_precio: tierVal,
+            extra_tipo: extraVal
+        });
+    });
+
+    document.getElementById('input_ronda_json').value = JSON.stringify(dataRonda);
+
+    document.getElementById('resumen_texto_servicio').innerText = "RONDA MESA DESGLOSADA";
+    document.getElementById('resumen_chicas_lista').innerHTML = resumenItems.map(txt => `<span class="badge badge-purple font-black py-2.5 my-1 text-[10px] uppercase">${txt}</span>`).join('');
+    document.getElementById('resumen_total_mesa').innerText = "TOTAL MESA: $" + totalRonda.toLocaleString('es-CL');
+
+    document.getElementById('mesa_paso_datos').classList.add('hidden');
+    document.getElementById('mesa_resumen_confirmacion').classList.remove('hidden');
+}
 
 </script>
 <dialog id="modal_turno_fijo" class="modal">
