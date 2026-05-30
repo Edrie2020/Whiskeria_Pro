@@ -129,33 +129,34 @@ models.Base.metadata.create_all(bind=engine)
 def ejecutar_migraciones_sqlite_produccion():
     db = SessionLocal()
     try:
+        # Aseguramos el uso de text() para compatibilidad con SQLAlchemy 2.0+
         cursor = db.execute(text("PRAGMA table_info(productos)"))
         columnas_prod = [row[1] for row in cursor.fetchall()]
         
         if "turno" not in columnas_prod:
-            db.execute("ALTER TABLE productos ADD COLUMN turno VARCHAR DEFAULT 'Turno 1'")
+            db.execute(text("ALTER TABLE productos ADD COLUMN turno VARCHAR DEFAULT 'Turno 1'"))
             db.commit()
             print("✅ MIGRACIÓN: Columna 'turno' inyectada en 'productos'.")
             
         try:
-            db.execute("DROP INDEX IF EXISTS ix_productos_nombre")
-            db.execute("CREATE INDEX IF NOT EXISTS ix_productos_nombre ON productos (nombre)")
+            db.execute(text("DROP INDEX IF EXISTS ix_productos_nombre"))
+            db.execute(text("CREATE INDEX IF NOT EXISTS ix_productos_nombre ON productos (nombre)"))
             db.commit()
             print("✅ MIGRACIÓN: Índice único de nombres de productos removido.")
         except Exception as idx_err:
             print(f"⚠️ MIGRACIÓN (Aviso de índice): {str(idx_err)}")
 
-        # 💡 MIGRACIÓN DE LA TABLA VENTAS PARA COBRO MIXTO
-        cursor_v = db.execute("PRAGMA table_info(ventas)")
+        # MIGRACIÓN DE LA TABLA VENTAS PARA COBRO MIXTO
+        cursor_v = db.execute(text("PRAGMA table_info(ventas)"))
         columnas_ventas = [row[1] for row in cursor_v.fetchall()]
 
         if "monto_efectivo" not in columnas_ventas:
-            db.execute("ALTER TABLE ventas ADD COLUMN monto_efectivo FLOAT DEFAULT 0.0")
+            db.execute(text("ALTER TABLE ventas ADD COLUMN monto_efectivo FLOAT DEFAULT 0.0"))
             db.commit()
             print("✅ MIGRACIÓN: Columna 'monto_efectivo' inyectada en 'ventas'.")
 
         if "monto_tarjeta" not in columnas_ventas:
-            db.execute("ALTER TABLE ventas ADD COLUMN monto_tarjeta FLOAT DEFAULT 0.0")
+            db.execute(text("ALTER TABLE ventas ADD COLUMN monto_tarjeta FLOAT DEFAULT 0.0"))
             db.commit()
             print("✅ MIGRACIÓN: Columna 'monto_tarjeta' inyectada en 'ventas'.")
 
