@@ -1,3 +1,4 @@
+<!-- START OF FILE templates/reportes.html -->
 <!DOCTYPE html>
 <html lang="es" data-theme="night">
 <head>
@@ -8,210 +9,192 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <title>CONTABILIDAD W2000</title>
     <style>
-    .neon-gold { text-shadow: 0 0 15px #facc15; color: #facc15; }
-    .card-btn { transition: all 0.3s; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
-
-    /* Ocultar bloque de contador por defecto en pantalla */
-    .bloque-contador { display: none; }
-
-    /* --- CONFIGURACIÓN DE IMPRESIÓN INTELIGENTE (AHORRO DE TINTA) --- */
-    @media print {
-        body { 
-            background: #ffffff !important; 
-            color: #000000 !important; 
-            padding: 10px !important; 
-            font-family: sans-serif !important; 
-        }
-        .no-print { display: none !important; }
+        .neon-pink { text-shadow: 0 0 10px #ec4899; color: #ec4899; }
+        .neon-gold { text-shadow: 0 0 15px #facc15; color: #facc15; }
+        .card-btn { transition: all 0.2s ease-in-out; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
+        .card-btn:hover { border-color: rgba(236, 72, 153, 0.3); transform: translateY(-1px); }
         
-        /* Forzar texto negro absoluto y remover sombras neón en impresión */
-        body.modo-jefe,
-        body.modo-jefe *,
-        body.modo-contador,
-        body.modo-contador * {
-            color: #000000 !important;
-            text-shadow: none !important;
-        }
+        .bloque-contador { display: none; }
 
-        /* 1. DISEÑO LIMPIO Y DE BAJO CONSUMO EN MODO JEFE (IMPRESIÓN FULL) */
-        body.modo-jefe .bg-zinc-900, 
-        body.modo-jefe .bg-zinc-950, 
-        body.modo-jefe .bg-black,
-        body.modo-jefe .bg-zinc-900\/50,
-        body.modo-jefe .bg-zinc-800,
-        body.modo-jefe .bg-zinc-900\/80,
-        body.modo-jefe .bg-gradient-to-br { 
-            background: #ffffff !important; 
-            border: 1.5px solid #e4e4e7 !important; 
-            box-shadow: none !important;
-        }
+        /* Estilos optimizados para impresión formal */
+        @media print {
+            body { 
+                background: #ffffff !important; 
+                color: #000000 !important; 
+                padding: 15px !important; 
+                font-family: sans-serif !important; 
+            }
+            .no-print { display: none !important; }
+            
+            body.modo-jefe,
+            body.modo-jefe *,
+            body.modo-contador,
+            body.modo-contador * {
+                color: #000000 !important;
+                text-shadow: none !important;
+            }
 
-        /* Utilidad de la Casa en un amarillo pastel suave */
-        body.modo-jefe .bg-gradient-to-br.from-yellow-500.to-amber-600 {
-            background: #fef08a !important; /* Amarillo pastel */
-            border: 1.5px solid #eab308 !important;
-        }
-        body.modo-jefe .bg-gradient-to-br.from-yellow-500.to-amber-600 * {
-            color: #854d0e !important;
-        }
+            body.modo-jefe .bg-zinc-900, 
+            body.modo-jefe .bg-zinc-950, 
+            body.modo-jefe .bg-black,
+            body.modo-jefe .bg-zinc-900\/50,
+            body.modo-jefe .bg-zinc-800,
+            body.modo-jefe .bg-zinc-900\/80,
+            body.modo-jefe .bg-gradient-to-br { 
+                background: #ffffff !important; 
+                border: 1px solid #e4e4e7 !important; 
+                box-shadow: none !important;
+            }
 
-        /* Recuadro de Liquidación Damas */
-        body.modo-jefe .border-pink-500\/20 {
-            border: 1.5px solid #fbcfe8 !important; /* Rosa sutil */
-        }
-        body.modo-jefe .border-pink-500\/20 * {
-            color: #db2777 !important;
-        }
+            body.modo-jefe .bg-gradient-to-br.from-yellow-500.to-amber-600 {
+                background: #fef08a !important; 
+                border: 1px solid #eab308 !important;
+            }
+            body.modo-jefe .bg-gradient-to-br.from-yellow-500.to-amber-600 * {
+                color: #854d0e !important;
+            }
 
-        /* Tarjetas de Métodos de Pago: Fondo blanco con bordes sutiles de color */
-        body.modo-jefe .bg-emerald-500\/5,
-        body.modo-jefe .bg-blue-500\/5,
-        body.modo-jefe .bg-purple-500\/5,
-        body.modo-jefe .bg-zinc-900\/80 {
-            background: #ffffff !important;
-            border-width: 1.5px !important;
-            border-style: solid !important;
-            box-shadow: none !important;
-        }
+            body.modo-jefe .border-pink-500\/20 {
+                border: 1px solid #fbcfe8 !important; 
+            }
+            body.modo-jefe .border-pink-500\/20 * {
+                color: #db2777 !important;
+            }
 
-        body.modo-jefe .bg-emerald-500\/5 { border-color: #10b981 !important; }
-        body.modo-jefe .bg-emerald-500\/5 * { color: #047857 !important; }
+            body.modo-jefe .bg-emerald-500\/5,
+            body.modo-jefe .bg-blue-500\/5,
+            body.modo-jefe .bg-purple-500\/5,
+            body.modo-jefe .bg-zinc-900\/80 {
+                background: #ffffff !important;
+                border: 1.5px solid #e4e4e7 !important;
+                box-shadow: none !important;
+            }
 
-        body.modo-jefe .bg-blue-500\/5 { border-color: #3b82f6 !important; }
-        body.modo-jefe .bg-blue-500\/5 * { color: #1d4ed8 !important; }
+            body.modo-jefe .bg-emerald-500\/5 { border-color: #10b981 !important; }
+            body.modo-jefe .bg-emerald-500\/5 * { color: #047857 !important; }
+            body.modo-jefe .bg-blue-500\/5 { border-color: #3b82f6 !important; }
+            body.modo-jefe .bg-blue-500\/5 * { color: #1d4ed8 !important; }
+            body.modo-jefe .bg-purple-500\/5 { border-color: #a855f7 !important; }
+            body.modo-jefe .bg-purple-500\/5 * { color: #6d28d9 !important; }
+            body.modo-jefe .bg-zinc-900\/80 { border-color: #eab308 !important; } 
+            body.modo-jefe .bg-zinc-900\/80 * { color: #a16207 !important; }
 
-        body.modo-jefe .bg-purple-500\/5 { border-color: #a855f7 !important; }
-        body.modo-jefe .bg-purple-500\/5 * { color: #6d28d9 !important; }
+            body.modo-jefe .seccion-garzones .bg-zinc-900\/50 {
+                background: #ffffff !important;
+                border: 1px solid #e4e4e7 !important;
+            }
+            body.modo-jefe .seccion-garzones .bg-black\/20 {
+                background: transparent !important;
+                border: none !important;
+            }
+            body.modo-jefe .seccion-garzones th {
+                color: #71717a !important;
+                border-bottom: 1px solid #e4e4e7 !important;
+            }
+            body.modo-jefe .seccion-garzones td {
+                color: #000000 !important;
+                border-bottom: 1px solid #f4f4f5 !important;
+                max-width: none !important;
+                white-space: normal !important;
+                overflow: visible;
+            }
 
-        body.modo-jefe .bg-zinc-900\/80 { border-color: #eab308 !important; } 
-        body.modo-jefe .bg-zinc-900\/80 * { color: #a16207 !important; }
+            body.modo-jefe .seccion-auditoria .bg-zinc-900\/80 {
+                background: #ffffff !important;
+                border: 1px solid #fca5a5 !important;
+            }
+            body.modo-jefe .seccion-auditoria .bg-red-500\/5 {
+                background: transparent !important;
+                border-bottom: 1px solid #f4f4f5 !important;
+            }
+            body.modo-jefe .seccion-auditoria span, 
+            body.modo-jefe .seccion-auditoria div {
+                color: #000000 !important;
+            }
+            body.modo-jefe .seccion-auditoria .text-red-400 {
+                color: #dc2626 !important;
+            }
 
-        /* Lista de Garzones transparente */
-        body.modo-jefe .seccion-garzones .bg-zinc-900\/50 {
-            background: #ffffff !important;
-            border: 1px solid #e4e4e7 !important;
-        }
-        body.modo-jefe .seccion-garzones .bg-black\/20 {
-            background: transparent !important;
-            border: none !important;
-        }
-        body.modo-jefe .seccion-garzones th {
-            color: #71717a !important;
-            border-bottom: 1px solid #e4e4e7 !important;
-        }
-        body.modo-jefe .seccion-garzones td {
-        color: #000000 !important;
-        border-bottom: 1px solid #f4f4f5 !important;
-        
-        /* 💡 Desbloqueo de truncado para mostrar el texto completo en cualquier tamaño de pantalla */
-        max-width: none !important;
-        white-space: normal !important;
-        overflow: visible !important;
-        text-overflow: clip !important;
-    }
+            .collapse-content { display: block !important; }
+            
+            body.modo-contador #dashboard-completo-jefe,
+            body.modo-contador .seccion-garzones,
+            body.modo-contador .seccion-auditoria {
+                display: none !important;
+            }
+            body.modo-contador .bloque-contador {
+                display: block !important;
+                color: #000000 !important;
+            }
 
-        /* Auditoría Administrativa transparente */
-        body.modo-jefe .seccion-auditoria .bg-zinc-900\/80 {
-            background: #ffffff !important;
-            border: 1px solid #fca5a5 !important;
+            body.modo-jefe .bloque-contador {
+                display: none !important;
+            }
+            body.modo-jefe #dashboard-completo-jefe,
+            body.modo-jefe .seccion-garzones,
+            body.modo-jefe .seccion-auditoria {
+                display: block !important;
+            }
         }
-        body.modo-jefe .seccion-auditoria .bg-red-500\/5 {
-            background: transparent !important;
-            border-bottom: 1px solid #f4f4f5 !important;
-        }
-        body.modo-jefe .seccion-auditoria span, 
-        body.modo-jefe .seccion-auditoria div {
-            color: #000000 !important;
-        }
-        body.modo-jefe .seccion-auditoria .text-red-400 {
-            color: #dc2626 !important;
-        }
-
-        .collapse-content { display: block !important; }
-
-        /* 2. CONTROL DE VISTAS EXCLUSIVAS */
-        
-        /* A. Si se imprime el Contador */
-        body.modo-contador #dashboard-completo-jefe,
-        body.modo-contador .seccion-garzones,
-        body.modo-contador .seccion-auditoria {
-            display: none !important;
-        }
-        body.modo-contador .bloque-contador {
-            display: block !important;
-            color: #000000 !important;
-        }
-
-        /* B. Si se imprime el Jefe (Impresión Full) */
-        body.modo-jefe .bloque-contador {
-            display: none !important;
-        }
-        body.modo-jefe #dashboard-completo-jefe,
-        body.modo-jefe .seccion-garzones,
-        body.modo-jefe .seccion-auditoria {
-            display: block !important;
-        }
-    }
-</style>
-
+    </style>
 </head>
+<body class="bg-[#020202] text-white min-h-screen p-3 md:p-6" id="reporte-jefe">
 
-<body class="bg-[#020202] text-white min-h-screen p-3 md:p-8" id="reporte-jefe">
-
-<!-- HEADER RESPONSIVE OPTIMIZADO -->
-<div class="max-w-7xl mx-auto flex flex-col gap-4 mb-6 border-b border-white/10 pb-4 no-print px-1">
-    
-    <!-- Fila 1: Botón Volver, Título y Modales de Acceso Apilados -->
-    <div class="flex justify-between items-center w-full gap-2">
-        <div class="flex items-center gap-2">
-            <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider">
-                ← SALÓN
-            </a>
-            <h1 class="text-xl sm:text-2xl font-black text-yellow-500 uppercase italic neon-gold leading-none">Panel Contable</h1>
-        </div>
+    <!-- HEADER / FILTROS -->
+    <div class="max-w-7xl mx-auto flex flex-col gap-4 mb-6 border-b border-white/10 pb-4 no-print">
         
-        <!-- Botones de Acción Apilados de forma óptima y responsiva -->
-        <div class="flex flex-col gap-1 items-end shrink-0">
-            <button type="button" onclick="document.getElementById('modal_global_pendientes').showModal()" class="btn btn-outline btn-secondary rounded-full font-black text-[9px] sm:text-[10px] h-6 sm:h-7 min-h-0 px-2.5 uppercase tracking-wide">
-                ⚠️ Liq. Pendientes
-            </button>
-            <button type="button" onclick="document.getElementById('modal_global_deudas').showModal()" class="btn btn-outline btn-warning rounded-full font-black text-[9px] sm:text-[10px] h-6 sm:h-7 min-h-0 px-2.5 uppercase tracking-wide">
-                📔 Deudas Clientes
-            </button>
+        <!-- Fila Superior -->
+        <div class="flex flex-col md:flex-row justify-between items-center w-full gap-4">
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider">
+                    ← SALÓN
+                </a>
+                <h1 class="text-xl sm:text-2xl font-black text-yellow-500 uppercase italic neon-gold leading-none">Panel Contable</h1>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <button type="button" onclick="document.getElementById('modal_global_pendientes').showModal()" 
+                        class="btn btn-outline btn-secondary rounded-full font-black text-[10px] h-8 px-4 uppercase flex-1 sm:flex-initial">
+                    ⚠️ FICHAS DIAS ANTERIORES
+                </button>
+                <button type="button" onclick="document.getElementById('modal_global_privados').showModal()" 
+                        class="btn btn-outline btn-accent rounded-full font-black text-[10px] h-8 px-4 uppercase border-purple-500 text-purple-400 flex-1 sm:flex-initial">
+                    💎 PRIVADOS DIAS ANTERIORES
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros Operativos -->
+        <form action="/contabilidad" method="get" class="grid grid-cols-2 gap-3 bg-zinc-900/50 p-3 rounded-2xl border border-white/5">
+            <input type="hidden" name="user" value="{{ role }}">
+            <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500 uppercase">Fecha Jornada</span></label>
+                <input type="date" name="fecha" value="{{ fecha_filtro }}" onchange="this.form.submit()" class="input input-sm bg-black font-bold border-zinc-700 text-xs text-center h-9 rounded-xl focus:border-yellow-500 text-white">
+            </div>
+            <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500 uppercase">Turno Activo</span></label>
+                <select name="turno" onchange="this.form.submit()" class="select select-sm bg-black border-zinc-700 font-bold text-xs h-9 min-h-0 text-center rounded-xl focus:border-yellow-500">
+                    <option value="Turno 1" {% if turno_filtro == 'Turno 1' %}selected{% endif %}>Turno 1</option>
+                    <option value="Turno 2" {% if turno_filtro == 'Turno 2' %}selected{% endif %}>Turno 2</option>
+                </select>
+            </div>
+        </form>
+
+        <!-- Botones de Impresión / Guardado -->
+        <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="imprimirJefe()" class="btn btn-xs sm:btn-sm btn-secondary font-black rounded-full h-8 min-h-0 text-[10px] uppercase italic">👑 Imprimir Full</button>
+            <button type="button" onclick="imprimirContador()" class="btn btn-xs sm:btn-sm btn-error font-black rounded-full h-8 min-h-0 text-[10px] uppercase italic">📄 Imprimir Contador</button>
         </div>
     </div>
 
-    <!-- Fila 2: Filtros de Fecha y Turno -->
-    <form action="/contabilidad" method="get" class="grid grid-cols-2 gap-3 bg-zinc-900/50 p-3 rounded-2xl border border-white/5">
-        <input type="hidden" name="user" value="{{ role }}">
-        <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[8px] font-bold text-zinc-500">FECHA JORNADA</span></label>
-            <input type="date" name="fecha" value="{{ fecha_filtro }}" onchange="this.form.submit()" class="input input-sm bg-black font-bold border-zinc-700 text-xs text-center h-9 rounded-xl focus:border-yellow-500">
-        </div>
-        <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[8px] font-bold text-zinc-500">TURNO ACTIVO</span></label>
-            <select name="turno" onchange="this.form.submit()" class="select select-sm bg-black border-zinc-700 font-bold text-xs h-9 min-h-0 text-center rounded-xl focus:border-yellow-500">
-                <option value="Turno 1" {% if turno_filtro == 'Turno 1' %}selected{% endif %}>Turno 1</option>
-                <option value="Turno 2" {% if turno_filtro == 'Turno 2' %}selected{% endif %}>Turno 2</option>
-            </select>
-        </div>
-    </form>
-
-    <!-- Fila 3: Botones de Impresión en Móvil -->
-    <div class="grid grid-cols-2 gap-2">
-        <button type="button" onclick="imprimirJefe()" class="btn btn-xs sm:btn-sm btn-secondary font-black rounded-full h-8 min-h-0 text-[9px] uppercase italic">👑 Imprimir Full</button>
-        <button type="button" onclick="imprimirContador()" class="btn btn-xs sm:btn-sm btn-error font-black rounded-full h-8 min-h-0 text-[9px] uppercase italic">📄 Imprimir Contador</button>
-    </div>
-</div>
-
-    <!-- DASHBOARD PREMIUM REDISEÑADO -->
+    <!-- DASHBOARD DE MÉTRICAS -->
     <div class="max-w-7xl mx-auto space-y-4 px-1" id="dashboard-completo-jefe">
         
-        <!-- Fila 1: Métricas Principales -->
+        <!-- Fila Principal (Métricas Grandes) -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             
             <!-- Caja Bruta -->
-            <div class="bg-gradient-to-br from-zinc-900 to-black p-5 rounded-[28px] border border-white/5 shadow-2xl flex flex-col justify-center h-24 relative overflow-hidden">
+            <div class="bg-gradient-to-br from-zinc-900 to-black p-5 rounded-[24px] border border-white/5 shadow-2xl flex flex-col justify-center h-24 relative overflow-hidden">
                 <span class="absolute top-3 right-4 text-2xl opacity-10">💰</span>
                 <p class="text-zinc-500 font-bold text-[10px] tracking-wider uppercase">Caja Bruta</p>
                 <h2 class="text-2xl sm:text-3xl font-black text-white mt-1">
@@ -221,7 +204,7 @@
             
             <!-- Liquidación Damas -->
             <div onclick="document.getElementById('modal_liq_damas').showModal()" 
-                 class="card-btn bg-gradient-to-br from-zinc-900 to-black p-5 rounded-[28px] border-pink-500/20 shadow-2xl flex flex-col justify-center h-24 relative overflow-hidden active:scale-95 transition-all">
+                 class="card-btn bg-gradient-to-br from-zinc-900 to-black p-5 rounded-[24px] border-pink-500/20 shadow-2xl flex flex-col justify-center h-24 relative overflow-hidden active:scale-95 transition-all">
                 <span class="absolute top-3 right-4 text-2xl opacity-10">💃</span>
                 <p class="text-pink-500 font-bold text-[10px] tracking-wider uppercase flex items-center justify-center gap-1">
                     Liquidación Damas <span class="badge badge-pink badge-xs text-[8px] bg-pink-500/20 border-pink-500 text-pink-400">ⓘ</span>
@@ -231,22 +214,20 @@
                 </h2>
             </div>
             
-            <!-- Utilidad Casa -->
-            <div class="bg-gradient-to-br from-yellow-500 to-amber-600 p-5 rounded-[28px] text-black shadow-2xl flex flex-col justify-center h-24 relative overflow-hidden">
+            <!-- Utilidad de la Casa -->
+            <div class="bg-gradient-to-br from-yellow-500 to-amber-600 p-5 rounded-[24px] text-black shadow-2xl flex flex-col justify-center h-24 relative overflow-hidden">
                 <span class="absolute top-3 right-4 text-2xl opacity-30">👑</span>
                 <p class="font-black text-[10px] tracking-wider uppercase text-black/60">Utilidad Casa</p>
                 <h2 class="text-2xl sm:text-3xl font-black italic mt-1 text-black">
                     ${{ "{:,.0f}".format(resumen.neto).replace(",", ".") }}
                 </h2>
             </div>
-
         </div>
 
-        <!-- Fila 2: Métodos de Pago Simétricos -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
+        <!-- Fila Secundaria (Métodos de Pago y Cuentas) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-center">
             
-    
-            <!-- Efectivo Detallado (Cuadratura con Caja Chica de Apertura) -->
+            <!-- Detalle de Efectivo -->
             <div class="bg-emerald-500/5 p-4 rounded-[22px] border border-emerald-500/20 flex flex-col justify-center min-h-20 h-auto text-left">
                 <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest text-center mb-1">EFECTIVO EN GAVETA 💵</span>
                 <div class="text-[9px] font-bold text-zinc-400 space-y-0.5 uppercase">
@@ -257,38 +238,34 @@
                 </div>
             </div>
             
-            <!-- Tarjeta -->
-            <div class="bg-blue-500/5 p-4 rounded-[22px] border border-blue-500/10 flex flex-col justify-center h-20">
+            <!-- Tarjetas -->
+            <div class="bg-blue-500/5 p-4 rounded-[22px] border border-blue-500/15 flex flex-col justify-center h-20">
                 <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TARJETA 💳</span>
                 <span class="text-lg sm:text-xl font-black text-blue-400 mt-0.5">
                     ${{ "{:,.0f}".format(resumen.tarjeta).replace(",", ".") }}
                 </span>
             </div>
             
-            <!-- Transferencia -->
-            <div class="bg-purple-500/5 p-4 rounded-[22px] border border-purple-500/10 flex flex-col justify-center h-20">
+            <!-- Transferencias -->
+            <div class="bg-purple-500/5 p-4 rounded-[22px] border border-purple-500/15 flex flex-col justify-center h-20">
                 <span class="block text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest">TRANSFERENCIA 📱</span>
                 <span class="text-lg sm:text-xl font-black text-purple-400 mt-0.5">
                     ${{ "{:,.0f}".format(resumen.transferencia).replace(",", ".") }}
                 </span>
             </div>
             
-            <!-- Cuentas (Simétrico, mismo tamaño) -->
-            <div onclick="document.getElementById('modal_global_deudas').showModal()" 
-                 class="card-btn bg-zinc-900/80 p-4 rounded-[22px] border border-yellow-500/20 flex flex-col justify-center h-20 active:scale-95 transition-all">
-                <span class="block text-[8px] sm:text-[9px] font-black text-yellow-500/80 uppercase tracking-widest">CUENTAS 📔</span>
-                <span class="text-lg sm:text-xl font-black text-yellow-500 mt-0.5">
-                    ${{ "{:,.0f}".format(monto_deudas_total).replace(",", ".") }}
+            <!-- PRIVADOS POR PAGAR (ABRE EL MODAL DE PRIVADOS DEL TURNO) -->
+            <div onclick="document.getElementById('modal_global_privados_hoy').showModal()" 
+                 class="card-btn bg-zinc-900/80 p-4 rounded-[22px] border border-purple-500/30 flex flex-col justify-center h-20">
+                <span class="block text-[9px] font-black text-purple-400 uppercase tracking-widest">PRIVADOS POR PAGAR 💎</span>
+                <span class="text-xl font-black text-white mt-0.5">
+                    ${{ "{:,.0f}".format(total_privados_hoy).replace(",", ".") }}
                 </span>
             </div>
-
         </div>
     </div> 
 
-
-  <!-- ======================================================================= -->
-    <!-- 2. BLOQUE EXCLUSIVO PARA IMPRESIÓN DEL CONTADOR -->
-    <!-- ======================================================================= -->
+    <!-- BLOQUE EXCLUSIVO PARA IMPRESIÓN CONTADOR -->
     <div class="bloque-contador" style="color: black; font-family: Arial, sans-serif;">
         <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="font-size: 26px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Reporte Contable Formal</h1>
@@ -325,96 +302,95 @@
         </div>
     </div>
 
-<!-- 3. VENTAS POR GARZONES -->
-        <div class="pt-6 w-full block seccion-garzones max-w-7xl mx-auto px-1">
-            <h3 class="text-[9px] font-black mb-4 uppercase text-zinc-600 tracking-[3px] text-center italic">● Control de Ventas por Garzón ●</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {% for garzon, data in detalle_garzones.items() %}
-                <div class="collapse collapse-plus bg-zinc-900/50 border border-white/5 rounded-2xl">
-                    <input type="checkbox" /> 
-                    <div class="collapse-title flex justify-between items-center py-2 px-4 min-h-0">
-                        <span class="text-xs font-bold uppercase text-zinc-300">🤵 {{ garzon }}</span>
-                        <span class="text-xs font-black text-cyan-400">${{ "{:,.0f}".format(data.total).replace(",", ".") }}</span>
-                    </div>
-                    <div class="collapse-content px-2 pb-2">
-                        <table class="table table-xs w-full bg-black/20 rounded-xl text-[10px]">
-                            <thead class="text-zinc-500 uppercase text-[8px] border-b border-white/5">
-                                <tr>
-                                    <th>Hora</th>
-                                    <th>Servicio</th>
-                                    <th>Destino</th>
-                                    <th class="text-right">Monto</th>
-                                    <th class="text-right no-print">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for v in data.lista %}
-                                <tr class="border-b border-white/5">
-                                    <td>{{ v.hora }}</td>
-                                    <td class="truncate max-w-[80px] cursor-pointer hover:text-cyan-400 active:scale-95 transition-transform" 
-    data-full-text="{{ v.servicio }}" 
-    onclick="mostrarServicioCompleto(this.getAttribute('data-full-text'))">
-    {{ v.servicio }}
-</td>
-                                    <td class="text-pink-500 uppercase truncate max-w-[80px]">{{ v.destino }}</td>
-                                    <td class="text-right font-bold text-zinc-200">${{ "{:,.0f}".format(v.monto).replace(",", ".") }}</td>
-                                    <td class="text-right no-print">
-    {% if role in ['admin1', 'administrador', 'cajera'] %}
-    <button type="button" onclick="prepararBorrado('{{ v.id }}', '{{ v.servicio }}')" class="btn btn-circle btn-xs btn-error btn-outline" title="Eliminar Venta">
-        ✕
-    </button>
-    {% else %}
-    <span class="text-[9px] text-zinc-600">🔒</span>
-    {% endif %}
-</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+    <!-- VENTAS POR GARZONES -->
+    <div class="pt-6 w-full block seccion-garzones max-w-7xl mx-auto px-1">
+        <h3 class="text-[9px] font-black mb-4 uppercase text-zinc-600 tracking-[3px] text-center italic">● Control de Ventas por Garzón ●</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {% for garzon, data in detalle_garzones.items() %}
+            <div class="collapse collapse-plus bg-zinc-900/50 border border-white/5 rounded-2xl">
+                <input type="checkbox" /> 
+                <div class="collapse-title flex justify-between items-center py-2 px-4 min-h-0">
+                    <span class="text-xs font-bold uppercase text-zinc-300">🤵 {{ garzon }}</span>
+                    <span class="text-xs font-black text-cyan-400">${{ "{:,.0f}".format(data.total).replace(",", ".") }}</span>
                 </div>
-                {% endfor %}
-            </div>
-            {% if not detalle_garzones %}
-                <p class="text-center text-zinc-700 text-[10px] uppercase font-bold py-4">Sin ventas registradas</p>
-            {% endif %}
-        </div>
-
-        <!-- SECCIÓN AUDITORÍA DE CONTROL -->
-<div class="mt-8 w-full seccion-auditoria max-w-7xl mx-auto px-1">
-    <div class="bg-zinc-900/80 border border-red-500/20 rounded-[25px] p-4 shadow-xl">
-        <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
-            <h3 class="text-[9px] font-black uppercase text-red-500 tracking-[3px] italic">
-                ● Registro de Auditoría y Control ●
-            </h3>
-            <span class="text-[8px] text-zinc-500 font-bold uppercase italic">Solo acciones administrativas</span>
-        </div>
-
-        <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-            {% for log in logs %}
-            <div class="flex items-center gap-2 bg-red-500/5 p-2 rounded-xl border border-white/5 text-[10px]">
-                <div class="text-[9px] font-mono text-zinc-500">{{ log.fecha.strftime('%H:%M:%S') }}</div>
-                <div class="shrink-0"><span class="text-[9px] font-black text-red-400 uppercase">[{{ log.usuario }}]</span></div>
-                <div class="text-[10px] text-zinc-300 font-bold uppercase tracking-tight truncate">{{ log.accion }}</div>
+                <div class="collapse-content px-2 pb-2">
+                    <table class="table table-xs w-full bg-black/20 rounded-xl text-[10px]">
+                        <thead class="text-zinc-500 uppercase text-[8px] border-b border-white/5">
+                            <tr>
+                                <th>Hora</th>
+                                <th>Servicio</th>
+                                <th>Destino</th>
+                                <th class="text-right">Monto</th>
+                                <th class="text-right no-print">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in data.lista %}
+                            <tr class="border-b border-white/5">
+                                <td>{{ v.hora }}</td>
+                                <td class="truncate max-w-[120px] cursor-pointer hover:text-cyan-400 active:scale-95 transition-transform" 
+                                    data-full-text="{{ v.servicio }}" 
+                                    onclick="mostrarServicioCompleto(this.getAttribute('data-full-text'))">
+                                    {{ v.servicio }}
+                                </td>
+                                <td class="text-pink-500 uppercase truncate max-w-[120px]">{{ v.destino }}</td>
+                                <td class="text-right font-bold text-zinc-200">${{ "{:,.0f}".format(v.monto).replace(",", ".") }}</td>
+                                <td class="text-right no-print">
+                                    {% if role in ['admin1', 'administrador', 'cajera'] %}
+                                    <button type="button" onclick="prepararBorrado('{{ v.id }}', '{{ v.servicio }}')" class="btn btn-circle btn-xs btn-error btn-outline" title="Eliminar Venta">
+                                        ✕
+                                    </button>
+                                    {% else %}
+                                    <span class="text-[9px] text-zinc-600">🔒</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             {% endfor %}
+        </div>
+        {% if not detalle_garzones %}
+            <p class="text-center text-zinc-700 text-[10px] uppercase font-bold py-4">Sin ventas registradas</p>
+        {% endif %}
+    </div>
 
-            {% if not logs %}
-            <div class="text-center py-6 opacity-20">
-                <p class="text-sm font-bold uppercase italic">Sin eventos de control en este turno</p>
+    <!-- SECCIÓN AUDITORÍA DE CONTROL -->
+    <div class="mt-8 w-full seccion-auditoria max-w-7xl mx-auto px-1">
+        <div class="bg-zinc-900/80 border border-red-500/20 rounded-[25px] p-4 shadow-xl">
+            <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
+                <h3 class="text-[9px] font-black uppercase text-red-500 tracking-[3px] italic">
+                    ● Registro de Auditoría y Control ●
+                </h3>
+                <span class="text-[8px] text-zinc-500 font-bold uppercase italic">Solo acciones administrativas</span>
             </div>
-            {% endif %}
+
+            <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                {% for log in logs %}
+                <div class="flex items-center gap-2 bg-red-500/5 p-2 rounded-xl border border-white/5 text-[10px]">
+                    <div class="text-[9px] font-mono text-zinc-500">{{ log.fecha.strftime('%H:%M:%S') }}</div>
+                    <div class="shrink-0"><span class="text-[9px] font-black text-red-400 uppercase">[{{ log.usuario }}]</span></div>
+                    <div class="text-[10px] text-zinc-300 font-bold uppercase tracking-tight truncate">{{ log.accion }}</div>
+                </div>
+                {% endfor %}
+
+                {% if not logs %}
+                <div class="text-center py-6 opacity-20">
+                    <p class="text-sm font-bold uppercase italic">Sin eventos de control en este turno</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
-</div>
 
     <!-- MODAL LIQUIDACIÓN DAMAS -->
     <dialog id="modal_liq_damas" class="modal">
-        <div class="modal-box max-w-5xl bg-zinc-950 border border-pink-500 p-4">
+        <div class="modal-box max-w-5xl bg-zinc-950 border border-pink-500 p-4 rounded-[24px]">
             <h3 class="text-lg font-black text-pink-500 uppercase italic mb-4">Liquidaciones Personal</h3>
             
-            <!-- 🔍 BUSCADOR DE DAMAS EN EL MODAL -->
             <div class="mb-4">
                 <input type="text" id="buscadorDamaModal" onkeyup="filtrarDamasModal()" 
                        placeholder="🔍 ESCRIBE EL NOMBRE DE LA DAMA PARA BUSCAR..." 
@@ -454,7 +430,6 @@
                             <td class="text-red-500">-{{ "{:,.0f}".format(d.residencia) }}</td>
                             <td class="text-right text-sm text-pink-500 font-black">${{ "{:,.0f}".format(d.total_pagar).replace(",", ".") }}</td>
                             
-                            <!-- BOTÓN PARA ENVIAR WHATSAPP -->
                             <td>
                                 <a href="{{ d.link_wa }}" target="_blank" class="btn btn-xs btn-success gap-1 text-[9px] h-6 min-h-0 px-2">
                                     ENVIAR
@@ -462,16 +437,16 @@
                             </td>
 
                             <td>
-    {% if d.liquidada %}
-    <input type="checkbox" checked disabled class="checkbox checkbox-success checkbox-xs border-2 opacity-50 cursor-not-allowed">
-    {% else %}
-        {% if role in ['admin1', 'administrador', 'cajera'] %}
-        <input type="checkbox" onchange="confirmarPagoDama(this, '{{d.dama_id}}', '{{d.nombre}}', '{{ d.total_pagar }}', '{{ d.fecha }}')" class="checkbox checkbox-success checkbox-xs border-2">
-        {% else %}
-        <input type="checkbox" disabled class="checkbox checkbox-success checkbox-xs border-2 opacity-30 cursor-not-allowed" title="Sin permisos de pago">
-        {% endif %}
-    {% endif %}
-</td>
+                                {% if d.liquidada %}
+                                <input type="checkbox" checked disabled class="checkbox checkbox-success checkbox-xs border-2 opacity-50 cursor-not-allowed">
+                                {% else %}
+                                    {% if role in ['admin1', 'administrador', 'cajera'] %}
+                                    <input type="checkbox" onchange="confirmarPagoDama(this)" data-dama-id="{{d.dama_id}}" data-nombre="{{d.nombre}}" data-monto="{{d.total_pagar}}" data-fecha="{{d.fecha}}" class="checkbox checkbox-success checkbox-xs border-2">
+                                    {% else %}
+                                    <input type="checkbox" disabled class="checkbox checkbox-success checkbox-xs border-2 opacity-30 cursor-not-allowed" title="Sin permisos de pago">
+                                    {% endif %}
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endif %}
                         {% endfor %}
@@ -486,7 +461,7 @@
     {% for d in detalle_damas %}
     {% if d %}
     <dialog id="modal_dama_det_{{ d.dama_id }}_{{ d.liquidada }}" class="modal">
-        <div class="modal-box bg-zinc-900 border border-pink-500/50 p-4">
+        <div class="modal-box bg-zinc-900 border border-pink-500/50 p-4 rounded-[20px]">
             <h3 class="text-sm font-black text-pink-500 mb-4 uppercase">{{ d.nombre }} - Detalle</h3>
 
             <div class="space-y-2 max-h-60 overflow-y-auto">
@@ -503,58 +478,191 @@
     {% endif %}
     {% endfor %}
 
-    <!-- MODAL GLOBAL DEUDAS -->
-<dialog id="modal_global_deudas" class="modal">
-    <div class="modal-box max-w-lg bg-zinc-950 border border-yellow-500 p-4">
-        <div class="flex justify-between items-center mb-4">
-            <div>
-                <h3 class="text-base font-black text-yellow-500 uppercase italic">Seguimiento de Cuentas</h3>
-                <p class="text-[9px] text-zinc-500 uppercase font-bold">Listado de deudas históricas</p>
-            </div>
-            <div class="badge badge-warning badge-sm p-3 font-black text-xs">TOTAL: ${{ "{:,.0f}".format(monto_deudas_total).replace(",", ".") }}</div>
-        </div>
-        
-        <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
-            {% for d in deudas_global %}
-            <div class="bg-zinc-900/80 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
-                <div class="flex flex-col gap-0.5 truncate max-w-[150px]">
-                    <span class="text-[8px] text-zinc-500 font-bold uppercase">{{ d.fecha.strftime('%d/%m/%y %H:%M') }}</span>
-                    <p class="font-black text-white uppercase truncate">{{ d.cliente_nombre or 'CLIENTE' }}</p>
-                    <p class="text-[9px] text-yellow-600 font-bold italic truncate">{{ d.servicio }}</p>
+    <!-- MODAL 1: CONTROL DE PRIVADOS DEL TURNO ACTIVO (DENTRO DE LA TARJETA PRINCIPAL) -->
+    <dialog id="modal_global_privados_hoy" class="modal">
+        <div class="modal-box max-w-xl bg-zinc-950 border-2 border-purple-500 p-6 rounded-[35px]">
+            <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-3">
+                <div>
+                    <h3 class="text-lg font-black text-purple-400 uppercase italic">Privados del Turno Activo</h3>
+                    <p class="text-[9px] text-zinc-500 uppercase font-bold">Listado de privados de la jornada actual</p>
                 </div>
-                
-                <div class="text-right shrink-0">
-                    <p class="text-sm font-black text-yellow-500">${{ "{:,.0f}".format(d.monto).replace(",", ".") }}</p>
-                    {% if role in ['admin1', 'administrador', 'cajera'] %}
-<form action="/cobrar_deuda/{{ d.id }}" method="post" class="mt-1" onsubmit="return confirm('¿CONFIRMAR PAGO?')">
-    <button type="submit" name="metodo_pago_final" value="EFECTIVO" class="btn btn-[8px] btn-success h-6 min-h-0 px-2 font-black">
-        💵 COBRAR
-    </button>
-</form>
-{% else %}
-<span class="text-[9px] text-yellow-500 uppercase block mt-1 font-bold">🔒 Deuda Pendiente</span>
-{% endif %}
-                </div>
+                <div class="badge badge-secondary badge-sm p-3 font-black text-xs">Total Turno: ${{ "{:,.0f}".format(total_privados_hoy).replace(",", ".") }}</div>
             </div>
-            {% endfor %}
-            
-            {% if not deudas_global %}
-            <div class="text-center py-10 opacity-30">
-                <p class="text-xl font-black uppercase italic italic">No hay cuentas pendientes</p>
-            </div>
-            {% endif %}
-        </div>
-        
-        <div class="modal-action mt-4">
-            <form method="dialog"><button class="btn btn-sm">CERRAR</button></form>
-        </div>
-    </div>
-</dialog>
 
-    <!-- MODAL GLOBAL PENDIENTES (HEADER) -->
+            <!-- Buscador Dinámico de Damas del Turno -->
+            <div class="mb-4">
+                <input type="text" id="buscadorPrivadosHoy" onkeyup="filtrarPrivadosHoy()" 
+                       placeholder="🔍 ESCRIBE EL NOMBRE DE LA DAMA PARA BUSCAR..." 
+                       class="input input-bordered input-sm w-full bg-black border-purple-500/40 text-center font-bold uppercase focus:border-purple-500 text-xs h-9">
+            </div>
+            
+            <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+                {% for p in privados_dia %}
+                <div class="card-privado-hoy bg-pink-950/10 p-4 rounded-xl border border-pink-500/20 flex flex-col gap-2" data-dama-nombre="{{ p.nombre }}">
+                    <div class="flex justify-between items-center text-xs">
+                        <div>
+                            <p class="text-[8px] text-zinc-500 font-bold uppercase">{{ p.fecha }} | {{ p.turno }}</p>
+                            <p class="font-black text-white uppercase text-sm">Dama: {{ p.nombre }}</p>
+                            <p class="text-[9px] text-pink-400 font-bold">Servicios: {{ p.cantidad }} Privados</p>
+                        </div>
+                        <div class="text-right shrink-0 flex items-center gap-3">
+                            <div>
+                                <p class="text-sm font-black text-pink-500">${{ "{:,.0f}".format(p.total_commission).replace(",", ".") }}</p>
+                                {% if p.liquidada %}
+                                <span class="text-[8px] text-green-400 font-bold block">✔ PAGADA</span>
+                                {% else %}
+                                <span class="text-[8px] text-yellow-500 font-bold block">PENDIENTE</span>
+                                {% endif %}
+                            </div>
+                            {% if not p.liquidada and role in ['admin1', 'administrador', 'cajera'] %}
+                            <input type="checkbox" onchange="confirmarPagoPrivadoGrupo(this)" data-ids="{{p.ids_ventas}}" data-nombre="{{p.nombre}}" data-monto="{{p.total_commission}}" class="checkbox checkbox-success checkbox-xs border-2">
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Botón Enviar WhatsApp de Privados -->
+                    <div class="flex justify-start">
+                        <a href="{{ p.link_wa }}" target="_blank" class="btn btn-xs btn-success gap-1 text-[9px] h-6 min-h-0 px-2 rounded-full">
+                            ENVIAR DETALLE WHATSAPP
+                        </a>
+                    </div>
+
+                    <!-- Desglose de Consumos Expandible -->
+                    <details class="group bg-black/40 border border-white/5 rounded-xl overflow-hidden mt-1">
+                        <summary class="flex justify-between items-center p-2.5 cursor-pointer select-none font-bold text-[9px] text-zinc-400 uppercase">
+                            <span>🔍 Ver desglose de privados</span>
+                            <span class="transition-transform group-open:rotate-180 text-[8px]">▼</span>
+                        </summary>
+                        <div class="p-2 border-t border-white/5 bg-black/60">
+                            <table class="table table-xs w-full text-center">
+                                <thead>
+                                    <tr class="text-zinc-500 uppercase text-[8px] border-b border-white/5">
+                                        <th class="text-left">Hora</th>
+                                        <th>Garzón</th>
+                                        <th>Cliente</th>
+                                        <th class="text-right">Comisión</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in p.consumos %}
+                                    <tr class="border-b border-white/5 text-[10px]">
+                                        <td class="text-left font-mono">{{ c.hora }}</td>
+                                        <td>{{ c.garzon }}</td>
+                                        <td class="truncate max-w-[80px]">{{ c.cliente }}</td>
+                                        <td class="text-right text-pink-500 font-black">${{ "{:,.0f}".format(c.comision).replace(",", ".") }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                </div>
+                {% endfor %}
+                {% if not privados_dia %}
+                <p class="text-center text-[10px] text-zinc-600 uppercase font-bold py-6">No hay privados registrados para hoy</p>
+                {% endif %}
+            </div>
+            
+            <div class="modal-action mt-6 border-t border-white/5 pt-3">
+                <form method="dialog"><button class="btn btn-sm btn-ghost">CERRAR</button></form>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- MODAL 2: HISTÓRICO - PRIVADOS DIAS ANTERIORES -->
+    <dialog id="modal_global_privados" class="modal">
+        <div class="modal-box max-w-xl bg-zinc-950 border-2 border-purple-500 p-6 rounded-[35px]">
+            <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-3">
+                <div>
+                    <h3 class="text-lg font-black text-purple-400 uppercase italic">Control de Privados Anteriores</h3>
+                    <p class="text-[9px] text-zinc-500 uppercase font-bold">Historial de Privados de Días Anteriores</p>
+                </div>
+                <div class="badge badge-warning badge-sm p-3 font-black text-xs">Total Pendiente: ${{ "{:,.0f}".format(total_privados_pendientes).replace(",", ".") }}</div>
+            </div>
+
+            <!-- Buscador Dinámico de Damas de Días Anteriores -->
+            <div class="mb-4">
+                <input type="text" id="buscadorPrivadosAnteriores" onkeyup="filtrarPrivadosAnteriores()" 
+                       placeholder="🔍 ESCRIBE EL NOMBRE DE LA DAMA PARA BUSCAR..." 
+                       class="input input-bordered input-sm w-full bg-black border-purple-500/40 text-center font-bold uppercase focus:border-purple-500 text-xs h-9">
+            </div>
+            
+            <!-- PRIVADOS HISTÓRICOS PENDIENTES AGRUPADOS -->
+            <div class="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                {% for p in privados_pendientes %}
+                <div class="card-privado-anterior bg-red-950/10 p-4 rounded-xl border border-red-500/20 flex flex-col gap-2" data-dama-nombre="{{ p.nombre }}">
+                    <div class="flex justify-between items-center text-xs">
+                        <div class="truncate max-w-[200px]">
+                            <p class="text-[8px] text-zinc-500 font-bold uppercase">{{ p.fecha }} | {{ p.turno }}</p>
+                            <p class="font-black text-white uppercase truncate text-sm">Dama: {{ p.nombre }}</p>
+                            <p class="text-[9px] text-red-300 font-bold truncate">Servicios: {{ p.cantidad }} Privados</p>
+                        </div>
+                        <div class="text-right shrink-0 flex items-center gap-3">
+                            <p class="text-sm font-black text-red-400">${{ "{:,.0f}".format(p.total_commission).replace(",", ".") }}</p>
+                            {% if role in ['admin1', 'administrador', 'cajera'] %}
+                            <input type="checkbox" onchange="confirmarPagoPrivadoGrupo(this)" data-ids="{{p.ids_ventas}}" data-nombre="{{p.nombre}}" data-monto="{{p.total_commission}}" class="checkbox checkbox-success checkbox-xs border-2">
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Botón Enviar WhatsApp de Privados Históricos -->
+                    <div class="flex justify-start">
+                        <a href="{{ p.link_wa }}" target="_blank" class="btn btn-xs btn-success gap-1 text-[9px] h-6 min-h-0 px-2 rounded-full">
+                            ENVIAR DETALLE WHATSAPP
+                        </a>
+                    </div>
+
+                    <!-- Desglose de Consumos Expandible Histórico -->
+                    <details class="group bg-black/40 border border-white/5 rounded-xl overflow-hidden mt-1">
+                        <summary class="flex justify-between items-center p-2.5 cursor-pointer select-none font-bold text-[9px] text-zinc-400 uppercase">
+                            <span>🔍 Ver desglose de privados</span>
+                            <span class="transition-transform group-open:rotate-180 text-[8px]">▼</span>
+                        </summary>
+                        <div class="p-2 border-t border-white/5 bg-black/60">
+                            <table class="table table-xs w-full text-center">
+                                <thead>
+                                    <tr class="text-zinc-500 uppercase text-[8px] border-b border-white/5">
+                                        <th class="text-left">Hora</th>
+                                        <th>Garzón</th>
+                                        <th>Cliente</th>
+                                        <th class="text-right">Comisión</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in p.consumos %}
+                                    <tr class="border-b border-white/5 text-[10px]">
+                                        <td class="text-left font-mono">{{ c.hora }}</td>
+                                        <td>{{ c.garzon }}</td>
+                                        <td class="truncate max-w-[80px]">{{ c.cliente }}</td>
+                                        <td class="text-right text-pink-500 font-black">${{ "{:,.0f}".format(c.comision).replace(",", ".") }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                </div>
+                {% endfor %}
+                {% if not privados_pendientes %}
+                <p class="text-center text-[10px] text-zinc-600 uppercase font-bold py-6">No hay deudas pendientes de privados de días anteriores</p>
+                {% endif %}
+            </div>
+            
+            <div class="modal-action mt-6 border-t border-white/5 pt-3">
+                <form method="dialog"><button class="btn btn-sm btn-ghost">CERRAR</button></form>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- MODAL HISTÓRICO: FICHAS DIAS ANTERIORES -->
     <dialog id="modal_global_pendientes" class="modal">
-        <div class="modal-box max-w-lg bg-zinc-950 border border-secondary p-4">
-            <h3 class="text-base font-black text-secondary uppercase italic mb-4">Liquidaciones Pendientes</h3>
+        <div class="modal-box max-w-lg bg-zinc-950 border border-pink-500 p-4 rounded-[24px]">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+                <div>
+                    <h3 class="text-base font-black text-secondary uppercase italic">Fichas de Días Anteriores</h3>
+                    <p class="text-[9px] text-zinc-500 uppercase font-bold">Liquidaciones de turnos de fechas pasadas</p>
+                </div>
+            </div>
             <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
                 {% for p in pendientes_global %}
                 <div class="bg-zinc-900 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
@@ -569,18 +677,23 @@
                     </div>
                     <div class="text-right shrink-0">
                         <p class="text-sm font-black text-white">${{ "{:,.0f}".format(p.total_pagar).replace(",", ".") }}</p>
-                        <input type="checkbox" onchange="confirmarPagoDama(this, '{{p.dama_id}}', '{{p.nombre}}', '{{ p.total_pagar }}', '{{ p.fecha }}')" class="checkbox checkbox-success checkbox-xs border-2 mt-1">
+                        <input type="checkbox" onchange="confirmarPagoDama(this)" data-dama-id="{{p.dama_id}}" data-nombre="{{p.nombre}}" data-monto="{{p.total_pagar}}" data-fecha="{{p.fecha}}" class="checkbox checkbox-success checkbox-xs border-2 mt-1">
                     </div>
                 </div>
                 {% endfor %}
+                {% if not pendientes_global %}
+                <p class="text-center text-[10px] text-zinc-600 uppercase font-bold py-6">No hay fichas pendientes de turnos anteriores</p>
+                {% endif %}
             </div>
-            <div class="modal-action mt-4"><form method="dialog"><button class="btn btn-sm">CERRAR</button></form></div>
+
+            <div class="modal-action mt-4">
+                <form method="dialog"><button class="btn btn-sm">CERRAR</button></form>
+            </div>
         </div>
     </dialog>
 
-    <!-- MODAL MOTIVO BORRADO -->
     <dialog id="modal_borrar_venta" class="modal">
-        <div class="modal-box bg-zinc-950 border border-red-500 p-4">
+        <div class="modal-box bg-zinc-950 border border-red-500 p-4 rounded-[20px]">
             <h3 class="font-black text-red-500 uppercase mb-4 text-sm">¿Eliminar Venta?</h3>
             <form id="form_borrar" method="post">
                 <input type="text" name="motivo" placeholder="Motivo..." class="input input-bordered w-full bg-black mb-4 uppercase text-xs h-9" required>
@@ -593,23 +706,6 @@
     </dialog>
 
     <script>
-        function generarPDFJefe() {
-            const elemento = document.getElementById('reporte-jefe');
-            const opciones = {
-                margin: 0.2,
-                filename: 'Reporte_Jefe_{{ fecha_filtro }}_{{ turno_filtro }}.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, backgroundColor: '#020202', useCORS: true },
-                jsPDF: { unit: 'in', format: 'a3', orientation: 'portrait' }
-            };
-            const botones = document.querySelectorAll('.no-print');
-            botones.forEach(b => b.style.display = 'none');
-            html2pdf().set(opciones).from(elemento).save().then(() => {
-                botones.forEach(b => b.style.display = 'flex');
-            });
-        }
-
-        // --- SISTEMA DE CAPTURA NATIVO ESTABLE PARA EVITAR EL PDF EN BLANCO ---
         var estiloImpresionActivo = null;
 
         window.addEventListener('beforeprint', () => {
@@ -620,7 +716,6 @@
                 document.body.classList.add('modo-contador');
                 document.body.classList.remove('modo-jefe');
             } else {
-                // Configuración predeterminada si imprimen directo de navegador
                 document.body.classList.add('modo-jefe');
             }
         });
@@ -641,8 +736,14 @@
             window.print();
         }
 
-        async function confirmarPagoDama(checkbox, damaId, nombre, monto, fecha) {
-            if (confirm(`¿CONFIRMAR PAGO A: ${nombre}?\nMONTO: $${monto}\nFECHA: ${fecha}`)) {
+        async function confirmarPagoDama(checkbox) {
+            const damaId = checkbox.getAttribute('data-dama-id');
+            const nombre = checkbox.getAttribute('data-nombre');
+            const monto = checkbox.getAttribute('data-monto');
+            const fecha = checkbox.getAttribute('data-fecha');
+            
+            const montoFormateado = Number(monto).toLocaleString('es-CL');
+            if (confirm(`¿CONFIRMAR PAGO A: ${nombre}?\nMONTO: $${montoFormateado}\nFECHA: ${fecha}`)) {
                 const fD = new FormData();
                 fD.append('fecha', fecha); 
                 fD.append('turno', '{{ turno_filtro }}');
@@ -667,12 +768,35 @@
             }
         }
 
-       function filtrarDamas() {
-            let val = document.getElementById('buscDama').value.toUpperCase();
-            let filas = document.getElementsByClassName('fila-dama');
-            for(let f of filas) {
-                let nombre = f.getElementsByClassName('nombre-dama')[0].innerText.toUpperCase();
-                f.style.display = nombre.includes(val) ? "" : "none";
+        async function confirmarPagoPrivadoGrupo(checkbox) {
+            const idsVentas = checkbox.getAttribute('data-ids');
+            const damaNombre = checkbox.getAttribute('data-nombre');
+            const montoTotal = checkbox.getAttribute('data-monto');
+            
+            const montoFormateado = Number(montoTotal).toLocaleString('es-CL');
+            if (confirm(`¿CONFIRMAR PAGO DE PRIVADOS A: ${damaNombre}?\nMONTO: $${montoFormateado}`)) {
+                try {
+                    const formData = new FormData();
+                    formData.append('ids', idsVentas);
+                    
+                    const res = await fetch('/registrar_pago_privado_grupo', { 
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (res.ok) {
+                        checkbox.disabled = true;
+                        window.location.reload();
+                    } else {
+                        alert("❌ Error: No se pudo registrar el pago.");
+                        checkbox.checked = false;
+                    }
+                } catch (error) {
+                    alert("❌ Error de red.");
+                    checkbox.checked = false;
+                }
+            } else {
+                checkbox.checked = false;
             }
         }
 
@@ -680,10 +804,29 @@
             let val = document.getElementById('buscadorDamaModal').value.toUpperCase();
             let filas = document.querySelectorAll('.fila-dama-modal');
             filas.forEach(f => {
-                let nombre = f.querySelector('.nombre-dama-modal').innerText.toUpperCase();
-                f.style.display = nombre.includes(val) ? "" : "none";
+                let textNombre = f.querySelector('.nombre-dama-modal').innerText.toUpperCase();
+                f.style.display = textNombre.includes(val) ? "" : "none";
             });
         }
+
+        function filtrarPrivadosHoy() {
+            const query = document.getElementById('buscadorPrivadosHoy').value.toUpperCase();
+            const cards = document.querySelectorAll('.card-privado-hoy');
+            cards.forEach(card => {
+                const name = card.getAttribute('data-dama-nombre').toUpperCase();
+                card.style.display = name.includes(query) ? 'flex' : 'none';
+            });
+        }
+
+        function filtrarPrivadosAnteriores() {
+            const query = document.getElementById('buscadorPrivadosAnteriores').value.toUpperCase();
+            const cards = document.querySelectorAll('.card-privado-anterior');
+            cards.forEach(card => {
+                const name = card.getAttribute('data-dama-nombre').toUpperCase();
+                card.style.display = name.includes(query) ? 'flex' : 'none';
+            });
+        }
+
         function abrirDetalleDama(damaId, liquidada) {
             let modalId = 'modal_dama_det_' + damaId + '_' + liquidada;
             let modal = document.getElementById(modalId);
@@ -696,12 +839,13 @@
             document.getElementById('form_borrar').action = "/eliminar_venta/" + id + "?user={{ role }}";
             document.getElementById('modal_borrar_venta').showModal();
         }
+
         function mostrarServicioCompleto(texto) {
             document.getElementById('texto_servicio_completo').innerText = texto;
             document.getElementById('modal_servicio_completo').showModal();
         }
     </script>
-  <!-- MODAL GLOBAL PARA MOSTRAR DETALLE COMPLETO DEL SERVICIO -->
+
     <dialog id="modal_servicio_completo" class="modal" onclick="this.close()">
         <div class="modal-box bg-zinc-950 border border-zinc-800 p-6 text-center rounded-[24px] max-w-xs" onclick="event.stopPropagation()">
             <p class="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2">Detalle de la Venta</p>
@@ -711,6 +855,6 @@
             </button>
         </div>
     </dialog>
-
 </body>
 </html>
+<!-- END OF FILE templates/reportes.html -->

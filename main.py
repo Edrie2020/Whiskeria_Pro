@@ -1,3 +1,4 @@
+# START OF FILE main.py
 # =========================================================
 # 1. IMPORTACIONES DEL SISTEMA (Librerías externas)
 # =========================================================
@@ -61,7 +62,7 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
     if existe:
         return
 
-    # 💡 Cargamos únicamente los productos que pertenecen al catálogo de este turno específico
+    # Cargamos únicamente los productos que pertenecen al catálogo de este turno específico
     productos = db.query(models.Producto).filter(models.Producto.turno == turno_nuevo).all()
     for p in productos:
         ultimo_registro = db.query(models.InventarioTurno).filter(
@@ -125,11 +126,10 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
 # Crear las tablas de la base de datos al iniciar si no existen
 models.Base.metadata.create_all(bind=engine)
 
-# 💡 MIGRACIÓN AUTOMÁTICA SEGURA PARA PRODUCCIÓN (EVITA PÉRDIDA DE DATOS)
+# MIGRACIÓN AUTOMÁTICA SEGURA PARA PRODUCCIÓN (EVITA PÉRDIDA DE DATOS)
 def ejecutar_migraciones_sqlite_produccion():
     db = SessionLocal()
     try:
-        # Aseguramos el uso de text() para compatibilidad con SQLAlchemy 2.0+
         cursor = db.execute(text("PRAGMA table_info(productos)"))
         columnas_prod = [row[1] for row in cursor.fetchall()]
         
@@ -171,12 +171,10 @@ ejecutar_migraciones_sqlite_produccion()
 
 app = FastAPI()
 
-# Configuración de archivos estáticos y plantillas...
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Registro de Routers (Rutas externas)
+# Registro de Routers
 app.include_router(ventas.router)
 app.include_router(asistencia.router)
 app.include_router(damas.router)
@@ -190,31 +188,24 @@ app.include_router(usuarios.router)
 # ---------------------------------------------------------
 @app.get("/")
 async def home(request: Request, db: Session = Depends(get_db)):
-    # 🔒 1. VERIFICACIÓN DE SEGURIDAD
     username, user_role = obtener_usuario_sesion(request)
 
     if not username or user_role not in ["admin1", "administrador", "cajera", "jefe_guillermo", "encargado"]:
         return RedirectResponse(url="/login", status_code=303)
     
-    # 2. OBTENER CONFIGURACIÓN DEL CLUB
     conf = obtener_config(db)
-    
-    # --- FECHA OPERATIVA NOCTURNA Y LOCAL ---
     hoy_dt = obtener_fecha_operativa()
     fecha_hoy_str = hoy_dt.strftime("%Y-%m-%d")
     
-    # 3. SUMAR VENTAS DEL TURNO ACTIVO
     total_ventas = db.query(func.sum(models.Venta.monto)).filter(
         models.Venta.fecha_operativa == fecha_hoy_str,
         models.Venta.turno == conf.turno_activo
     ).scalar() or 0.0
     
-    # 4. SUMAR DEUDAS
     total_deudas = db.query(func.sum(models.Venta.monto)).filter(
         models.Venta.metodo_pago == "CUENTA"
     ).scalar() or 0.0
     
-    # 5. OBTENER ASISTENCIAS
     asistencias = db.query(models.Asistencia).filter(
         models.Asistencia.fecha == fecha_hoy_str,
         models.Asistencia.turno == conf.turno_activo
@@ -223,7 +214,6 @@ async def home(request: Request, db: Session = Depends(get_db)):
     ids_presentes = [a.dama_id for a in asistencias]
     dict_asistencias = {a.dama_id: a for a in asistencias}
     
-    # 6. PREPARAR DAMAS PARA EL SALÓN
     damas_pantalla = []
     if conf.estado_club == "ABIERTO":
         damas_db = db.query(models.Dama).filter(models.Dama.id.in_(ids_presentes)).all()
@@ -236,7 +226,6 @@ async def home(request: Request, db: Session = Depends(get_db)):
                 "bailando_hoy": asis.bailando_hoy if asis else False
             })
     
-    # 7. LÓGICA DE BAILARINAS DIVIDIDA
     bailando_hoy = []
     en_espera = []
     ausentes_b = []
@@ -267,30 +256,20 @@ async def home(request: Request, db: Session = Depends(get_db)):
             else:
                 en_espera.append(info)
 
-    # 8. META DIARIA
     meta_fija = 4000000.0
     porcentaje = (total_ventas / meta_fija) * 100 if meta_fija > 0 else 0
     if porcentaje > 100: 
         porcentaje = 100
 
-    # 🔍 9. FILTRADO EXCLUSIVO DE PRODUCTOS ACTIVOS PARA EL TURNO EN CURSO
-    # Obtener el conjunto de IDs de productos que pertenecen al turno activo
-    productos_turno_ids = [
-        r[0] for r in db.query(models.InventarioTurno.producto_id).filter(
-            models.InventarioTurno.turno == conf.turno_activo
-        ).distinct().all()
-    ]
-
     productos_cooler_filtrados = db.query(models.Producto).filter(
         models.Producto.tipo == "PRODUCTO",
-        models.Producto.turno == conf.turno_activo  # Filtrado estricto por turno activo
+        models.Producto.turno == conf.turno_activo
     ).all()
 
     productos_todos_filtrados = db.query(models.Producto).filter(
-        models.Producto.turno == conf.turno_activo  # Filtrado estricto por turno activo
+        models.Producto.turno == conf.turno_activo
     ).all()
 
-    # 10. RETORNO DE LA RESPUESTA
     return templates.TemplateResponse(
         request=request,
         name="index.html", 
@@ -342,11 +321,9 @@ async def gestionar_club(
         if turno:
             conf.turno_activo = turno
             
-            # 📦 CONGELACIÓN TRANSACCIONAL DE INVENTARIO
             fecha_op = obtener_fecha_operativa().strftime("%Y-%m-%d")
             inicializar_stock_nuevo_turno(db, fecha_op, turno)
             
-            # 💰 REGISTRAR O ACTUALIZAR EL MONTO DE APERTURA PARA ESTA JORNADA
             caja_existente = db.query(models.CajaTurno).filter(
                 models.CajaTurno.fecha == fecha_op,
                 models.CajaTurno.turno == turno
@@ -377,26 +354,24 @@ async def gestionar_club(
     
     return RedirectResponse(url="/", status_code=303)
 
-# ---------------------------------------------------------
-# CONTABILIDAD Y REPORTES
-# ---------------------------------------------------------
-
+# =========================================================================
+# CONTABILIDAD Y REPORTES (FUNCIÓN COMPLETA E INTEGRADA)
+# =========================================================================
 @app.get("/contabilidad", response_class=HTMLResponse)  
 async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["admin1", "administrador", "cajera", "jefe_guillermo", "encargado"]:
         return RedirectResponse(url="/login?error=no_autorizado", status_code=303)
-    # --- LÓGICA DE FILTROS SEGURA ---
+        
     hoy_dt = obtener_fecha_operativa()
     fecha_param = request.query_params.get("fecha", hoy_dt.strftime("%Y-%m-%d"))
     turno_filter = request.query_params.get("turno", "Turno 1")
     
-    # Filtro de fecha para la base de datos (todo el día de 00:00 a 23:59)
     fecha_obj = datetime.strptime(fecha_param, "%Y-%m-%d")
     inicio_dia = datetime.combine(fecha_obj.date(), time.min)
     fin_dia = datetime.combine(fecha_obj.date(), time.max)
 
-    # 1. Obtener Ventas del turno (Filtro contable por Fecha Operativa)
+    # 1. Obtener Ventas del turno
     ventas_hoy = db.query(models.Venta).filter(
         models.Venta.fecha_operativa == fecha_param, 
         models.Venta.turno == turno_filter
@@ -408,7 +383,6 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         models.Asistencia.turno == turno_filter
     ).all()
 
-    # Obtener el monto de apertura para la fecha y el turno seleccionados desde la nueva tabla
     caja_info = db.query(models.CajaTurno).filter(
         models.CajaTurno.fecha == fecha_param,
         models.CajaTurno.turno == turno_filter
@@ -425,31 +399,48 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         "efectivo_total_gaveta": sum(v.monto for v in ventas_hoy if v.metodo_pago == "EFECTIVO") + sum((v.monto_efectivo or 0) for v in ventas_hoy if v.metodo_pago == "MIXTO") + monto_ap_valor
     }
 
-    # 4. Cálculo detallado por Dama (Liquidaciones en múltiples Fichas)
+    damas_nombres_dict = {d.id: d.nombre_artistico for d in db.query(models.Dama).all()}
+
+    # 4. Cálculo detallado por Dama (Fichas del Turno - EXCLUYENDO PRIVADOS)
     detalle_damas = []
     for asis in asistencias_hoy:
         dama = db.query(models.Dama).filter(models.Dama.id == asis.dama_id).first()
         if not dama: continue
         
-        # Filtramos ventas de hoy asociadas a la dama según su estado de liquidación
-        ventas_pagadas = [v for v in ventas_hoy if v.dama_id == dama.id and v.liquidada]
-        ventas_pendientes = [v for v in ventas_hoy if v.dama_id == dama.id and not v.liquidada]
+        # Filtramos ventas excluyendo "PRIVADO" para cumplir la instrucción de "se paga aparte"
+        ventas_pagadas = [v for v in ventas_hoy if v.dama_id == dama.id and v.liquidada and v.servicio != "PRIVADO"]
+        ventas_pendientes = [v for v in ventas_hoy if v.dama_id == dama.id and not v.liquidada and v.servicio != "PRIVADO"]
 
-        # 💡 Cálculo de Bonos Base del turno (Bono de asistencia, shows y descuento residencia)
+        # Cálculo de Bonos Base del turno (Bono de asistencia, shows y descuento residencia)
         monto_bono_base = 0
         costo_residencia_base = 0
         if asis.turno == "Turno 1":
-            if (asis.tipo_llegada == "Residente" and asis.hora_libro <= "22:35") or \
-               (asis.tipo_llegada == "Externa" and asis.hora_libro <= "23:05"):
+            if asis.tipo_llegada == "Residente" and ("22:00" <= asis.hora_libro <= "22:36"):
+                monto_bono_base = 10000
+            elif asis.tipo_llegada == "Externa" and ("22:30" <= asis.hora_libro <= "23:06"):
                 monto_bono_base = 10000
         if asis.tipo_llegada == "Residente":
             costo_residencia_base = 5000
 
         whatsapp_limpio = "".join(c for c in dama.whatsapp if c.isdigit()) if dama.whatsapp else ""
 
-        # CASO A: Si ya se pagó la Ficha 1 (asis.liquidada == True)
+        # Contar cuántos Privados de hoy tiene la dama para adjuntarle la nota informativa
+        privados_hoy_dama = [v for v in ventas_hoy if v.dama_id == dama.id and v.servicio == "PRIVADO"]
+        total_privados_hoy_dama_comis = sum(v.comision_chica for v in privados_hoy_dama)
+        cant_privados_hoy_dama = len(privados_hoy_dama)
+
+        note_privados_txt = ""
+        if cant_privados_hoy_dama > 0:
+            note_privados_txt = (
+                f"\n-----------------------------------------\n"
+                f"💎 *PRIVADOS DEL TURNO (SE PAGAN APARTE):*\n"
+                f"• Cantidad: {cant_privados_hoy_dama} Privados\n"
+                f"• Comisión por cobrar: *${total_privados_hoy_dama_comis:,.0f}*\n"
+                f"_(Se liquidan por separado en el control de privados)_"
+            )
+
+        # CASO A: Si ya se pagó la Ficha 1
         if asis.liquidada:
-            # 1. Añadimos Ficha 1 ya PAGADA (Tragos pagados + todos los bonos/shows/residencia)
             total_comis_pagadas = sum(v.comision_chica for v in ventas_pagadas)
             total_ficha1 = (total_comis_pagadas + monto_bono_base + asis.bono_show) - costo_residencia_base
             
@@ -474,8 +465,9 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 f"-----------------------------------------\n"
                 f"💵 *TOTAL NETO RECIBIDO:* *${total_ficha1:,.0f}*\n"
                 f"-----------------------------------------\n"
-                f"_Ficha cerrada y pagada con éxito._ ✔"
+                f"_Ficha cerrada con éxito._ ✔"
             )
+            msg_f1 += note_privados_txt
 
             detalle_damas.append({
                 "dama_id": dama.id,
@@ -491,7 +483,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 "liquidada": True
             })
 
-            # 2. Si hay nuevos tragos no pagados, abrimos de forma automática la FICHA 2 (PENDIENTE)
+            # Si hay nuevos tragos no pagados, abrimos de forma automática la FICHA 2 (PENDIENTE)
             if len(ventas_pendientes) > 0:
                 total_ficha2 = sum(v.comision_chica for v in ventas_pendientes)
                 tragos_det_f2 = "".join(f"• {v.fecha.strftime('%H:%M')} - {v.servicio} (+${v.comision_chica:,.0f})\n" for v in ventas_pendientes)
@@ -514,8 +506,9 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                     f"--------------------------------\n"
                     f"💵 *TOTAL NETO PENDIENTE (FICHA 2):* *${total_ficha2:,.0f}*\n"
                     f"--------------------------------\n"
-                    f"_¡Muchas gracias por tu trabajo de hoy!_ 🌸"
+                    f"_¡Muchas gracias!_ 🌸"
                 )
+                msg_f2 += note_privados_txt
 
                 detalle_damas.append({
                     "dama_id": dama.id,
@@ -557,8 +550,9 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 f"--------------------------------\n"
                 f"💵 *TOTAL NETO PENDIENTE (FICHA 1):* *${total_ficha1_pend:,.0f}*\n"
                 f"--------------------------------\n"
-                f"_¡Muchas gracias por tu trabajo de hoy!_ 🌸"
+                f"_¡Muchas gracias!_ 🌸"
             )
+            msg_f1_pend += note_privados_txt
 
             detalle_damas.append({
                 "dama_id": dama.id,
@@ -589,7 +583,6 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         if v.mesero not in detalle_garzones:
             detalle_garzones[v.mesero] = {"total": 0, "lista": []}
             
-        # 💡 Resolvemos el destino correcto: Nombre de la dama, o el nombre del cliente
         if v.dama_id:
             destino = damas_lookup.get(v.dama_id, "S/D")
         else:
@@ -597,15 +590,26 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
 
         detalle_garzones[v.mesero]["total"] += v.monto
         detalle_garzones[v.mesero]["lista"].append({
-            "id": v.id,  # 💡 <-- ID necesario para poder eliminar la venta
+            "id": v.id,
             "hora": v.fecha.strftime("%H:%M"),
             "servicio": v.servicio,
             "destino": destino,
             "monto": v.monto
         })
 
-    # 6. Auditoría y Deudas Globales
-    resumen["pagos_damas"] = sum(d["total_pagar"] for d in detalle_damas)
+    # =========================================================================
+    # 5.2. Cálculo del Balance 50/50 y reportes financieros
+    # =========================================================================
+    # Suma de payouts de las fichas de turno
+    total_fichas_damas = sum(d["total_pagar"] for d in detalle_damas)
+    
+    # Suma de todas las comisiones de Privados LIQUIDADOS hoy (100k por cada uno)
+    total_privados_liquidados_hoy = sum(
+        v.comision_chica for v in ventas_hoy 
+        if v.servicio == "PRIVADO" and v.liquidada
+    )
+    
+    resumen["pagos_damas"] = total_fichas_damas + total_privados_liquidados_hoy
     resumen["neto"] = resumen["bruto"] - resumen["pagos_damas"]
 
     logs = db.query(models.LogAuditoria).filter(
@@ -617,20 +621,17 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     deudas_global = db.query(models.Venta).filter(models.Venta.metodo_pago == "CUENTA").all()
 
     # =========================================================================
-    # 🔒 7. BÚSQUEDA GLOBAL DE LIQUIDACIONES PENDIENTES (OPTIMIZADA SIN N+1)
+    # 🔒 7. BÚSQUEDA GLOBAL DE LIQUIDACIONES PENDIENTES (EXCLUYENDO PRIVADOS)
     # =========================================================================
-    
-    # A. Obtenemos todas las asistencias no liquidadas de la historia (Ficha 1 pendientes)
     asis_no_liq = db.query(models.Asistencia).filter(
         models.Asistencia.liquidada == False
     ).all()
 
-    # B. Obtenemos todas las ventas no liquidadas de una sola vez
     ventas_pendientes_raw = db.query(models.Venta).filter(
-        models.Venta.liquidada == False
+        models.Venta.liquidada == False,
+        models.Venta.servicio != "PRIVADO"
     ).all()
 
-    # Agrupamos las ventas en memoria por una clave única contable: (dama_id, fecha_operativa, turno)
     ventas_agrupadas = {}
     claves_ventas_pendientes = set()
     for v in ventas_pendientes_raw:
@@ -642,7 +643,6 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         ventas_agrupadas[clave].append(v)
         claves_ventas_pendientes.add((v.dama_id, v.fecha_operativa, v.turno))
 
-    # C. Obtenemos las asistencias ya pagadas (liquidada == True) pero que tienen ventas pendientes (Ficha 2+)
     asis_fichas_extras = []
     if claves_ventas_pendientes:
         from sqlalchemy import or_
@@ -658,31 +658,25 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 or_(*condiciones)
             ).all()
 
-    # D. Combinamos ambas listas de asistencias y ordenamos por fecha descendente
     asistencias_pendientes = asis_no_liq + asis_fichas_extras
     asistencias_pendientes.sort(key=lambda x: x.fecha, reverse=True)
 
     pendientes_global = []
 
     if asistencias_pendientes:
-        # Obtenemos todas las Damas para indexarlas por ID
         damas_dict = {d.id: d for d in db.query(models.Dama).all()}
 
-        # 🔄 Procesamos la lista unificada en memoria (Cero consultas adicionales dentro de este bucle)
         for asis_p in asistencias_pendientes:
             dama_p = damas_dict.get(asis_p.dama_id)
             if not dama_p: 
                 continue
             
-            # Buscamos las ventas del lote usando nuestra clave en memoria
             clave_asis = (asis_p.dama_id, asis_p.fecha, asis_p.turno)
-            ventas_p = ventas_agrupadas.get(clave_asis, [])
+            ventas_p = [v for v in ventas_agrupadas.get(clave_asis, [])]
             
             total_comis_p = sum(v.comision_chica for v in ventas_p)
 
-            # Lógica dinámica: Si la asistencia ya está liquidada, es una Ficha 2
             if asis_p.liquidada:
-                # Los bonos, shows iniciales y el descuento de residencia ya fueron aplicados en la Ficha 1
                 monto_bono_p = 0
                 costo_residencia_p = 0
                 ganancia_bailes_p = 0
@@ -691,8 +685,9 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 monto_bono_p = 0
                 costo_residencia_p = 0
                 if asis_p.turno == "Turno 1":
-                    if (asis_p.tipo_llegada == "Residente" and asis_p.hora_libro <= "22:35") or \
-                       (asis_p.tipo_llegada == "Externa" and asis_p.hora_libro <= "23:05"):
+                    if asis_p.tipo_llegada == "Residente" and ("22:00" <= asis_p.hora_libro <= "22:36"):
+                        monto_bono_p = 10000
+                    elif asis_p.tipo_llegada == "Externa" and ("22:30" <= asis_p.hora_libro <= "23:06"):
                         monto_bono_p = 10000
                 if asis_p.tipo_llegada == "Residente":
                     costo_residencia_p = 5000
@@ -702,7 +697,6 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
             total_chica_p = (total_comis_p + monto_bono_p + ganancia_bailes_p) - costo_residencia_p
 
             if total_chica_p > 0:
-                # Construcción del desglose
                 tragos_detalle_p = ""
                 for v_p in ventas_p:
                     tragos_detalle_p += f"• {v_p.fecha.strftime('%H:%M')} - {v_p.servicio} (+${v_p.comision_chica:,.0f}) [Garzón: {v_p.mesero}]\n"
@@ -710,7 +704,26 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 if not tragos_detalle_p:
                     tragos_detalle_p = "• Sin consumos.\n"
 
-                # Mensaje personalizado según el estado de la ficha (Ficha 1 o Ficha 2)
+                # Adjuntar también a las fichas pendientes del historial la nota informativa de privados de ese día
+                priv_hist_dama = db.query(models.Venta).filter(
+                    models.Venta.dama_id == dama_p.id,
+                    models.Venta.servicio == "PRIVADO",
+                    models.Venta.fecha_operativa == asis_p.fecha,
+                    models.Venta.turno == asis_p.turno
+                ).all()
+                total_priv_hist_comis = sum(v.comision_chica for v in priv_hist_dama)
+                cant_priv_hist = len(priv_hist_dama)
+                
+                note_hist_txt = ""
+                if cant_priv_hist > 0:
+                    note_hist_txt = (
+                        f"\n-----------------------------------------\n"
+                        f"💎 *PRIVADOS DEL TURNO (SE PAGAN APARTE):*\n"
+                        f"• Cantidad: {cant_priv_hist} Privados\n"
+                        f"• Comisión por cobrar: *${total_priv_hist_comis:,.0f}*\n"
+                        f"_(Se liquidan por separado en el control de privados)_"
+                    )
+
                 if asis_p.liquidada:
                     msg_p = (
                         f"⭐ *DETALLE DE LIQUIDACIÓN - {nombre_ficha_label}* ⭐\n"
@@ -753,8 +766,9 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                         f"-----------------------------------------\n"
                         f"_¡Muchas gracias!_ 🌸"
                     )
+                
+                msg_p += note_hist_txt
 
-                # Sanitizar número de WhatsApp
                 whatsapp_p_limpio = "".join(c for c in dama_p.whatsapp if c.isdigit()) if dama_p.whatsapp else ""
                 msg_p_encoded = urllib.parse.quote(msg_p)
                 link_wa_p = f"https://wa.me/{whatsapp_p_limpio}?text={msg_p_encoded}"
@@ -768,7 +782,169 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                     "link_wa": link_wa_p
                 })
 
-    # --- RETORNO DE LA RESPUESTA
+    # =========================================================================
+    # 🔒 AGRUPACIÓN DE PRIVADOS POR DAMA (SÓLO TURNOS ACTIVOS VS DIAS ANTERIORES)
+    # =========================================================================
+    privados_todos = db.query(models.Venta).filter(models.Venta.servicio == "PRIVADO").all()
+    
+    grupos_hoy = {}
+    grupos_pendientes = {}
+    
+    for p in privados_todos:
+        clave = (p.dama_id, p.fecha_operativa, p.turno)
+        
+        if p.fecha_operativa == fecha_param and p.turno == turno_filter:
+            if clave not in grupos_hoy:
+                grupos_hoy[clave] = []
+            grupos_hoy[clave].append(p)
+        else:
+            if not p.liquidada:
+                if clave not in grupos_pendientes:
+                    grupos_pendientes[clave] = []
+                grupos_pendientes[clave].append(p)
+                
+    lista_privados_cuentas_hoy = []
+    for (dama_id, f_op, tur), ventas_grupo in grupos_hoy.items():
+        dama_nombre = damas_nombres_dict.get(dama_id, "S/D")
+        cant_priv = len(ventas_grupo)
+        total_comis = sum(v.comision_chica for v in ventas_grupo)
+        group_liq = all(v.liquidada for v in ventas_grupo)
+        ids_csv = ",".join(str(v.id) for v in ventas_grupo)
+        
+        # Desglose detallado de cada consumo individual para el modal
+        consumos_detallados = []
+        msg_detalle_wa = ""
+        for v in ventas_grupo:
+            hora_f = v.fecha.strftime('%H:%M')
+            cli = v.cliente_nombre or "CLIENTE"
+            consumos_detallados.append({
+                "id": v.id,
+                "hora": hora_f,
+                "garzon": v.mesero,
+                "cliente": cli,
+                "monto": v.monto,
+                "comision": v.comision_chica,
+                "liquidada": v.liquidada
+            })
+            msg_detalle_wa += f"• {hora_f} - PRIVADO (+${v.comision_chica:,.0f}) [Garzón: {v.mesero}]\n"
+
+        # Mensaje de WhatsApp personalizado para los Privados del turno activo
+        dama_obj = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
+        wsp_limpio = "".join(c for c in dama_obj.whatsapp if c.isdigit()) if dama_obj and dama_obj.whatsapp else ""
+        
+        msg_wa = (
+            f"⭐ *DETALLE DE PRIVADOS - {dama_nombre}* ⭐\n"
+            f"📅 *Fecha:* {f_op} | 🕒 *Turno:* {tur}\n"
+            f"-----------------------------------------\n"
+            f"💎 *SERVICIOS DE PRIVADOS:* \n{msg_detalle_wa}"
+            f"-----------------------------------------\n"
+            f"💵 *TOTAL POR COBRAR:* *${total_comis:,.0f}*\n"
+            f"-----------------------------------------\n"
+            f"_Se liquidan por separado._ 🌸"
+        )
+        link_wa = f"https://wa.me/{wsp_limpio}?text={urllib.parse.quote(msg_wa)}"
+        
+        lista_privados_cuentas_hoy.append({
+            "dama_id": dama_id,
+            "nombre": dama_nombre,
+            "fecha": f_op,
+            "turno": tur,
+            "cantidad": cant_priv,
+            "total_commission": total_comis,
+            "liquidada": group_liq,
+            "ids_ventas": ids_csv,
+            "consumos": consumos_detallados,
+            "link_wa": link_wa
+        })
+        
+    lista_privados_pendientes = []
+    for (dama_id, f_op, tur), ventas_grupo in grupos_pendientes.items():
+        dama_nombre = damas_nombres_dict.get(dama_id, "S/D")
+        cant_priv = len(ventas_grupo)
+        total_comis = sum(v.comision_chica for v in ventas_grupo)
+        group_liq = all(v.liquidada for v in ventas_grupo)
+        ids_csv = ",".join(str(v.id) for v in ventas_grupo)
+        
+        consumos_detallados = []
+        msg_detalle_wa = ""
+        for v in ventas_grupo:
+            hora_f = v.fecha.strftime('%H:%M')
+            cli = v.cliente_nombre or "CLIENTE"
+            consumos_detallados.append({
+                "id": v.id,
+                "hora": hora_f,
+                "garzon": v.mesero,
+                "cliente": cli,
+                "monto": v.monto,
+                "comision": v.comision_chica,
+                "liquidada": v.liquidada
+            })
+            msg_detalle_wa += f"• {hora_f} - PRIVADO (+${v.comision_chica:,.0f}) [Garzón: {v.mesero}]\n"
+
+        dama_obj = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
+        wsp_limpio = "".join(c for c in dama_obj.whatsapp if c.isdigit()) if dama_obj and dama_obj.whatsapp else ""
+        
+        msg_wa = (
+            f"⭐ *DETALLE DE PRIVADOS HISTÓRICOS - {dama_nombre}* ⭐\n"
+            f"📅 *Fecha:* {f_op} | 🕒 *Turno:* {tur}\n"
+            f"-----------------------------------------\n"
+            f"💎 *SERVICIOS DE PRIVADOS:* \n{msg_detalle_wa}"
+            f"-----------------------------------------\n"
+            f"💵 *TOTAL POR COBRAR:* *${total_comis:,.0f}*\n"
+            f"-----------------------------------------\n"
+            f"_Pendiente de días anteriores._ 🌸"
+        )
+        link_wa = f"https://wa.me/{wsp_limpio}?text={urllib.parse.quote(msg_wa)}"
+        
+        lista_privados_pendientes.append({
+            "dama_id": dama_id,
+            "nombre": dama_nombre,
+            "fecha": f_op,
+            "turno": tur,
+            "cantidad": cant_priv,
+            "total_commission": total_comis,
+            "liquidada": group_liq,
+            "ids_ventas": ids_csv,
+            "consumos": consumos_detallados,
+            "link_wa": link_wa
+        })
+        
+    total_unpaid_privados_hoy = sum(v.comision_chica for v in privados_todos if v.fecha_operativa == fecha_param and v.turno == turno_filter and not v.liquidada)
+    total_unpaid_privados_historial = sum(v.comision_chica for v in privados_todos if (v.fecha_operativa != fecha_param or v.turno != turno_filter) and not v.liquidada)
+
+    # Privados del día actual agrupados para el listado del modal
+    lista_privados_dia = []
+    for (dama_id, f_op, tur), ventas_grupo in grupos_hoy.items():
+        dama_nombre = damas_nombres_dict.get(dama_id, "S/D")
+        cant_priv = len(ventas_grupo)
+        total_comis = sum(v.comision_chica for v in ventas_grupo)
+        group_liq = all(v.liquidada for v in ventas_grupo)
+        ids_csv = ",".join(str(v.id) for v in ventas_grupo)
+        
+        consumos_detallados = []
+        for v in ventas_grupo:
+            consumos_detallados.append({
+                "id": v.id,
+                "hora": v.fecha.strftime('%H:%M'),
+                "garzon": v.mesero,
+                "cliente": v.cliente_nombre or "CLIENTE",
+                "monto": v.monto,
+                "comision": v.comision_chica,
+                "liquidada": v.liquidada
+            })
+        
+        lista_privados_dia.append({
+            "dama_id": dama_id,
+            "nombre": dama_nombre,
+            "fecha": f_op,
+            "turno": tur,
+            "cantidad": cant_priv,
+            "total_commission": total_comis,
+            "liquidada": group_liq,
+            "ids_ventas": ids_csv,
+            "consumos": consumos_detallados
+        })
+
     return templates.TemplateResponse(
         request=request,
         name="reportes.html", 
@@ -783,7 +959,12 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
             "username": username,   
             "fecha_filtro": fecha_param, 
             "turno_filtro": turno_filter,
-            "pendientes_global": pendientes_global
+            "pendientes_global": pendientes_global,
+            "privados_cuentas_hoy": lista_privados_cuentas_hoy,
+            "total_privados_hoy": total_unpaid_privados_hoy,
+            "privados_pendientes": lista_privados_pendientes,
+            "total_privados_pendientes": total_unpaid_privados_historial,
+            "privados_dia": lista_privados_dia
         }
     )
 
@@ -794,7 +975,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
 async def eliminar_venta(request: Request, venta_id: int, motivo: str = Form(...), db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["admin1", "administrador", "cajera"]:
-        raise HTTPException(status_code=403, detail="No autorizado.")
+        raise HTTPException(status_code=403, detail="No authorized.")
 
     venta = db.query(models.Venta).filter(models.Venta.id == venta_id).first()
     if venta:
@@ -814,18 +995,19 @@ async def registrar_pago_dama(request: Request, dama_id: int, fecha: str = Form(
     if not username or user_role not in ["admin1", "administrador", "cajera"]:
         raise HTTPException(status_code=403, detail="No autorizado.")
     
-    # 3. Liquidar ventas de ese turno usando la columna fecha_operativa exacta
+    # Liquidar ventas de ese turno usando la columna fecha_operativa exacta (excluye privados de la liquidación de ficha)
     ventas_pendientes = db.query(models.Venta).filter(
         models.Venta.dama_id == dama_id,
         models.Venta.fecha_operativa == fecha,
         models.Venta.turno == turno,
+        models.Venta.servicio != "PRIVADO",
         models.Venta.liquidada == False
     ).all()
     
     for v in ventas_pendientes: 
         v.liquidada = True
 
-    # 4. Liquidar la asistencia (Bonos/Residencia)
+    # Liquidar la asistencia (Bonos/Residencia)
     asis = db.query(models.Asistencia).filter(
         models.Asistencia.dama_id == dama_id,
         models.Asistencia.fecha == fecha,
@@ -835,7 +1017,6 @@ async def registrar_pago_dama(request: Request, dama_id: int, fecha: str = Form(
     if asis: 
         asis.liquidada = True
 
-    # 5. AUDITORÍA REAL
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
     log = models.LogAuditoria(
         usuario=username, 
@@ -918,11 +1099,9 @@ async def registrar_pago_show(
 
 @app.get("/descargar_respaldo_secreto")
 async def descargar_respaldo_secreto(clave: str):
-    # Esto protege el enlace para que solo usted pueda usarlo
     if clave != "whiskeria9981":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
-    # El sistema busca dónde está guardada la base de datos real en Render
     ruta_disco_persistente = "/data/whiskeria.db"
     ruta_servidor_gratuito = "./whiskeria.db"
     
@@ -932,13 +1111,54 @@ async def descargar_respaldo_secreto(clave: str):
         return FileResponse(ruta_servidor_gratuito, filename="whiskeria_backup.db")
     else:
         raise HTTPException(status_code=404, detail="Base de datos no encontrada")
+
+@app.post("/registrar_pago_privado/{venta_id}")
+async def registrar_pago_privado(request: Request, venta_id: int, db: Session = Depends(get_db)):
+    username, user_role = obtener_usuario_sesion(request)
+    if not username or user_role not in ["admin1", "administrador", "cajera"]:
+        raise HTTPException(status_code=403, detail="No autorizado.")
+    
+    venta = db.query(models.Venta).filter(models.Venta.id == venta_id).first()
+    if venta:
+        venta.liquidada = True
+        log = models.LogAuditoria(
+            usuario=username,
+            accion=f"PAGÓ PRIVADO INDIVIDUAL - Venta ID: {venta.id} (${venta.comision_chica:,.0f})",
+            turno=venta.turno
+        )
+        db.add(log)
+        db.commit()
+    return {"status": "ok"}   
+
+@app.post("/registrar_pago_privado_grupo")
+async def registrar_pago_privado_grupo(
+    request: Request,
+    ids: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    username, user_role = obtener_usuario_sesion(request)
+    if user_role not in ["admin1", "administrador", "cajera"]:
+        raise HTTPException(status_code=403, detail="No autorizado.")
+        
+    id_list = [int(x) for x in ids.split(",") if x.strip().isdigit()]
+    if id_list:
+        ventas_grupo = db.query(models.Venta).filter(models.Venta.id.in_(id_list)).all()
+        for v in ventas_grupo:
+            v.liquidada = True
+        
+        db.add(models.LogAuditoria(
+            usuario=username,
+            accion=f"PAGÓ GRUPO DE PRIVADOS - Cantidad: {len(ventas_grupo)} servicios",
+            turno=ventas_grupo[0].turno if ventas_grupo else None
+        ))
+        db.commit()
+    return {"status": "ok"}
     
 @app.post("/subir_respaldo_secreto")
 async def subir_respaldo_secreto(clave: str, archivo: UploadFile = File(...)):
     if clave != "whiskeria9981":
         raise HTTPException(status_code=403, detail="Acceso denegado")
     
-    # Detectamos la ruta de producción o la local de pruebas
     ruta_disco_persistente = "/data"
     
     if os.path.exists(ruta_disco_persistente):
@@ -947,9 +1167,9 @@ async def subir_respaldo_secreto(clave: str, archivo: UploadFile = File(...)):
         ruta_destino = "./whiskeria.db"
 
     try:
-        # Reemplaza físicamente el archivo en el servidor
         with open(ruta_destino, "wb") as buffer:
             shutil.copyfileobj(archivo.file, buffer)
         return {"status": "success", "message": "Base de datos subida y actualizada con éxito."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al subir el archivo: {str(e)}")
+# END OF FILE main.py

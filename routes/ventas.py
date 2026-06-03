@@ -17,6 +17,9 @@ router = APIRouter()
 # ---------------------------------------------------------
 # 1. REGISTRAR VENTA INDIVIDUAL
 # ---------------------------------------------------------
+# ---------------------------------------------------------
+# 1. REGISTRAR VENTA INDIVIDUAL (COMPLETA E INTEGRADA)
+# ---------------------------------------------------------
 @router.post("/registrar_venta")
 async def registrar_venta(
     request: Request,
@@ -29,8 +32,8 @@ async def registrar_venta(
     monto_casa_manual: int = Form(0),
     monto_chica_manual: int = Form(0),
     cliente_nombre: Optional[str] = Form(None),
-    monto_efectivo: Optional[float] = Form(0.0), # Recibimos Efectivo Mixto
-    monto_tarjeta: Optional[float] = Form(0.0), # Recibimos Tarjeta Mixto
+    monto_efectivo: Optional[float] = Form(0.0), 
+    monto_tarjeta: Optional[float] = Form(0.0), 
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -42,42 +45,95 @@ async def registrar_venta(
 
     conf = obtener_config(db)
     
-    total, pago_chica, pago_casa = calcular_venta_detallada(
-        tier_precio, extra_tipo, monto_casa_manual, monto_chica_manual
-    )
+    # SI LA VENTA INCLUYE UN PRIVADO, LO SEPARAMOS EN DOS REGISTROS INDEPENDIENTES
+    if extra_tipo == "PRIVADO":
+        # 1. Registrar el consumo de trago o salida manual si existiese (calculado sin el Privado)
+        tot_trago, chica_trago, casa_trago = calcular_venta_detallada(
+            tier_precio, None, monto_casa_manual, monto_chica_manual
+        )
+        if tot_trago > 0:
+            servicios_lista = []
+            if tier_precio > 0:
+                servicios_lista.append(f"TRAGO {tier_precio // 1000}K")
+            if monto_casa_manual > 0 or monto_chica_manual > 0:
+                servicios_lista.append("SALIDA MANUAL")
+            nombre_serv_trago = " + ".join(servicios_lista) if servicios_lista else "VENTA INDIVIDUAL"
 
-    servicios_lista = []
-    if tier_precio > 0:
-        servicios_lista.append(f"TRAGO {tier_precio // 1000}K")
-    if extra_tipo:
-        servicios_lista.append(extra_tipo)
-    if monto_casa_manual > 0 or monto_chica_manual > 0:
-        servicios_lista.append("SALIDA MANUAL")
+            nueva_venta_trago = models.Venta(
+                dama_id=dama_id,
+                servicio=nombre_serv_trago.upper(),
+                monto=tot_trago,
+                comision_chica=chica_trago,
+                ganancia_casa=casa_trago,
+                turno=conf.turno_activo,
+                mesero=mesero,
+                metodo_pago=metodo_pago,
+                cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
+                producto_id=producto_id,
+                fecha=obtener_ahora_local(),
+                fecha_operativa=calcular_fecha_operativa_defecto(),
+                monto_efectivo=monto_efectivo if metodo_pago == "MIXTO" else 0.0,
+                monto_tarjeta=monto_tarjeta if metodo_pago == "MIXTO" else 0.0
+            )
+            db.add(nueva_venta_trago)
         
-    nombre_serv = " + ".join(servicios_lista) if servicios_lista else "VENTA INDIVIDUAL"
+        # 2. Registrar el PRIVADO de forma aislada
+        nueva_venta_privado = models.Venta(
+            dama_id=dama_id,
+            servicio="PRIVADO",
+            monto=200000.0,
+            comision_chica=100000.0,
+            ganancia_casa=100000.0,
+            turno=conf.turno_activo,
+            mesero=mesero,
+            metodo_pago=metodo_pago,
+            cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
+            producto_id=None,
+            fecha=obtener_ahora_local(),
+            fecha_operativa=calcular_fecha_operativa_defecto(),
+            monto_efectivo=0.0,
+            monto_tarjeta=0.0
+        )
+        db.add(nueva_venta_privado)
+        
+    else:
+        # REGISTRO ESTÁNDAR COMPLETO (Para tragos individuales o VIP sin privados)
+        total, pago_chica, pago_casa = calcular_venta_detallada(
+            tier_precio, extra_tipo, monto_casa_manual, monto_chica_manual
+        )
+        servicios_lista = []
+        if tier_precio > 0:
+            servicios_lista.append(f"TRAGO {tier_precio // 1000}K")
+        if extra_tipo:
+            servicios_lista.append(extra_tipo)
+        if monto_casa_manual > 0 or monto_chica_manual > 0:
+            servicios_lista.append("SALIDA MANUAL")
+            
+        nombre_serv = " + ".join(servicios_lista) if servicios_lista else "VENTA INDIVIDUAL"
 
-    nueva_venta = models.Venta(
-        dama_id=dama_id,
-        servicio=nombre_serv.upper(),
-        monto=total,
-        comision_chica=pago_chica,
-        ganancia_casa=pago_casa,
-        turno=conf.turno_activo,
-        mesero=mesero,
-        metodo_pago=metodo_pago,
-        cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
-        producto_id=producto_id,
-        fecha=obtener_ahora_local(),
-        fecha_operativa=calcular_fecha_operativa_defecto(),
-        monto_efectivo=monto_efectivo if metodo_pago == "MIXTO" else 0.0,
-        monto_tarjeta=monto_tarjeta if metodo_pago == "MIXTO" else 0.0
-    )
-    db.add(nueva_venta)
+        nueva_venta = models.Venta(
+            dama_id=dama_id,
+            servicio=nombre_serv.upper(),
+            monto=total,
+            comision_chica=pago_chica,
+            ganancia_casa=pago_casa,
+            turno=conf.turno_activo,
+            mesero=mesero,
+            metodo_pago=metodo_pago,
+            cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
+            producto_id=producto_id,
+            fecha=obtener_ahora_local(),
+            fecha_operativa=calcular_fecha_operativa_defecto(),
+            monto_efectivo=monto_efectivo if metodo_pago == "MIXTO" else 0.0,
+            monto_tarjeta=monto_tarjeta if metodo_pago == "MIXTO" else 0.0
+        )
+        db.add(nueva_venta)
+
     db.commit()
     return RedirectResponse(url="/", status_code=303)
 
 # ---------------------------------------------------------
-# 2. REGISTRAR RONDA DE MESA
+# 2. REGISTRAR RONDA DE MESA (COMPLETA E INTEGRADA)
 # ---------------------------------------------------------
 @router.post("/registrar_ronda_mesa")
 async def registrar_ronda_mesa(
@@ -90,8 +146,8 @@ async def registrar_ronda_mesa(
     tier_precio: Optional[int] = Form(None),           
     extra_tipo: Optional[str] = Form(None),
     producto_id: Optional[int] = Form(None),
-    monto_efectivo: Optional[float] = Form(0.0), # Recibimos Efectivo Mixto
-    monto_tarjeta: Optional[float] = Form(0.0), # Recibimos Tarjeta Mixto
+    monto_efectivo: Optional[float] = Form(0.0), 
+    monto_tarjeta: Optional[float] = Form(0.0), 
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -114,48 +170,82 @@ async def registrar_ronda_mesa(
         for item in items:
             t_precio = item["tier_precio"]
             ex_tipo = item.get("extra_tipo")
-            tot, chica, casa = calcular_venta_detallada(t_precio, ex_tipo)
-            total_ronda += tot
-            desglose_calculos.append((tot, chica, casa))
+            if ex_tipo == "PRIVADO":
+                tot_t, chica_t, casa_t = calcular_venta_detallada(t_precio, None)
+                tot_p, chica_p, casa_p = calcular_venta_detallada(0, "PRIVADO")
+                total_ronda += (tot_t + tot_p)
+                desglose_calculos.append({
+                    "trago": (tot_t, chica_t, casa_t),
+                    "privado": (tot_p, chica_p, casa_p),
+                    "es_privado": True
+                })
+            else:
+                tot, chica, casa = calcular_venta_detallada(t_precio, ex_tipo)
+                total_ronda += tot
+                desglose_calculos.append({
+                    "trago": (tot, chica, casa),
+                    "es_privado": False
+                })
 
         factor_efectivo = (monto_efectivo / total_ronda) if metodo_pago == "MIXTO" and total_ronda > 0 else 0.0
 
         for idx, item in enumerate(items):
             d_id = item["dama_id"]
             p_id = item.get("producto_id")
-            tot_v, chica_v, casa_v = desglose_calculos[idx]
+            calc = desglose_calculos[idx]
 
             prod_nombre = ""
             if p_id:
                 prod = db.query(models.Producto).filter(models.Producto.id == p_id).first()
-                if prod: prod_nombre = prod.nombre
+                if prod: 
+                    prod_nombre = prod.nombre
 
-            nombre_serv = f"MESA: {prod_nombre or 'TRAGO'} {item['tier_precio'] // 1000}K"
-            if item.get("extra_tipo"):
-                nombre_serv += f" + {item['extra_tipo']}"
+            # Registrar Trago/VIP
+            tot_t, chica_t, casa_t = calc["trago"]
+            if tot_t > 0:
+                nombre_serv_t = f"MESA: {prod_nombre or 'TRAGO'} {item['tier_precio'] // 1000}K"
+                if item.get("extra_tipo") and item.get("extra_tipo") != "PRIVADO":
+                    nombre_serv_t += f" + {item['extra_tipo']}"
 
-            efec_prop = tot_v * factor_efectivo if metodo_pago == "MIXTO" else 0.0
-            tarj_prop = tot_v * (1 - factor_efectivo) if metodo_pago == "MIXTO" else 0.0
+                nueva_v_t = models.Venta(
+                    dama_id=d_id,
+                    servicio=nombre_serv_t.upper(),
+                    monto=tot_t,
+                    comision_chica=chica_t,
+                    ganancia_casa=casa_t,
+                    turno=conf.turno_activo,
+                    mesero=mesero,
+                    metodo_pago=metodo_pago,
+                    cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
+                    producto_id=p_id if p_id else None,
+                    fecha=ahora,
+                    fecha_operativa=f_operativa,
+                    monto_efectivo=tot_t * factor_efectivo if metodo_pago == "MIXTO" else 0.0,
+                    monto_tarjeta=tot_t * (1 - factor_efectivo) if metodo_pago == "MIXTO" else 0.0
+                )
+                db.add(nueva_v_t)
 
-            nueva_v = models.Venta(
-                dama_id=d_id,
-                servicio=nombre_serv.upper(),
-                monto=tot_v,
-                comision_chica=chica_v,
-                ganancia_casa=casa_v,
-                turno=conf.turno_activo,
-                mesero=mesero,
-                metodo_pago=metodo_pago,
-                cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
-                producto_id=p_id if p_id else None,
-                fecha=ahora,
-                fecha_operativa=f_operativa,
-                monto_efectivo=efec_prop,
-                monto_tarjeta=tarj_prop
-            )
-            db.add(nueva_v)
-            
-        # ─── AGREGAR ESTAS DOS LÍNEAS AL FINAL DEL BLOQUE "if" (Misma indentación que el "for") ───
+            # Registrar PRIVADO por separado si existiese
+            if calc["es_privado"]:
+                tot_p, chica_p, casa_p = calc["privado"]
+                nueva_v_p = models.Venta(
+                    dama_id=d_id,
+                    servicio="PRIVADO",
+                    monto=tot_p,
+                    comision_chica=chica_p,
+                    ganancia_casa=casa_p,
+                    turno=conf.turno_activo,
+                    mesero=mesero,
+                    metodo_pago=metodo_pago,
+                    cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
+                    producto_id=None,
+                    fecha=ahora,
+                    fecha_operativa=f_operativa,
+                    monto_efectivo=0.0,
+                    monto_tarjeta=0.0
+                )
+                db.add(nueva_v_p)
+
         db.commit()
         return RedirectResponse(url="/", status_code=303)
 
@@ -164,30 +254,30 @@ async def registrar_ronda_mesa(
         if not ids_chicas or tier_precio is None:
             return RedirectResponse(url="/", status_code=303)
 
-        total_ronda = len(ids_chicas) * tier_precio
-        factor_efectivo = (monto_efectivo / total_ronda) if metodo_pago == "MIXTO" and total_ronda > 0 else 0.0
+        unitario_total = tier_precio
+        if extra_tipo == "PRIVADO":
+            unitario_total += 200000.0
+        total_ronda_completo = len(ids_chicas) * unitario_total
+        
+        factor_efectivo = (monto_efectivo / total_ronda_completo) if metodo_pago == "MIXTO" and total_ronda_completo > 0 else 0.0
 
         for d_id in ids_chicas:
-            total, chica, casa = calcular_venta_detallada(tier_precio, extra_tipo)
-            
-            prod_nombre = ""
-            if producto_id:
-                prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
-                if prod: prod_nombre = prod.nombre
+            # 1. Registrar consumo base/trago (VIP o simple sin privado)
+            tot_t, chica_t, casa_t = calcular_venta_detallada(tier_precio, None)
+            if tot_t > 0:
+                prod_nombre = ""
+                if producto_id:
+                    prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
+                    if prod: 
+                        prod_nombre = prod.nombre
 
-                nombre_serv = f"MESA: {prod_nombre or 'TRAGO'} {tier_precio // 1000}K"
-                if extra_tipo: 
-                    nombre_serv += f" + {extra_tipo}"
-
-                efec_prop = total * factor_efectivo if metodo_pago == "MIXTO" else 0.0
-                tarj_prop = total * (1 - factor_efectivo) if metodo_pago == "MIXTO" else 0.0
-
-                nueva_v = models.Venta(
+                nombre_serv_t = f"MESA: {prod_nombre or 'TRAGO'} {tier_precio // 1000}K"
+                nueva_v_t = models.Venta(
                     dama_id=d_id,
-                    servicio=nombre_serv.upper(),
-                    monto=total,
-                    comision_chica=chica,
-                    ganancia_casa=casa,
+                    servicio=nombre_serv_t.upper(),
+                    monto=tot_t,
+                    comision_chica=chica_t,
+                    ganancia_casa=casa_t,
                     turno=conf.turno_activo,
                     mesero=mesero,
                     metodo_pago=metodo_pago,
@@ -195,14 +285,34 @@ async def registrar_ronda_mesa(
                     producto_id=producto_id,
                     fecha=ahora,
                     fecha_operativa=f_operativa,
-                    monto_efectivo=efec_prop,
-                    monto_tarjeta=tarj_prop
+                    monto_efectivo=tot_t * factor_efectivo if metodo_pago == "MIXTO" else 0.0,
+                    monto_tarjeta=tot_t * (1 - factor_efectivo) if metodo_pago == "MIXTO" else 0.0
                 )
-                db.add(nueva_v)
+                db.add(nueva_v_t)
+
+            # 2. Registrar PRIVADO por separado si existiese
+            if extra_tipo == "PRIVADO":
+                nueva_v_p = models.Venta(
+                    dama_id=d_id,
+                    servicio="PRIVADO",
+                    monto=200000.0,
+                    comision_chica=100000.0,
+                    ganancia_casa=100000.0,
+                    turno=conf.turno_activo,
+                    mesero=mesero,
+                    metodo_pago=metodo_pago,
+                    cliente_nombre=cliente_nombre.upper() if cliente_nombre else None,
+                    producto_id=None,
+                    fecha=ahora,
+                    fecha_operativa=f_operativa,
+                    monto_efectivo=0.0,
+                    monto_tarjeta=0.0
+                )
+                db.add(nueva_v_p)
 
         db.commit()
         return RedirectResponse(url="/", status_code=303)
-
+    
 # ---------------------------------------------------------
 # 3. VENTA CLIENTE SOLO
 # ---------------------------------------------------------

@@ -1,9 +1,11 @@
+
+<!-- START OF FILE templates/index.html -->
 <!DOCTYPE html>
 <html lang="es" data-theme="night">
 <head>
     <meta charset="UTF-8">
-    <link rel="apple-touch-icon" href="/static/logo.png">
-    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link class="rounded-full" rel="apple-touch-icon" href="/static/logo.png">
+    <link class="rounded-full" rel="icon" type="image/png" href="/static/logo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,10 +28,8 @@
 </head>
 <body class="bg-[#020202] min-h-screen text-white font-sans overflow-x-hidden">
 
-<!-- BARRA ESTADO RESPONSIVE -->
+    <!-- BARRA ESTADO RESPONSIVE -->
     <div class="status-bar w-full py-2.5 md:py-3 px-4 md:px-10 flex flex-col sm:flex-row justify-between items-center sticky top-0 z-[60] shadow-2xl gap-2 sm:gap-4">
-        
-        <!-- Lado Izquierdo: Estado del Club (Se alinea al centro en móvil, a la izquierda en PC) -->
         <div class="flex items-center gap-2 justify-between w-full sm:w-auto border-b border-white/5 pb-2 sm:pb-0 sm:border-0">
             <div class="flex items-center gap-2 mx-auto sm:mx-0">
                 <div class="w-2.5 h-2.5 rounded-full {% if estado_club == 'ABIERTO' %} bg-green-400 animate-pulse {% else %} bg-red-500 {% endif %}"></div>
@@ -37,33 +37,26 @@
                     {% if estado_club == 'ABIERTO' %} ABIERTO | {{ turno }} {% else %} CERRADO {% endif %}
                 </p>
             </div>
-            <!-- Rol sutil en celular -->
             <span class="badge badge-outline badge-xs sm:hidden font-mono uppercase border-zinc-700 text-zinc-500">{{ role }}</span>
         </div>
 
-        <!-- Lado Derecho: Grupo de Botones (Más pequeños y ordenados en celular) -->
         <div class="flex items-center gap-2 justify-center sm:justify-end w-full sm:w-auto">
-            
-            <!-- 1. GESTIÓN DE TURNO (Solo Roles de Mando) -->
             {% if role in ['admin1', 'administrador', 'cajera'] %}
-<button onclick="document.getElementById('modal_turno_fijo').showModal()" 
-        class="btn btn-xs sm:btn-sm rounded-full {% if estado_club == 'ABIERTO' %} btn-error {% else %} bg-emerald-500 hover:bg-emerald-600 text-black {% endif %} font-black uppercase px-3 sm:px-4 shadow-lg h-8 min-h-0 text-[10px] sm:text-xs">
-    {{ 'CERRAR TURNO' if estado_club == 'ABIERTO' else 'ABRIR TURNO' }}
-</button>
-{% endif %}
+            <button onclick="document.getElementById('modal_turno_fijo').showModal()" 
+                    class="btn btn-xs sm:btn-sm rounded-full {% if estado_club == 'ABIERTO' %} btn-error {% else %} bg-emerald-500 hover:bg-emerald-600 text-black {% endif %} font-black uppercase px-3 sm:px-4 shadow-lg h-8 min-h-0 text-[10px] sm:text-xs">
+                {{ 'CERRAR TURNO' if estado_club == 'ABIERTO' else 'ABRIR TURNO' }}
+            </button>
+            {% endif %}
 
-            <!-- 2. BOTÓN ACCESOS (Solo Roles de Mando) -->
             {% if role in ['admin1', 'jefe_guillermo'] %}
-<a href="/usuarios" class="btn btn-xs sm:btn-sm btn-warning rounded-full font-black px-3 sm:px-4 shadow-lg text-black uppercase h-8 min-h-0 text-[10px] sm:text-xs">
-    ACCESOS
-</a>
-{% endif %}
+            <a href="/usuarios" class="btn btn-xs sm:btn-sm btn-warning rounded-full font-black px-3 sm:px-4 shadow-lg text-black uppercase h-8 min-h-0 text-[10px] sm:text-xs">
+                ACCESOS
+            </a>
+            {% endif %}
 
-            <!-- 3. BOTÓN SALIR -->
             <a href="/logout" class="btn btn-xs sm:btn-sm btn-outline btn-error rounded-full font-black px-3 sm:px-4 h-8 min-h-0 text-[10px] sm:text-xs">
                 SALIR
             </a>
-
         </div>
     </div>
 
@@ -76,53 +69,39 @@
                 </div>
                 <h1 class="text-2xl font-black italic tracking-tighter neon-pink uppercase">WHISKERIA 2000</h1>
             </div>
-
-          <!-- GRILLA DE ICONOS PREMIUM CON NEÓN -->
     
             <div class="grid grid-cols-3 md:flex gap-4 md:gap-6 justify-center max-w-lg mx-auto md:max-w-none">
-                
-                <!-- 1. DAMAS (Chicas de fiesta) -->
                 <a href="/admin_personal" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
-    <div class="icon-circle glow-pink text-4xl">👯‍♀️</div>
-    <span class="text-[9px] font-black uppercase text-pink-500">Damas</span>
-</a>
-
-                <!-- 2. ASISTENCIAS (Notero alegre) -->
+                    <div class="icon-circle glow-pink text-4xl">👯‍♀️</div>
+                    <span class="text-[9px] font-black uppercase text-pink-500">Damas</span>
+                </a>
                 <a href="/asistencia" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
-    <div class="icon-circle glow-green text-4xl">📝</div>
-    <span class="text-[9px] font-black uppercase text-green-500">Asistencias</span>
-</a>
-
-                <!-- 3. BAILARINAS (Original alegre) -->
+                    <div class="icon-circle glow-green text-4xl">📝</div>
+                    <span class="text-[9px] font-black uppercase text-green-500">Asistencias</span>
+                </a>
                 {% if turno == 'Turno 1' %}
-<button onclick="document.getElementById('modal_bailarinas_pro').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
-    <div class="icon-circle glow-purple text-4xl">💃</div>
-    <span class="text-[9px] font-black uppercase text-purple-500">Bailarinas</span>
-</button>
-{% endif %}
-
-                <!-- 4. REPORTES (Gráfico de éxito con flecha roja) -->
+                <button onclick="document.getElementById('modal_bailarinas_pro').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
+                    <div class="icon-circle glow-purple text-4xl">💃</div>
+                    <span class="text-[9px] font-black uppercase text-purple-500">Bailarinas</span>
+                </button>
+                {% endif %}
                 <a href="/contabilidad" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
-    <div class="icon-circle glow-yellow text-4xl">📈</div>
-    <span class="text-[9px] font-black uppercase text-yellow-500">Reportes</span>
-</a>
-
-                <!-- 5. STOCK (Cervezas brindando) -->
+                    <div class="icon-circle glow-yellow text-4xl">📈</div>
+                    <span class="text-[9px] font-black uppercase text-yellow-500">Reportes</span>
+                </a>
                  <a href="/stock" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
-<div class="icon-circle glow-blue text-4xl">🍻</div>
-<span class="text-[9px] font-black uppercase text-blue-400">Stock</span>
-</a>
-                <!-- 6. GARZONES (Original alegre) -->
+                    <div class="icon-circle glow-blue text-4xl">🍻</div>
+                    <span class="text-[9px] font-black uppercase text-blue-400">Stock</span>
+                </a>
                 <button onclick="document.getElementById('modal_garzones').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
-    <div class="icon-circle glow-cyan text-4xl">🤵</div>
-    <span class="text-[9px] font-black uppercase text-cyan-400">Garzones</span>
-</button>
+                    <div class="icon-circle glow-cyan text-4xl">🤵</div>
+                    <span class="text-[9px] font-black uppercase text-cyan-400">Garzones</span>
+                </button>
             </div>
+        </div>
     </header>
 
     <div class="max-w-6xl mx-auto p-4 md:p-6">
-        
-        <!-- DASHBOARD COMPACTO Y ELEGANTE (Reducido al 50% de espacio) -->
         <div id="dashboard_ventas_container" class="bg-zinc-900 border border-pink-500/20 rounded-[24px] p-4 mb-6 shadow-2xl max-w-xl mx-auto">
             <div class="flex justify-between items-center mb-2.5 px-1">
                 <div>
@@ -134,15 +113,14 @@
                     <p class="text-xs font-black text-zinc-300">$4.000.000</p>
                 </div>
             </div>
-            <!-- Barra de progreso reducida y estilizada -->
             <div class="relative w-full h-4 bg-black rounded-full p-0.5 border border-white/5 overflow-hidden">
-                <div class="h-full rounded-full thermometer-gradient" style="width: {{porcentaje}}%;"></div>
+                <div id="thermometer_bar" class="h-full rounded-full thermometer-gradient"></div>
             </div>
         </div>
 
         {% if estado_club == 'ABIERTO' %}
-<div id="damas_salon_grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-2 {% if role not in ['admin1', 'administrador', 'cajera', 'garzon'] %} pointer-events-none opacity-80 {% endif %}">
-            <div onclick="document.getElementById('modal_cliente').showModal()" class="flex flex-col items-center cursor-pointer transition-all hover:scale-110">
+        <div id="damas_salon_grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-2 {% if role not in ['admin1', 'administrador', 'cajera', 'garzon'] %} pointer-events-none opacity-80 {% endif %}">
+            <div onclick="abrirModalCliente()" class="flex flex-col items-center cursor-pointer transition-all hover:scale-110">
                 <div class="w-20 h-20 md:w-28 md:h-28 rounded-full p-1 border-4 glow-cyan flex items-center justify-center">
                     <span class="text-4xl md:text-5xl">👔</span>
                 </div>
@@ -157,17 +135,16 @@
             {% for dama in damas %}
             <div onclick="abrirVenta('{{ dama.id }}', '{{ dama.nombre_artistico }}')" class="flex flex-col items-center text-center cursor-pointer transition-all hover:scale-110">
                 <div class="w-20 h-20 md:w-28 md:h-28 rounded-full p-1 border-4 border-green-500 shadow-2xl">
-        <img src="{{ dama.foto_url }}" class="w-full h-full object-cover rounded-full" />
-    </div>
+                    <img src="{{ dama.foto_url }}" class="w-full h-full object-cover rounded-full" />
+                </div>
                 <h3 class="mt-2 text-[10px] font-black uppercase text-white leading-none">
-        {{ dama.nombre_artistico }} 
-        {% if dict_bailando.get(dama.id) %} 
-            <span class="text-purple-500">💃</span> 
-        {% endif %}
-    </h3>
-
-</div>
-{% endfor %}
+                    {{ dama.nombre_artistico }} 
+                    {% if dict_bailando.get(dama.id) %} 
+                        <span class="text-purple-500">💃</span> 
+                    {% endif %}
+                </h3>
+            </div>
+            {% endfor %}
         </div>
         {% else %}
         <div class="text-center py-20 bg-zinc-900/20 rounded-[40px] border border-dashed border-zinc-800">
@@ -176,11 +153,10 @@
         {% endif %}
     </div>
 
-<!-- MODAL VENTA INDIVIDUAL (UNIFICADO: TRAGO + EXTRAS + SALIDA EN MISMA BOLETA) -->
+<!-- MODAL VENTA INDIVIDUAL -->
 <dialog id="modal_venta" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box bg-zinc-950 border-2 border-pink-500 p-8 text-center rounded-[40px] max-w-lg">
         <form id="form_registro_venta" action="/registrar_venta" method="post" class="space-y-6">
-            
             <h3 id="modal_titulo" class="font-black text-3xl text-pink-500 uppercase italic tracking-tighter"></h3>
             
             <input type="hidden" name="dama_id" id="input_dama_id">
@@ -210,7 +186,6 @@
                     </div>
                 </div>
 
-                <!-- SELECTOR DE PRECIO TIER (VISUAL E INTERACTIVO) -->
                 <div>
                     <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Seleccione Trago (Opcional):</span>
                     <div class="grid grid-cols-4 gap-1.5">
@@ -221,7 +196,6 @@
                     </div>
                 </div>
 
-                <!-- SELECTOR DE EXTRAS (VIP / PRIVADO) -->
                 <div>
                     <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Adicionales (Opcional):</span>
                     <div class="grid grid-cols-2 gap-2">
@@ -230,7 +204,6 @@
                     </div>
                 </div>
 
-                <!-- CONFIGURACIÓN DE SALIDA (OPCIONAL EN LA MISMA BOLETA) -->
                 <div class="space-y-3 bg-zinc-900/50 p-4 rounded-3xl border border-orange-500/20">
                     <h4 class="text-orange-500 font-black uppercase italic text-[10px]">Salida / Salón Manual (Opcional):</h4>
                     <div class="grid grid-cols-2 gap-3">
@@ -245,7 +218,6 @@
                     </div>
                 </div>
 
-                <!-- BOTÓN UNIFICADO DE CONTINUAR -->
                 <button type="button" onclick="procesarSiguientePasoInd()" class="btn btn-success w-full font-black text-sm shadow-lg shadow-green-500/10">
                     SIGUIENTE: DETALLE DE PAGO →
                 </button>
@@ -258,33 +230,33 @@
                     <p id="ind_resumen_total" class="text-4xl font-black text-white mt-2"></p>
                 </div>
 
-                <div id="botones_pago_ind" class="grid grid-cols-2 gap-3">
-    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
-    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
-    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
-    <button type="button" onclick="abrirPagoMixtoInd()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
-</div>
+                <div id="botones_pago_ind" class="grid grid-cols-2 gap-3 text-center justify-center">
+                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+                    <button type="button" onclick="abrirPagoMixtoInd()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
+                </div>
 
-<!-- PANEL PAGO MIXTO INDIVIDUAL -->
-<div id="seccion_pago_mixto_ind" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-pink-500/30">
-    <h4 class="text-pink-400 font-black uppercase text-xs italic">Cobrar por Dos Medios de Pago</h4>
-    <div class="grid grid-cols-2 gap-3">
-        <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
-            <input type="number" name="monto_efectivo" id="ind_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoInd()">
-        </div>
-        <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
-            <input type="number" name="monto_tarjeta" id="ind_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoInd()">
-        </div>
-    </div>
-    <p id="msg_error_mixto_ind" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la venta</p>
-    <button type="button" id="btn_confirmar_mixto_ind" onclick="confirmarVentaMixtaInd()" class="btn btn-sm btn-secondary w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
-</div>
+                <!-- PANEL PAGO MIXTO INDIVIDUAL -->
+                <div id="seccion_pago_mixto_ind" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-pink-500/30">
+                    <h4 class="text-pink-400 font-black uppercase text-xs italic">Cobrar por Dos Medios de Pago</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-control">
+                            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
+                            <input type="number" name="monto_efectivo" id="ind_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoInd()">
+                        </div>
+                        <div class="form-control">
+                            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
+                            <input type="number" name="monto_tarjeta" id="ind_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoInd()">
+                        </div>
+                    </div>
+                    <p id="msg_error_mixto_ind" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la venta</p>
+                    <button type="button" id="btn_confirmar_mixto_ind" onclick="confirmarVentaMixtaInd()" class="btn btn-sm btn-secondary w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
+                </div>
+
                 <button type="button" onclick="volverAEditarInd()" class="btn btn-ghost w-full font-bold text-xs uppercase">← Volver a precios</button>
             </div>
 
-            <!-- CANCELAR -->
             <div class="mt-4 pt-4 border-t border-white/5">
                 <button type="button" onclick="document.getElementById('modal_venta').close()" class="btn btn-ghost btn-xs w-full text-zinc-600 font-black uppercase">← CANCELAR Y SALIR</button>
             </div>
@@ -292,15 +264,7 @@
     </div>
 </dialog>
 
-<!-- Catálogo de auto-búsqueda rápida para las mesas (Solo licores individuales / cooler) -->
-<datalist id="opciones-tragos-mesa">
-    <option value="TRAGO BÁSICO"></option>
-    {% for p in productos_cooler %}
-    <option value="{{ p.nombre }}"></option>
-    {% endfor %}
-</datalist>
-
-<!-- Bloque de datos seguro (Excluye botellas enteras del catálogo de mesas) -->
+<!-- Bloque de datos seguro -->
 <script id="productos-data" type="application/json">
 [
     {% for p in productos_cooler %}
@@ -318,7 +282,6 @@
             <input type="hidden" name="ronda_json" id="input_ronda_json">
 
             <div id="mesa_paso_datos" class="space-y-6">
-                <!-- SELECCIÓN GARZÓN -->
                 <div class="text-left">
                     <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block ml-2">👤 SELECCIONE GARZÓN:</span>
                     <select name="mesero" id="mesa_mesero_select" class="select select-bordered w-full bg-black text-white font-black border-zinc-800 mt-1">
@@ -327,7 +290,6 @@
                     </select>
                 </div>
 
-                <!-- SELECCIÓN DAMAS -->
                 <div class="space-y-2 text-left">
                     <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block ml-2">1. Seleccione las Chicas de la Mesa:</span>
                     <input type="text" id="buscChicaMesa" onkeyup="filtrarChicasMesa()" placeholder="🔍 ESCRIBIR NOMBRE DE DAMA..." class="input input-bordered input-sm w-full bg-zinc-900 border-purple-500/30 text-center font-bold uppercase mb-2">
@@ -342,7 +304,6 @@
                     </div>
                 </div>
 
-                <!-- CONFIGURACIÓN DETALLADA POR FILAS (CADA CHICA TIENE SU CONSUMO) -->
                 <div class="space-y-2 text-left">
                     <div class="flex justify-between items-center px-2">
                         <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">2. Detalle de Consumos y Valores:</span>
@@ -363,13 +324,11 @@
                                 </tr>
                             </thead>
                             <tbody id="ronda_chicas_detalle_filas">
-                                <!-- Se renderiza dinámicamente con JavaScript -->
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- RESUMEN DE COMPRA MESA -->
                 <div class="flex justify-between items-center bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20">
                     <span class="text-xs font-black text-zinc-400 uppercase tracking-wider">Monto Total de la Ronda:</span>
                     <span id="monto_total_mesa_visual" class="text-xl font-black text-purple-400">$0</span>
@@ -390,29 +349,29 @@
                     <p id="resumen_total_mesa" class="text-lg font-black text-white mb-4"></p>
                 </div>
 
-                <div id="botones_pago_mesa" class="grid grid-cols-2 gap-3">
-    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
-    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
-    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
-    <button type="button" onclick="abrirPagoMixtoMesa()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
-</div>
+                <div id="botones_pago_mesa" class="grid grid-cols-2 gap-3 text-center justify-center">
+                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+                    <button type="button" onclick="abrirPagoMixtoMesa()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
+                </div>
 
-<!-- PANEL PAGO MIXTO MESA -->
-<div id="seccion_pago_mixto_mesa" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-purple-500/30">
-    <h4 class="text-purple-400 font-black uppercase text-xs italic">Cobrar Ronda por Dos Medios</h4>
-    <div class="grid grid-cols-2 gap-3">
-        <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
-            <input type="number" name="monto_efectivo" id="mesa_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMesa()">
-        </div>
-        <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
-            <input type="number" name="monto_tarjeta" id="mesa_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMesa()">
-        </div>
-    </div>
-    <p id="msg_error_mixto_mesa" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la ronda</p>
-    <button type="button" id="btn_confirmar_mixto_mesa" onclick="confirmarVentaMixtaMesa()" class="btn btn-sm btn-purple w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
-</div>
+                <!-- PANEL PAGO MIXTO MESA -->
+                <div id="seccion_pago_mixto_mesa" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-purple-500/30">
+                    <h4 class="text-purple-400 font-black uppercase text-xs italic">Cobrar Ronda por Dos Medios</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-control">
+                            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
+                            <input type="number" name="monto_efectivo" id="mesa_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMesa()">
+                        </div>
+                        <div class="form-control">
+                            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
+                            <input type="number" name="monto_tarjeta" id="mesa_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMesa()">
+                        </div>
+                    </div>
+                    <p id="msg_error_mixto_mesa" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la ronda</p>
+                    <button type="button" id="btn_confirmar_mixto_mesa" onclick="confirmarVentaMixtaMesa()" class="btn btn-sm btn-purple w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
+                </div>
 
                 <button type="button" onclick="volverAEditarMesa()" class="btn btn-ghost w-full font-bold">← VOLVER A EDITAR</button>
             </div>
@@ -421,7 +380,6 @@
 </dialog>
 
     <!-- OTROS MODALES -->
-
     <dialog id="modal_garzones" class="modal">
         <div class="modal-box bg-zinc-900 border-2 border-cyan-500">
             <h3 class="font-black text-2xl text-cyan-400 uppercase text-center mb-6">Garzones de Turno</h3>
@@ -433,31 +391,27 @@
                 {% endfor %}
             </div>
             <form id="form_garzon_ajax" class="flex gap-2">
-    <input id="nombre_garzon_input" name="nombre" type="text" placeholder="Nombre..." class="input input-bordered flex-1 bg-black uppercase font-bold" required>
-    <!-- Asegúrate de que el botón sea type="submit" -->
-    <button type="submit" class="btn btn-info font-black">Añadir</button>
-</form>
+                <input id="nombre_garzon_input" name="nombre" type="text" placeholder="Nombre..." class="input input-bordered flex-1 bg-black uppercase font-bold" required>
+                <button type="submit" class="btn btn-info font-black">Añadir</button>
+            </form>
             <div class="modal-action">
-    <form method="dialog">
-        <button class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider" onclick="window.location.reload()">
-            ← SALÓN
-        </button>
-    </form>
-</div>
+                <form method="dialog">
+                    <button class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider" onclick="window.location.reload()">
+                        ← SALÓN
+                    </button>
+                </form>
+            </div>
         </div>
     </dialog>
  
 <!-- MODAL CLIENTE -->
 <dialog id="modal_cliente" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box bg-zinc-950 border-2 border-cyan-500 p-6 sm:p-8 text-center rounded-[40px] max-w-xl">
-        
-        <!-- HEADER -->
         <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-3">
             <h3 class="font-black text-2xl text-cyan-400 uppercase tracking-tighter italic">Venta Cliente</h3>
             <button type="button" onclick="document.getElementById('modal_cliente').close()" class="btn btn-circle btn-xs btn-outline btn-error">✕</button>
         </div>
 
-        <!-- TABS DE NAVEGACIÓN -->
         <div class="flex gap-2 justify-center mb-6">
             <button type="button" id="tab_venta_directa" onclick="activarTabCliente('directa')" class="btn btn-xs sm:btn-sm btn-cyan font-black uppercase tracking-wider rounded-full px-4">
                 ⚡ Venta Rápida
@@ -467,24 +421,19 @@
             </button>
         </div>
 
-        <!-- ================================================================= -->
-        <!-- PESTAÑA 1: VENTA DIRECTA (Original de 1 Solo Producto) -->
-        <!-- ================================================================= -->
+        <!-- PESTAÑA 1: VENTA DIRECTA -->
         <form id="form_venta_cliente" action="/registrar_venta_cliente" method="post" class="space-y-6">
             <div id="cliente_paso_1" class="space-y-6">
-                <!-- GARZÓN -->
                 <select name="mesero" id="cliente_mesero" class="select select-bordered w-full bg-black text-white font-black border-zinc-800">
                     <option value="" disabled selected>👤 ¿QUIÉN VENDE?</option>
                     {% for g in garzones %}<option>{{ g.nombre }}</option>{% endfor %}
                 </select>
 
-                <!-- MONTO -->
                 <div class="space-y-1">
                     <p class="text-[10px] font-black text-zinc-500 uppercase italic text-left ml-2">Monto de la Venta:</p>
                     <input name="monto" id="cliente_monto" type="number" placeholder="$ 0" class="input input-bordered w-full bg-black text-cyan-400 text-3xl font-black text-center" required />
                 </div>
 
-                <!-- BUSCADOR -->
                 <div class="space-y-2 text-left relative">
                     <p class="text-[10px] font-black text-zinc-500 uppercase italic ml-2">¿Qué producto es?</p>
                     <div class="relative w-full" id="containerDropCliente">
@@ -515,41 +464,39 @@
                     <p id="resumen_cliente_monto" class="text-5xl font-black text-white italic"></p>
                 </div>
 
-                <div id="botones_pago_cliente_div" class="grid grid-cols-2 gap-3">
-    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
-    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
-    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
-    <button type="button" onclick="abrirPagoMixtoCliente()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
-</div>
+                <div id="botones_pago_cliente_div" class="grid grid-cols-2 gap-3 text-center justify-center">
+                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+                    <button type="button" onclick="abrirPagoMixtoCliente()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
+                </div>
 
-<!-- PANEL PAGO MIXTO CLIENTE DIRECTA -->
-<div id="seccion_pago_mixto_cliente" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-cyan-500/30">
-    <h4 class="text-cyan-400 font-black uppercase text-xs italic">Cobrar Venta por Dos Medios</h4>
-    <div class="grid grid-cols-2 gap-3">
-        <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
-            <input type="number" name="monto_efectivo" id="cliente_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoCliente()">
-        </div>
-        <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
-            <input type="number" name="monto_tarjeta" id="cliente_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoCliente()">
-        </div>
-    </div>
-    <p id="msg_error_mixto_cliente" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la boleta</p>
-    <button type="button" id="btn_confirmar_mixto_cliente" onclick="confirmarVentaMixtaCliente()" class="btn btn-sm btn-info w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
-</div>
+                <!-- PANEL PAGO MIXTO CLIENTE DIRECTA -->
+                <div id="seccion_pago_mixto_cliente" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-cyan-500/30">
+                    <h4 class="text-cyan-400 font-black uppercase text-xs italic">Cobrar Venta por Dos Medios</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-control">
+                            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
+                            <input type="number" name="monto_efectivo" id="cliente_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoCliente()">
+                        </div>
+                        <div class="form-control">
+                            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
+                            <input type="number" name="monto_tarjeta" id="cliente_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoCliente()">
+                        </div>
+                    </div>
+                    <p id="msg_error_mixto_cliente" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la boleta</p>
+                    <button type="button" id="btn_confirmar_mixto_cliente" onclick="confirmarVentaMixtaCliente()" class="btn btn-sm btn-info w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
+                </div>
+
                 <button type="button" onclick="volverAEditarCliente()" class="btn btn-ghost w-full font-bold text-xs">← VOLVER ATRÁS</button>
             </div>
         </form>
 
-        <!-- ================================================================= -->
-        <!-- PESTAÑA 2: BOLETA DETALLADA / COMBO (CARRITO DE COMPRAS) -->
-        <!-- ================================================================= -->
+        <!-- PESTAÑA 2: BOLETA DETALLADA / COMBO -->
         <form id="form_venta_multi_cliente" action="/registrar_venta_multi_cliente" method="post" class="hidden space-y-6 text-left">
             <input type="hidden" name="productos_json" id="input_productos_json">
 
             <div id="multi_paso_1" class="space-y-6">
-                <!-- GARZÓN -->
                 <div>
                     <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-1 ml-2">👤 ¿Quién realiza la venta?</span>
                     <select name="mesero" id="multi_mesero" class="select select-bordered w-full bg-black text-white font-black border-zinc-800" required>
@@ -558,9 +505,8 @@
                     </select>
                 </div>
 
-                <!-- BUSCADOR FLOTANTE PARA AÑADIR AL CARRITO -->
                 <div class="space-y-2 relative">
-                    <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block ml-2">🔍 Buscar y añadir productos (Bebidas, Licores, etc.):</span>
+                    <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block ml-2">🔍 Buscar y añadir productos:</span>
                     <div class="relative w-full" id="containerDropCart">
                         <input type="text" id="buscTragoCart" onkeyup="filtrarTragosCart()" onfocus="mostrarMenuTragosCart()" placeholder="ESCRIBIR NOMBRE PARA AÑADIR..." class="input input-bordered input-sm w-full bg-black border-zinc-700 text-center uppercase font-black text-cyan-400">
                         <div id="menuTragosCart" class="hidden absolute bottom-full left-0 w-full mb-2 bg-zinc-900 border-2 border-zinc-700 rounded-2xl shadow-2xl z-[100] max-h-48 overflow-y-auto">
@@ -573,15 +519,12 @@
                     </div>
                 </div>
 
-                <!-- LISTA VISUAL DEL CARRITO DE COMPRAS -->
                 <div class="space-y-2">
                     <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block ml-2">Lista de productos en esta boleta:</span>
                     <div id="lista_carrito_productos" class="space-y-2 max-h-44 overflow-y-auto p-3 bg-black/40 rounded-3xl border border-white/5">
-                        <!-- El carrito se generará dinámicamente con JavaScript -->
                     </div>
                 </div>
 
-                <!-- MONTO TOTAL COMBINADO -->
                 <div class="space-y-1">
                     <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block ml-2">Monto Total de la Boleta Cobrada:</span>
                     <input name="monto_total" id="multi_monto" type="number" placeholder="$ 0" class="input input-bordered w-full bg-black text-cyan-400 text-2xl font-black text-center" required />
@@ -597,43 +540,39 @@
                     <p id="resumen_multi_monto" class="text-5xl font-black text-white italic"></p>
                 </div>
 
-                <div id="botones_pago_multi_div" class="grid grid-cols-2 gap-3">
-    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
-    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
-    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
-    <button type="button" onclick="abrirPagoMixtoMulti()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
-</div>
+                <div id="botones_pago_multi_div" class="grid grid-cols-2 gap-3 text-center justify-center">
+                    <button type="submit" name="metodo_pago" value="EFECTIVO" class="btn btn-lg bg-emerald-600 text-white font-black">💵 EFECTIVO</button>
+                    <button type="submit" name="metodo_pago" value="TARJETA" class="btn btn-lg bg-blue-600 text-white font-black">💳 TARJETA</button>
+                    <button type="submit" name="metodo_pago" value="TRANSFERENCIA" class="btn btn-lg bg-purple-600 text-white font-black">📱 TRANSF.</button>
+                    <button type="button" onclick="abrirPagoMixtoMulti()" class="btn btn-lg bg-zinc-700 text-white font-black italic">✨ MIXTO</button>
+                </div>
 
-<!-- PANEL PAGO MIXTO CLIENTE MULTI -->
-<div id="seccion_pago_mixto_multi" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-cyan-500/30">
-    <h4 class="text-cyan-400 font-black uppercase text-xs italic">Cobrar Boleta por Dos Medios</h4>
-    <div class="grid grid-cols-2 gap-3">
-        <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
-            <input type="number" name="monto_efectivo" id="multi_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMulti()">
-        </div>
-        <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
-            <input type="number" name="monto_tarjeta" id="multi_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMulti()">
-        </div>
-    </div>
-    <p id="msg_error_mixto_multi" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la boleta</p>
-    <button type="button" id="btn_confirmar_mixto_multi" onclick="confirmarVentaMixtaMulti()" class="btn btn-sm btn-info w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
-</div>
+                <!-- PANEL PAGO MIXTO CLIENTE MULTI -->
+                <div id="seccion_pago_mixto_multi" class="hidden space-y-4 bg-zinc-900/80 p-5 rounded-3xl border border-cyan-500/30">
+                    <h4 class="text-cyan-400 font-black uppercase text-xs italic">Cobrar Boleta por Dos Medios</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-control">
+                            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💵 MONTO EFECTIVO</span></label>
+                            <input type="number" name="monto_efectivo" id="multi_mixto_efectivo" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMulti()">
+                        </div>
+                        <div class="form-control">
+                            <label class="label py-0.5"><span class="label-text text-[9px] font-bold text-zinc-500">💳 MONTO TARJETA</span></label>
+                            <input type="number" name="monto_tarjeta" id="multi_mixto_tarjeta" value="0" class="input input-bordered input-sm bg-black text-center font-black" onkeyup="calcularMixtoMulti()">
+                        </div>
+                    </div>
+                    <p id="msg_error_mixto_multi" class="text-[9px] text-red-500 font-bold uppercase hidden">⚠️ La suma debe coincidir con el total de la boleta</p>
+                    <button type="button" id="btn_confirmar_mixto_multi" onclick="confirmarVentaMixtaMulti()" class="btn btn-sm btn-info w-full font-black uppercase tracking-wider">CONFIRMAR PAGO MIXTO</button>
+                </div>
+
                 <button type="button" onclick="volverAEditarMulti()" class="btn btn-ghost w-full font-bold text-xs">← VOLVER ATRÁS</button>
             </div>
         </form>
-
     </div>
 </dialog>
 
 <script>
-// =========================================================================
-// 🍾 CONTROL INTELIGENTE DE BOTELLAS DE RESPALDO (NUEVO)
-// =========================================================================
 let preVentaDeteccion = null;
 
-// Función que intercepta el flujo de venta de cortos
 async function verificarBotellaAgotada(productoId, callbackExito) {
     if (!productoId) {
         callbackExito();
@@ -646,12 +585,11 @@ async function verificarBotellaAgotada(productoId, callbackExito) {
 
         if (data.vacia) {
             if (data.respaldos.length > 0) {
-                // Cargar opciones en el select del modal
                 const select = document.getElementById('select_respaldo_botella');
                 select.innerHTML = data.respaldos.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
                 
                 document.getElementById('abrir_corto_id').value = productoId;
-                preVentaDeteccion = callbackExito; // Guardar callback
+                preVentaDeteccion = callbackExito;
                 document.getElementById('modal_abrir_respaldo').showModal();
             } else {
                 alert(`⚠️ STOCK COMPLETAMENTE AGOTADO: No tienes botellas de respaldo selladas para ${data.parent_nombre}. Registra la compra de un nuevo producto en stock.`);
@@ -660,11 +598,10 @@ async function verificarBotellaAgotada(productoId, callbackExito) {
             callbackExito();
         }
     } catch (error) {
-        callbackExito(); // Continuar si hay algún fallo en la API
+        callbackExito();
     }
 }
 
-// Acción para abrir la botella en el servidor mediante AJAX
 async function confirmarAperturaBotella() {
     const cortoId = document.getElementById('abrir_corto_id').value;
     const botellaId = document.getElementById('select_respaldo_botella').value;
@@ -683,14 +620,14 @@ async function confirmarAperturaBotella() {
         alert(`✅ BOTELLA ABIERTA CON ÉXITO: Se ha descorchado ${data.parent_nombre}.`);
         document.getElementById('modal_abrir_respaldo').close();
         if (preVentaDeteccion) {
-            preVentaDeteccion(); // Proceder a guardar la venta original
+            preVentaDeteccion();
         }
     } else {
         alert("❌ Ocurrió un error al intentar descorchar la botella.");
     }
 }
+
 function abrirDropdownTragoMesa(input) {
-    // Cerramos cualquier otro dropdown abierto primero
     document.querySelectorAll('.listado-opciones-trago').forEach(div => div.classList.add('hidden'));
 
     const container = input.closest('.dropdown-trago-container');
@@ -709,7 +646,6 @@ function abrirDropdownTragoMesa(input) {
         errorDeLectura = true;
     }
 
-    // 1. Siempre inyectamos el Trago Simple al principio
     menuDropdown.innerHTML = `
         <div onclick="seleccionarTragoMesaFila(this, '', 'TRAGO BÁSICO')" 
              class="opcion-trago p-2 hover:bg-purple-600 cursor-pointer border-b border-white/5 font-black text-[10px] uppercase text-zinc-400 text-left">
@@ -717,7 +653,6 @@ function abrirDropdownTragoMesa(input) {
          </div>
     `;
 
-    // 2. DIAGNÓSTICO: Si hay error de formato JSON
     if (errorDeLectura) {
         menuDropdown.innerHTML += `
             <div class="p-2 font-bold text-[9px] text-red-500 uppercase text-left">
@@ -725,7 +660,6 @@ function abrirDropdownTragoMesa(input) {
             </div>
         `;
     } 
-    // 3. DIAGNÓSTICO: Si no hay licores registrados en el turno activo
     else if (listadoProds.length === 0) {
         menuDropdown.innerHTML += `
             <div class="p-2 font-bold text-[9px] text-zinc-500 uppercase text-left italic">
@@ -733,7 +667,6 @@ function abrirDropdownTragoMesa(input) {
             </div>
         `;
     } 
-    // 4. Si hay productos en stock, los listamos
     else {
         listadoProds.forEach(p => {
             menuDropdown.innerHTML += `
@@ -797,10 +730,6 @@ function copiarPrimeroATodas() {
     actualizarPreciosMesa();
 }
 
-
-// ==========================================
-// 1. GARZONES (AJAX) - (TU CÓDIGO ORIGINAL SIGUE AQUÍ)
-// ==========================================
 async function borrarGarzonJS(id) {
     if (!confirm("¿Eliminar Garzón?")) return;
     const response = await fetch(`/eliminar_garzon/${id}`);
@@ -823,9 +752,6 @@ if (fG) {
     });
 }
 
-// ==========================================
-// 2. VENTAS INDIVIDUALES
-// ==========================================
 let ventaIndActual = { idDama: '', nombreDama: '', productoId: null, productoNombre: 'TRAGO BÁSICO', extra: '', montoTier: 0 };
 let montoTierSeleccionado = 0;
 
@@ -836,7 +762,6 @@ function abrirVenta(id, nombre) {
     document.getElementById('input_dama_id').value = id;
     document.getElementById('modal_titulo').innerText = nombre;
     
-    // Reset visual de los botones de precio
     document.querySelectorAll('[id^="btn_tier_"]').forEach(btn => {
         btn.classList.remove('btn-secondary');
         btn.classList.add('btn-outline');
@@ -857,48 +782,6 @@ function abrirVenta(id, nombre) {
         buscTrago.classList.add('border-zinc-700');
     }
     
-    // Reset de vistas
-    document.getElementById('individual_paso_datos').classList.remove('hidden');
-    document.getElementById('individual_resumen_confirmacion').classList.add('hidden');
-    document.getElementById('menuTragosInd').classList.add('hidden');
-    
-    const btnVip = document.getElementById('btn_ind_extra_vip');
-    const btnPriv = document.getElementById('btn_ind_extra_priv');
-    if(btnVip) { btnVip.classList.remove('btn-secondary'); btnVip.classList.add('btn-outline'); }
-    if(btnPriv) { btnPriv.classList.remove('btn-accent'); btnPriv.classList.add('btn-outline'); }
-
-    document.getElementById('modal_venta').showModal();
-}
-
-function abrirVenta(id, nombre) {
-    ventaIndActual = { idDama: id, nombreDama: nombre, productoId: null, productoNombre: 'TRAGO BÁSICO', extra: '', montoTier: 0 };
-    montoTierSeleccionado = 0;
-    
-    document.getElementById('input_dama_id').value = id;
-    document.getElementById('modal_titulo').innerText = nombre;
-    
-    // Reset visual de los botones de precio
-    document.querySelectorAll('[id^="btn_tier_"]').forEach(btn => {
-        btn.classList.remove('btn-secondary');
-        btn.classList.add('btn-outline');
-    });
-
-    const meseroSelect = document.getElementById('individual_mesero_select');
-    if(meseroSelect) meseroSelect.selectedIndex = 0;
-
-    document.getElementById('buscTragoInd').value = "";
-    document.getElementById('input_individual_extra_tipo').value = "";
-    document.getElementById('input_individual_tier_precio').value = "0";
-    document.getElementById('ind_casa_manual').value = "0";
-    document.getElementById('ind_chica_manual').value = "0";
-    
-    const buscTrago = document.getElementById('buscTragoInd');
-    if (buscTrago) {
-        buscTrago.classList.remove('border-pink-500');
-        buscTrago.classList.add('border-zinc-700');
-    }
-    
-    // Reset de vistas
     document.getElementById('individual_paso_datos').classList.remove('hidden');
     document.getElementById('individual_resumen_confirmacion').classList.add('hidden');
     document.getElementById('menuTragosInd').classList.add('hidden');
@@ -926,63 +809,11 @@ function seleccionarPrecioTier(monto, btn) {
         btn.classList.add('btn-secondary');
     }
 }
-function seleccionarFlujo(f) {
-    ventaActual.tipo = f;
-    document.getElementById('seccion_inicio').classList.add('hidden');
-    if (f === 'T25') {
-        ventaActual.montoTier = 25000;
-        ventaActual.productoNombre = 'TRAGO BÁSICO';
-        irAPago();
-    } else if (f === 'PRODUCTOS') {
-        document.getElementById('seccion_productos').classList.remove('hidden');
-    } else if (f === 'ESPECIAL') {
-        document.getElementById('seccion_especiales').classList.remove('hidden');
-    }
-}
-
-function fijarProducto(id, nombre) {
-    ventaActual.productoId = id;
-    ventaActual.productoNombre = nombre;
-    document.getElementById('input_producto_id').value = id;
-    document.querySelectorAll('.btn-producto-modal').forEach(b => b.classList.replace('btn-info', 'btn-outline'));
-    document.getElementById('btn_prod_' + id).classList.replace('btn-outline', 'btn-info');
-    document.getElementById('seccion_precios').classList.remove('hidden');
-}
-
-function toggleExtra(tipo) {
-    ventaActual.extra = (ventaActual.extra === tipo) ? '' : tipo;
-    document.getElementById('btn_extra_vip').classList.toggle('btn-secondary', ventaActual.extra === 'VIP');
-    document.getElementById('btn_extra_vip').classList.toggle('btn-outline', ventaActual.extra !== 'VIP');
-    document.getElementById('btn_extra_priv').classList.toggle('btn-accent', ventaActual.extra === 'PRIVADO');
-    document.getElementById('btn_extra_priv').classList.toggle('btn-outline', ventaActual.extra !== 'PRIVADO');
-}
-
-function fijarPrecio(valorString) {
-    const precios = { 'T25': 25000, 'T35': 35000, 'T50': 50000, 'T100': 100000 };
-    ventaActual.montoTier = precios[valorString];
-    irAPago();
-}
-
-function irAPago() {
-    const m = document.getElementById('individual_mesero_select').value;
-    if (!m) { alert("⚠️ SELECCIONE GARZÓN"); return; }
-    document.getElementById('input_tier_precio').value = ventaActual.montoTier;
-    document.getElementById('input_extra_tipo').value = ventaActual.extra;
-    document.getElementById('flujo_ventas').classList.add('hidden');
-    let texto = ventaActual.productoNombre;
-    if(ventaActual.extra) texto += " + " + ventaActual.extra;
-    document.getElementById('resumen_final_texto').innerText = texto.toUpperCase();
-    let total = ventaActual.montoTier;
-    if(ventaActual.extra === 'VIP') total += 50000;
-    if(ventaActual.extra === 'PRIVADO') total += 200000;
-    document.getElementById('resumen_valor_texto').innerText = "$" + total.toLocaleString('es-CL');
-    document.getElementById('individual_resumen_confirmacion').classList.remove('hidden');
-}
 
 function irAPagoCliente() {
     const m = document.getElementById('cliente_monto').value;
     const g = document.getElementById('cliente_mesero').value;
-    const p = document.getElementById('input_cliente_trago').value; // Usar el ID correcto
+    const p = document.getElementById('input_cliente_trago').value;
 
     if (!m || !g || !p) {
         alert("⚠️ SELECCIONE GARZÓN, INGRESE MONTO Y BUSQUE EL PRODUCTO");
@@ -996,13 +827,6 @@ function irAPagoCliente() {
     document.getElementById('cliente_paso_pago').classList.remove('hidden');
 }
 
-
-function abrirSeccionCuentaInd() {
-    document.getElementById('botones_pago_ind').classList.add('hidden');
-    document.getElementById('seccion_nombre_ind_deuda').classList.remove('hidden');
-}
-
-// Cierre de menú al clickear fuera
 document.addEventListener('click', function(e) {
     const container = document.getElementById('containerDropTragoInd');
     if (container && !container.contains(e.target)) {
@@ -1010,87 +834,7 @@ document.addEventListener('click', function(e) {
     }
 });
 
-function validarYConfirmarDeudaInd() {
-    const nombre = document.getElementById('input_nombre_ind_deuda').value.trim();
-    if (nombre.length < 3) { alert("⚠️ INGRESE NOMBRE DEUDOR"); return; }
-    const form = document.getElementById('form_registro_venta');
-    const inputMetodo = document.createElement("input");
-    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "CUENTA";
-    form.appendChild(inputMetodo);
-    form.submit();
-}
-
-function validarYConfirmarDeudaCliente() {
-    const nombre = document.getElementById('input_cliente_cuenta').value.trim();
-    if (nombre.length < 3) {
-        alert("⚠️ INGRESE EL NOMBRE DEL CLIENTE");
-        return;
-    }
-    const form = document.getElementById('form_venta_cliente');
-    const inputMetodo = document.createElement("input");
-    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "CUENTA";
-    form.appendChild(inputMetodo);
-    form.submit();
-}
-
-// ==========================================
-// 3. VENTAS MESA
-// ==========================================
 let mesaActual = { ids: [], nombres: [], montoTier: 0, extra: '', productoId: null, productoNombre: 'TRAGO BÁSICO' };
-
-function abrirModalMesas() {
-    mesaActual = { ids: [], nombres: [], montoTier: 0, extra: '', productoId: null, productoNombre: 'TRAGO BÁSICO' };
-    
-    // Reset visual de las chicas
-    document.querySelectorAll('.dama-mesa-item').forEach(el => { 
-        el.classList.add('opacity-40'); 
-        el.style.display = "flex"; 
-        el.querySelector('img').style.borderColor = 'transparent'; 
-    });
-
-    const meseroSelect = document.getElementById('mesa_mesero_select');
-    if (meseroSelect) meseroSelect.selectedIndex = 0;
-
-    document.getElementById("buscChicaMesa").value = "";
-    document.getElementById('input_ronda_json').value = "";
-    
-    // Limpiar tabla detallada
-    document.getElementById('ronda_chicas_detalle_filas').innerHTML = `
-        <tr><td colspan="5" class="text-center text-zinc-600 font-bold uppercase text-[9px] py-4">No hay chicas seleccionadas</td></tr>
-    `;
-
-    document.getElementById('monto_total_mesa_visual').innerText = "$0";
-
-    // Reset vistas
-    document.getElementById('mesa_paso_datos').classList.remove('hidden');
-    document.getElementById('mesa_resumen_confirmacion').classList.add('hidden');
-    const seccionDeudaMesa = document.getElementById('seccion_nombre_mesa_deuda');
-if (seccionDeudaMesa) {
-    seccionDeudaMesa.classList.add('hidden');
-}
-    document.getElementById('botones_pago_mesa').classList.remove('hidden');
-    
-    document.getElementById('modal_mesas').showModal();
-}
-
-function toggleFichaMesa(el, id, n) {
-    id = parseInt(id);
-    const i = mesaActual.ids.indexOf(id);
-    if (i > -1) { 
-        mesaActual.ids.splice(i, 1); 
-        mesaActual.nombres.splice(mesaActual.nombres.indexOf(n), 1); 
-        el.classList.add('opacity-40'); 
-        el.querySelector('img').style.borderColor = 'transparent'; 
-    } else { 
-        mesaActual.ids.push(id); 
-        mesaActual.nombres.push(n); 
-        el.classList.remove('opacity-40'); 
-        el.querySelector('img').style.borderColor = '#a855f7'; 
-    }
-
-    // Generamos las filas dinámicamente
-    generarFilasMesaDetalle();
-}
 
 function filtrarChicasMesa() {
     const input = document.getElementById("buscChicaMesa").value.toUpperCase();
@@ -1105,32 +849,8 @@ function mostrarMenuTragosCliente() {
     document.getElementById('menuTragosCliente').classList.remove('hidden');
 }
 
-function mostrarMenuTragos() {
-    document.getElementById('menuTragosMesa').classList.remove('hidden');
-}
-
 function mostrarMenuTragosInd() { document.getElementById('menuTragosInd').classList.remove('hidden'); }
 
-function seleccionarProductoMesa(val) {
-    const parts = val.split('|');
-    mesaActual.productoId = parts[0] === '0' ? null : parts[0];
-    mesaActual.productoNombre = parts[1];
-}
-
-let masterListaTragos = [];
-
-function filtrarTragosMesa() {
-    const menu = document.getElementById('menuTragosMesa');
-    const input = document.getElementById("buscTragoMesa").value.toUpperCase();
-    const items = document.querySelectorAll(".trago-mesa-item");
-    
-    menu.classList.remove('hidden'); // Asegurar que se vea al escribir
-    
-    items.forEach(item => {
-        const nombre = item.getAttribute("data-nombre").toUpperCase();
-        item.style.display = nombre.includes(input) ? "block" : "none";
-    });
-}
 function filtrarTragosInd() {
     const input = document.getElementById("buscTragoInd").value.toUpperCase();
     const items = document.querySelectorAll(".trago-ind-item");
@@ -1146,18 +866,15 @@ function filtrarTragosCliente() {
     const input = document.getElementById("buscTragoCliente").value.toUpperCase();
     const items = document.querySelectorAll(".trago-cliente-item");
     
-    // Aseguramos que el menú se despliegue al escribir
     menu.classList.remove('hidden'); 
     
     items.forEach(item => {
         const nombre = item.getAttribute("data-nombre").toUpperCase();
-        // Si el nombre coincide con lo escrito, lo muestra. Si no, lo oculta.
         item.style.display = nombre.includes(input) ? "block" : "none";
     });
 }
 
 function seleccionarTragoCliente(el, id, nombre) {
-    // 1. Guardar el nombre y el ID en los campos ocultos
     const inputTrago = document.getElementById('input_cliente_trago');
     const inputProdId = document.getElementById('input_cliente_producto_id');
     const buscadorVisual = document.getElementById('buscTragoCliente');
@@ -1165,13 +882,11 @@ function seleccionarTragoCliente(el, id, nombre) {
     if (inputTrago) inputTrago.value = nombre;
     if (inputProdId) inputProdId.value = id;
     
-    // 2. Actualizar el buscador visual
     if (buscadorVisual) {
         buscadorVisual.value = nombre;
         buscadorVisual.classList.replace('border-zinc-700', 'border-cyan-500');
     }
     
-    // 3. Cerrar el menú flotante
     document.getElementById('menuTragosCliente').classList.add('hidden');
 }
 
@@ -1196,7 +911,6 @@ function seleccionarTragoMesaFila(elementoOpcion, productoId, productoNombre) {
     actualizarPreciosMesa();
 }
 
-// Event listener para cerrar dropdowns al cliquear en cualquier parte de la pantalla
 document.addEventListener('click', function(e) {
     if (!e.target.classList.contains('item-prod-select')) {
         document.querySelectorAll('.listado-opciones-trago').forEach(div => {
@@ -1204,29 +918,7 @@ document.addEventListener('click', function(e) {
         });
     }
 });
-
-// Cerrar el menú flotante si el usuario hace click fuera
-document.addEventListener('click', function(event) {
-    const container = document.getElementById('containerDropTrago');
-    const menu = document.getElementById('menuTragosMesa');
-    if (container && !container.contains(event.target)) {
-        menu.classList.add('hidden');
-    }
-});
     
-function toggleExtraMesa(tipo) {
-    // Si ya estaba seleccionado, lo apaga. Si no, lo enciende.
-    mesaActual.extra = (mesaActual.extra === tipo) ? '' : tipo;
-    
-    // Guardamos el valor en el input oculto que va al servidor
-    document.getElementById('input_mesa_extra_tipo').value = mesaActual.extra;
-    
-    // Cambios visuales de los botones
-    document.getElementById('btn_mesa_extra_vip').classList.toggle('btn-secondary', mesaActual.extra === 'VIP');
-    document.getElementById('btn_mesa_extra_vip').classList.toggle('btn-outline', mesaActual.extra !== 'VIP');
-    document.getElementById('btn_mesa_extra_priv').classList.toggle('btn-accent', mesaActual.extra === 'PRIVADO');
-    document.getElementById('btn_mesa_extra_priv').classList.toggle('btn-outline', mesaActual.extra !== 'PRIVADO');
-}
 function toggleExtraInd(tipo) {
     ventaIndActual.extra = (ventaIndActual.extra === tipo) ? '' : tipo;
     document.getElementById('input_individual_extra_tipo').value = ventaIndActual.extra;
@@ -1237,58 +929,6 @@ function toggleExtraInd(tipo) {
     document.getElementById('btn_ind_extra_priv').classList.toggle('btn-outline', ventaIndActual.extra !== 'PRIVADO');
 }
 
-function preConfirmarMesa(tier) {
-    const garzon = document.getElementById('mesa_mesero_select').value;
-    if (!garzon) { alert("⚠️ SELECCIONE GARZÓN"); return; }
-    if (mesaActual.ids.length === 0) { alert("⚠️ SELECCIONE CHICAS"); return; }
-    
-    const tragoNombreMesa = document.getElementById('buscTragoMesa').value.trim();
-    const extraMesa = mesaActual.extra;
-
-    // MODIFICADO: Deja pasar si hay un trago seleccionado O si se eligió un extra (VIP/PRIVADO)
-    if (!tragoNombreMesa && !extraMesa) {
-        alert("⚠️ DEBE SELECCIONAR UN TRAGO O UN ADICIONAL (VIP/PRIVADO)");
-        return;
-    }
-
-    const precios = { 'T25': 25000, 'T35': 35000, 'T50': 50000, 'T100': 100000 };
-    mesaActual.montoTier = precios[tier];
-    const container = document.getElementById('ids_mesa_input_container');
-    container.innerHTML = '';
-    mesaActual.ids.forEach(id => {
-        const inp = document.createElement('input');
-        inp.type = 'hidden'; inp.name = 'ids_chicas'; inp.value = id;
-        container.appendChild(inp);
-    });
-    document.getElementById('input_mesa_tier_precio').value = mesaActual.montoTier;
-    document.getElementById('input_mesa_extra_tipo').value = mesaActual.extra;
-    document.getElementById('input_mesa_producto_id').value = mesaActual.productoId || '';
-    
-    let texto = (mesaActual.productoNombre || (mesaActual.montoTier > 0 ? "TRAGO" : "")) + " " + tier;
-    if (mesaActual.extra) texto += " + " + mesaActual.extra;
-    
-    document.getElementById('resumen_texto_servicio').innerText = texto.toUpperCase();
-    document.getElementById('resumen_chicas_lista').innerHTML = mesaActual.nombres.map(n => `<span class="badge badge-secondary font-black">${n}</span>`).join('');
-    
-    let unitario = mesaActual.montoTier;
-    if(mesaActual.extra === 'VIP') unitario += 50000;
-    if(mesaActual.extra === 'PRIVADO') unitario += 200000;
-    
-    document.getElementById('resumen_total_mesa').innerText = `TOTAL RONDA: $${(unitario * mesaActual.ids.length).toLocaleString('es-CL')}`;
-    
-    verificarBotellaAgotada(mesaActual.productoId, () => {
-        document.getElementById('mesa_paso_datos').classList.add('hidden');
-        document.getElementById('mesa_resumen_confirmacion').classList.remove('hidden');
-    });
-}
-    // =========================================================================
-    // 🍾 CÓDIGO ENVUELTO: Primero verifica el stock, y si es correcto, avanza de pantalla
-    // =========================================================================
-    verificarBotellaAgotada(mesaActual.productoId, () => {
-        document.getElementById('mesa_paso_datos').classList.add('hidden');
-        document.getElementById('mesa_resumen_confirmacion').classList.remove('hidden');
-    });
-
 function procesarSiguientePasoInd() {
     const garzon = document.getElementById('individual_mesero_select').value;
     if (!garzon) { alert("⚠️ SELECCIONE GARZÓN"); return; }
@@ -1298,17 +938,14 @@ function procesarSiguientePasoInd() {
     const casaManual = parseInt(document.getElementById('ind_casa_manual').value) || 0;
     const chicaManual = parseInt(document.getElementById('ind_chica_manual').value) || 0;
 
-    // Validación: Prevenir registros completamente vacíos de $0
     if (montoTierSeleccionado === 0 && !extra && casaManual === 0 && chicaManual === 0) {
         alert("⚠️ DEBE SELECCIONAR AL MENOS UN TRAGO, UN EXTRA (VIP/PRIVADO) O INGRESAR UN MONTO DE SALIDA");
         return;
     }
 
-    // Guardar valores finales en los campos ocultos
     document.getElementById('input_individual_tier_precio').value = montoTierSeleccionado;
     document.getElementById('input_individual_extra_tipo').value = extra;
 
-    // Calcular el total consolidado
     let total = montoTierSeleccionado;
     let textoResumen = tragoNombre || (montoTierSeleccionado > 0 ? "TRAGO" : "");
 
@@ -1328,68 +965,30 @@ function procesarSiguientePasoInd() {
     document.getElementById('ind_resumen_total').innerText = "$" + total.toLocaleString('es-CL');
     document.getElementById('ind_resumen_texto').innerText = textoResumen.toUpperCase();
 
-    // Validar si la botella del corto se terminó antes de avanzar
     verificarBotellaAgotada(ventaIndActual.productoId, () => {
         document.getElementById('individual_paso_datos').classList.add('hidden');
         document.getElementById('individual_resumen_confirmacion').classList.remove('hidden');
     });
 }
 
-function abrirSeccionCuentaMesa() {
-    document.getElementById('botones_pago_mesa').classList.add('hidden');
-    document.getElementById('seccion_nombre_mesa_deuda').classList.remove('hidden');
-}
-
-function mostrarSeccionSalidaManual() {
-    document.getElementById('individual_paso_datos').classList.add('hidden');
-    document.getElementById('seccion_salida_manual').classList.remove('hidden');
-}
-
-function validarYConfirmarDeudaMesa() {
-    const nombre = document.getElementById('input_nombre_mesa_deuda').value.trim();
-    if (nombre.length < 3) { alert("⚠️ INGRESE NOMBRE CLIENTE"); return; }
-    const form = document.getElementById('form_mesa');
-    const inputMetodo = document.createElement("input");
-    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "CUENTA";
-    form.appendChild(inputMetodo);
-    form.submit();
-}
-
 function volverAEditarMesa() {
     document.getElementById('mesa_paso_datos').classList.remove('hidden');
     document.getElementById('mesa_resumen_confirmacion').classList.add('hidden');
+    document.getElementById('botones_pago_mesa').classList.remove('hidden');
 }
 
 function volverAEditarCliente() {
     document.getElementById('cliente_paso_1').classList.remove('hidden');
     document.getElementById('cliente_paso_pago').classList.add('hidden');
-    
-    // Reset de la sección de deuda por si acaso
-    document.getElementById('campo_nombre_cliente').classList.add('hidden');
     document.getElementById('botones_pago_cliente_div').classList.remove('hidden');
 }
 
 function volverAEditarInd() {
-    const paso1 = document.getElementById('individual_paso_datos');
-    const paso2 = document.getElementById('individual_resumen_confirmacion');
-    const seccionDeuda = document.getElementById('seccion_nombre_ind_deuda');
-    const botonesPago = document.getElementById('botones_pago_ind');
-
-    if (paso1) paso1.classList.remove('hidden');
-    if (paso2) paso2.classList.add('hidden');
-    if (seccionDeuda) seccionDeuda.classList.add('hidden');
-    if (botonesPago) botonesPago.classList.remove('hidden');
+    document.getElementById('individual_paso_datos').classList.remove('hidden');
+    document.getElementById('individual_resumen_confirmacion').classList.add('hidden');
+    document.getElementById('botones_pago_ind').classList.remove('hidden');
 }
 
-function activarDeudaCliente() {
-    // Ocultamos los botones de pago normales
-    document.getElementById('botones_pago_cliente_div').classList.add('hidden');
-    // Mostramos el campo de nombre y el botón de confirmar deuda
-    document.getElementById('campo_nombre_cliente').classList.remove('hidden');
-    document.getElementById('input_cliente_cuenta').focus();
-}
-
-// Cerrar menú cliente al clickear fuera
 document.addEventListener('click', function(e) {
     const container = document.getElementById('containerDropCliente');
     if (container && !container.contains(e.target)) {
@@ -1397,97 +996,20 @@ document.addEventListener('click', function(e) {
     }
 });
 
-function abrirModalCliente() {
-    // 👤 Resetear selección de mesero
-    const meseroSel = document.getElementById('cliente_mesero');
-    if (meseroSel) meseroSel.selectedIndex = 0;
-
-    // 💰 Limpiar monto
-    const montoInput = document.getElementById('cliente_monto');
-    if (montoInput) montoInput.value = "";
-
-    // 🔍 Limpiar y resetear buscador visual del trago
-    const buscador = document.getElementById('buscTragoCliente');
-    if (buscador) {
-        buscador.value = "";
-        buscador.classList.replace('border-cyan-500', 'border-zinc-700');
-    }
-
-    // 📦 Resetear inputs ocultos reales
-    const inputTrago = document.getElementById('input_cliente_trago');
-    const inputProdId = document.getElementById('input_cliente_producto_id');
-    if (inputTrago) inputTrago.value = "";
-    if (inputProdId) inputProdId.value = "";
-    
-    // Ocultar menús flotantes e intercambiar paneles
-    const menuTragos = document.getElementById('menuTragosCliente');
-    if (menuTragos) menuTragos.classList.add('hidden');
-    
-    document.getElementById('cliente_paso_1').classList.remove('hidden');
-    document.getElementById('cliente_paso_pago').classList.add('hidden');
-    
-    document.getElementById('modal_cliente').showModal();
-}
-
-// Función para guardar sin que parezca que salimos del modal
-async function guardarYMantenerModal(event, form) {
-    event.preventDefault(); // Evita que la página se recargue normal
-    
-    const formData = new FormData(form);
-    
-    // Enviamos los datos al servidor en segundo plano
-    await fetch(form.action, {
-        method: 'POST',
-        body: formData
-    });
-
-    // Recargamos la página pero añadimos una "marca" en la URL
-    window.location.href = window.location.pathname + "?keep_open=bailarinas";
-}
-
-// Al cargar la página, revisamos si tiene la "marca" para abrir el modal
-window.addEventListener('load', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('keep_open') === 'bailarinas') {
-        document.getElementById('modal_bailarinas_pro').showModal();
-        // Limpiamos la URL para que no se abra siempre
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-});
-   
-// Al cargar la página, revisamos si dejamos el modal "abierto"
-window.addEventListener('load', () => {
-    if (sessionStorage.getItem('modal_estado') === 'abierto') {
-        const modal = document.getElementById('modal_bailarinas_pro');
-        if (modal) {
-            modal.showModal();
-            // Muy importante: Limpiamos la memoria para que no se abra solo la próxima vez que entre a la web
-            sessionStorage.removeItem('modal_estado');
-        }
-    }
-});
-
-// 💡 FUNCIÓN DE FONDO PARA ACTUALIZAR LA PISTA SIN RECARGAR LA PÁGINA
 async function ejecutarAccionBailarina(event, form) {
-    event.preventDefault(); // Evita que la página se desvíe o se ponga en blanco
+    event.preventDefault();
     const formData = new FormData(form);
     
     try {
-        // 1. Enviar la petición al backend en segundo plano
         await fetch(form.action, {
             method: 'POST',
             body: formData
         });
         
-        // 2. Traer el HTML fresco de la página de inicio sin recargar la pestaña entera
         const response = await fetch("/");
         const htmlText = await response.text();
-        
-        // 3. Parsear el HTML nuevo obtenido
         const parser = new DOMParser();
         const newDoc = parser.parseFromString(htmlText, 'text/html');
-        
-        // 4. Actualizar dinámicamente los contenedores clave (incluido el interior del modal)
         const idsParaActualizar = ['modal_bailarinas_inner_box', 'dashboard_ventas_container', 'damas_salon_grid'];
         
         idsParaActualizar.forEach(id => {
@@ -1504,34 +1026,26 @@ async function ejecutarAccionBailarina(event, form) {
     }
 }
 
-// Muestra la confirmación leyendo y formateando el precio dinámicamente
-    function mostrarConfirmacionTarjeta(btn) {
-        const form = btn.closest('form');
-        
-        // 💰 1. Leer el monto ingresado en este formulario
-        const montoInput = form.querySelector('input[name="monto_total"]');
-        const monto = parseInt(montoInput.value) || 0;
-        const montoFormateado = monto.toLocaleString('es-CL');
-        
-        // 📝 2. Actualizar el mensaje con el valor ingresado
-        const textoSpan = form.querySelector('.confirm-text');
-        if (textoSpan) {
-            textoSpan.innerText = `¿CONFIRMAR SUBIR POR $${montoFormateado}?`;
-        }
-        
-        // 🔄 3. Realizar transición visual
-        form.querySelector('.normal-state').classList.add('hidden');
-        form.querySelector('.confirm-state').classList.remove('hidden');
+function mostrarConfirmacionTarjeta(btn) {
+    const form = btn.closest('form');
+    const montoInput = form.querySelector('input[name="monto_total"]');
+    const monto = parseInt(montoInput.value) || 0;
+    const montoFormateado = monto.toLocaleString('es-CL');
+    const textoSpan = form.querySelector('.confirm-text');
+    if (textoSpan) {
+        textoSpan.innerText = `¿CONFIRMAR SUBIR POR $${montoFormateado}?`;
     }
+    form.querySelector('.normal-state').classList.add('hidden');
+    form.querySelector('.confirm-state').classList.remove('hidden');
+}
 
-    // Regresa la tarjeta a su estado original
-    function cancelarConfirmacionTarjeta(btn) {
-        const form = btn.closest('form');
-        form.querySelector('.confirm-state').classList.add('hidden');
-        form.querySelector('.normal-state').classList.remove('hidden');
-    }
+function cancelarConfirmacionTarjeta(btn) {
+    const form = btn.closest('form');
+    form.querySelector('.confirm-state').classList.add('hidden');
+    form.querySelector('.normal-state').classList.remove('hidden');
+}
 
-    function registrarCortesiaCliente() {
+function registrarCortesiaCliente() {
     const mesero = document.getElementById('cliente_mesero').value;
     const prodId = document.getElementById('input_cliente_producto_id').value;
     const prodNombre = document.getElementById('input_cliente_trago').value;
@@ -1546,25 +1060,17 @@ async function ejecutarAccionBailarina(event, form) {
     }
 
     if (confirm(`¿CONFIRMAR REGISTRO DE CORTESÍA?\nBebida: ${prodNombre.toUpperCase()}\nGarzón: ${mesero}`)) {
-        // Fijamos el precio a 0 pesos para la cortesía
         document.getElementById('cliente_monto').value = 0;
-        
         const form = document.getElementById('form_venta_cliente');
-        
-        // Creamos el input temporal para enviar el método de pago como CORTESIA
         const inputMetodo = document.createElement("input");
         inputMetodo.type = "hidden";
         inputMetodo.name = "metodo_pago";
         inputMetodo.value = "CORTESIA";
-        
         form.appendChild(inputMetodo);
         form.submit();
     }
 }
 
-// ==========================================
-// 4. CONTROL DEL MÓDULO "CLIENTE" (CARRITO DE COMPRAS)
-// ==========================================
 let carrito = [];
 
 function activarTabCliente(tipo) {
@@ -1612,10 +1118,8 @@ function agregarAlCarrito(id, nombre) {
         carrito.push({ id: id, nombre: nombre, cantidad: 1 });
     }
     
-    // Limpiar buscador
     document.getElementById('menuTragosCart').classList.add('hidden');
     document.getElementById('buscTragoCart').value = '';
-    
     actualizarVistaCarrito();
 }
 
@@ -1643,7 +1147,6 @@ function actualizarVistaCarrito() {
         contenedor.insertAdjacentHTML('beforeend', html);
     });
     
-    // Guardar en input oculto
     document.getElementById('input_productos_json').value = JSON.stringify(carrito);
 }
 
@@ -1660,7 +1163,6 @@ function eliminarDelCarrito(index) {
     actualizarVistaCarrito();
 }
 
-// Cierre de dropdown al hacer click afuera
 document.addEventListener('click', function(e) {
     const container = document.getElementById('containerDropCart');
     if (container && !container.contains(e.target)) {
@@ -1668,7 +1170,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Navegación de Flujos Multi-Producto
 function irAPagoMulti() {
     const mesero = document.getElementById('multi_mesero').value;
     const monto = document.getElementById('multi_monto').value;
@@ -1696,38 +1197,13 @@ function irAPagoMulti() {
 function volverAEditarMulti() {
     document.getElementById('multi_paso_1').classList.remove('hidden');
     document.getElementById('multi_paso_pago').classList.add('hidden');
-    document.getElementById('campo_nombre_multi_cliente').classList.add('hidden');
     document.getElementById('botones_pago_multi_div').classList.remove('hidden');
 }
 
-function activarDeudaMulti() {
-    document.getElementById('botones_pago_multi_div').classList.add('hidden');
-    document.getElementById('campo_nombre_multi_cliente').classList.remove('hidden');
-    document.getElementById('input_multi_cuenta').focus();
-}
-
-function validarYConfirmarDeudaMulti() {
-    const nombre = document.getElementById('input_multi_cuenta').value.trim();
-    if (nombre.length < 3) {
-        alert("⚠️ INGRESE EL NOMBRE DEL CLIENTE (DEUDOR)");
-        return;
-    }
-    const form = document.getElementById('form_venta_multi_cliente');
-    const inputMetodo = document.createElement("input");
-    inputMetodo.type = "hidden";
-    inputMetodo.name = "metodo_pago";
-    inputMetodo.value = "CUENTA";
-    form.appendChild(inputMetodo);
-    form.submit();
-}
-
-// Modificar la inicialización para resetear el carrito al abrir
 function abrirModalCliente() {
-    // Resetear pestaña
     activarTabCliente('directa');
     carrito = [];
     
-    // Limpiar campos directos
     const meseroSel = document.getElementById('cliente_mesero');
     if (meseroSel) meseroSel.selectedIndex = 0;
     document.getElementById('cliente_monto').value = "";
@@ -1736,30 +1212,22 @@ function abrirModalCliente() {
     document.getElementById('input_cliente_producto_id').value = "";
     document.getElementById('cliente_paso_1').classList.remove('hidden');
     document.getElementById('cliente_paso_pago').classList.add('hidden');
-    document.getElementById('campo_nombre_cliente').classList.add('hidden');
     document.getElementById('botones_pago_cliente_div').classList.remove('hidden');
     
-    // Limpiar campos detallados
     const multiMesero = document.getElementById('multi_mesero');
     if (multiMesero) multiMesero.selectedIndex = 0;
     document.getElementById('multi_monto').value = "";
     document.getElementById('buscTragoCart').value = "";
     document.getElementById('multi_paso_1').classList.remove('hidden');
     document.getElementById('multi_paso_pago').classList.add('hidden');
-    document.getElementById('campo_nombre_multi_cliente').classList.add('hidden');
     document.getElementById('botones_pago_multi_div').classList.remove('hidden');
 
     document.getElementById('modal_cliente').showModal();
 }
 
-// =========================================================================
-// 5. CONTROL DEL MÓDULO "MESAS" (VERSIÓN CON AUTO-BÚSQUEDA)
-// =========================================================================
-
 function abrirModalMesas() {
     mesaActual = { ids: [], nombres: [], montoTier: 0, extra: '', productoId: null, productoNombre: 'TRAGO BÁSICO' };
     
-    // Reset visual de las chicas con validación de existencia de imagen
     document.querySelectorAll('.dama-mesa-item').forEach(el => { 
         el.classList.add('opacity-40'); 
         el.style.display = "flex"; 
@@ -1784,7 +1252,6 @@ function abrirModalMesas() {
         inputRondaJson.value = "";
     }
     
-    // Limpiar tabla detallada
     const detalleFilas = document.getElementById('ronda_chicas_detalle_filas');
     if (detalleFilas) {
         detalleFilas.innerHTML = `
@@ -1797,7 +1264,6 @@ function abrirModalMesas() {
         montoVisual.innerText = "$0";
     }
 
-    // Reset de vistas seguro (con validación para evitar errores de nulos)
     const mesaPasoDatos = document.getElementById('mesa_paso_datos');
     if (mesaPasoDatos) {
         mesaPasoDatos.classList.remove('hidden');
@@ -1806,11 +1272,6 @@ function abrirModalMesas() {
     const mesaResumenConfirmacion = document.getElementById('mesa_resumen_confirmacion');
     if (mesaResumenConfirmacion) {
         mesaResumenConfirmacion.classList.add('hidden');
-    }
-
-    const seccionNombreMesaDeuda = document.getElementById('seccion_nombre_mesa_deuda');
-    if (seccionNombreMesaDeuda) {
-        seccionNombreMesaDeuda.classList.add('hidden');
     }
 
     const botonesPagoMesa = document.getElementById('botones_pago_mesa');
@@ -1839,7 +1300,6 @@ function toggleFichaMesa(el, id, n) {
         el.querySelector('img').style.borderColor = '#a855f7'; 
     }
 
-    // Generamos las filas dinámicamente
     generarFilasMesaDetalle();
 }
 
@@ -1854,47 +1314,44 @@ function generarFilasMesaDetalle() {
     }
 
     mesaActual.ids.forEach((id, idx) => {
-    const nombre = mesaActual.nombres[idx];
-    const html = `
-        <tr class="border-b border-white/5 align-middle py-1.5" data-dama-id="${id}" data-dama-nombre="${nombre}">
-            <td class="font-black text-white text-[11px] text-left uppercase pl-2">${nombre}</td>
-            <td>
-                <!-- BUSCADOR INTERACTIVO DE TRAGO INDIVIDUAL (DESPLIEGUE HACIA ARRIBA) -->
-                <div class="relative w-full dropdown-trago-container">
-                    <input type="text" 
-                           placeholder="🔍 ESCRIBIR TRAGO..." 
-                           class="input input-bordered input-xs w-full bg-black text-white font-black text-center uppercase item-prod-select" 
-                           value="TRAGO BÁSICO"
-                           data-producto-id=""
-                           onfocus="abrirDropdownTragoMesa(this)"
-                           onkeyup="filtrarDropdownTragoMesa(this)"
-                           autocomplete="off">
-                    <!-- bottom-full mb-1 posiciona el listado hacia arriba de la celda -->
-                    <div class="hidden absolute left-0 w-full bottom-full mb-1 bg-zinc-950 border border-purple-500/50 rounded-xl shadow-2xl z-[100] max-h-32 overflow-y-auto listado-opciones-trago p-1">
-                        <!-- Las opciones se cargan dinámicamente -->
+        const nombre = mesaActual.nombres[idx];
+        const html = `
+            <tr class="border-b border-white/5 align-middle py-1.5" data-dama-id="${id}" data-dama-nombre="${nombre}">
+                <td class="font-black text-white text-[11px] text-left uppercase pl-2">${nombre}</td>
+                <td>
+                    <div class="relative w-full dropdown-trago-container">
+                        <input type="text" 
+                               placeholder="🔍 ESCRIBIR TRAGO..." 
+                               class="input input-bordered input-xs w-full bg-black text-white font-black text-center uppercase item-prod-select" 
+                               value="TRAGO BÁSICO"
+                               data-producto-id=""
+                               onfocus="abrirDropdownTragoMesa(this)"
+                               onkeyup="filtrarDropdownTragoMesa(this)"
+                               autocomplete="off">
+                        <div class="hidden absolute left-0 w-full bottom-full mb-1 bg-zinc-950 border border-purple-500/50 rounded-xl shadow-2xl z-[100] max-h-32 overflow-y-auto listado-opciones-trago p-1">
+                        </div>
                     </div>
-                </div>
-            </td>
-            <td>
-                <select class="select select-bordered select-xs w-full bg-black text-white font-black item-tier-select" onchange="actualizarPreciosMesa()">
-                    <option value="25000">T-25</option>
-                    <option value="35000">T-35</option>
-                    <option value="50000">T-50</option>
-                    <option value="100000">T-100</option>
-                </select>
-            </td>
-            <td>
-                <select class="select select-bordered select-xs w-full bg-black text-white font-bold item-extra-select" onchange="actualizarPreciosMesa()">
-                    <option value="">NINGUNO</option>
-                    <option value="VIP">VIP (+50K)</option>
-                    <option value="PRIVADO">PRIVADO (+200K)</option>
-                </select>
-            </td>
-            <td class="text-right text-purple-400 font-black text-xs pr-2 item-subtotal-text">$25.000</td>
-        </tr>
-    `;
-    contenedor.insertAdjacentHTML('beforeend', html);
-});
+                </td>
+                <td>
+                    <select class="select select-bordered select-xs w-full bg-black text-white font-black item-tier-select" onchange="actualizarPreciosMesa()">
+                        <option value="25000">T-25</option>
+                        <option value="35000">T-35</option>
+                        <option value="50000">T-50</option>
+                        <option value="100000">T-100</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="select select-bordered select-xs w-full bg-black text-white font-bold item-extra-select" onchange="actualizarPreciosMesa()">
+                        <option value="">NINGUNO</option>
+                        <option value="VIP">VIP (+50K)</option>
+                        <option value="PRIVADO">PRIVADO (+200K)</option>
+                    </select>
+                </td>
+                <td class="text-right text-purple-400 font-black text-xs pr-2 item-subtotal-text">$25.000</td>
+            </tr>
+        `;
+        contenedor.insertAdjacentHTML('beforeend', html);
+    });
 
     actualizarPreciosMesa();
 }
@@ -1960,7 +1417,6 @@ function avanzarAPagoMesa() {
         const pIdAttr = inputProd.getAttribute('data-producto-id');
         let pId = pIdAttr ? parseInt(pIdAttr) : null;
         
-        // Resguardo si no se cargó el ID pero coincide con el texto
         if (!pId && pNombreIngresado !== "TRAGO BÁSICO") {
             const foundProduct = listadoProds.find(p => p.nombre.toUpperCase() === pNombreIngresado);
             pId = foundProduct ? foundProduct.id : null;
@@ -1996,11 +1452,6 @@ function avanzarAPagoMesa() {
     document.getElementById('mesa_resumen_confirmacion').classList.remove('hidden');
 }
 
-// =========================================================================
-// 💵 CONTROLADORES DE COBRO MIXTO (EFECTIVO + TARJETA)
-// =========================================================================
-
-// 1. Venta Individual
 function abrirPagoMixtoInd() {
     document.getElementById('botones_pago_ind').classList.add('hidden');
     const panel = document.getElementById('seccion_pago_mixto_ind');
@@ -2037,7 +1488,6 @@ function confirmarVentaMixtaInd() {
     form.submit();
 }
 
-// 2. Venta de Mesas
 function abrirPagoMixtoMesa() {
     document.getElementById('botones_pago_mesa').classList.add('hidden');
     const panel = document.getElementById('seccion_pago_mixto_mesa');
@@ -2074,7 +1524,6 @@ function confirmarVentaMixtaMesa() {
     form.submit();
 }
 
-// 3. Venta Cliente Directa
 function abrirPagoMixtoCliente() {
     document.getElementById('botones_pago_cliente_div').classList.add('hidden');
     const panel = document.getElementById('seccion_pago_mixto_cliente');
@@ -2111,7 +1560,6 @@ function confirmarVentaMixtaCliente() {
     form.submit();
 }
 
-// 4. Venta Cliente Boleta Multi (Combo)
 function abrirPagoMixtoMulti() {
     document.getElementById('botones_pago_multi_div').classList.add('hidden');
     const panel = document.getElementById('seccion_pago_mixto_multi');
@@ -2140,37 +1588,31 @@ function calcularMixtoMulti() {
     }
 }
 
-function confirmarVentaMixtaMulti() {
+function confirmarVentaMulti() {
     const form = document.getElementById('form_venta_multi_cliente');
     const inputMetodo = document.createElement("input");
     inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "MIXTO";
     form.appendChild(inputMetodo);
     form.submit();
 }
-
 </script>
+
 <dialog id="modal_turno_fijo" class="modal">
     <div class="modal-box bg-zinc-900 border-2 {% if estado_club == 'ABIERTO' %} border-red-500 {% else %} border-pink-500 {% endif %} p-8 text-center text-white">
-        
         <h3 class="font-black text-2xl {% if estado_club == 'ABIERTO' %} text-red-500 {% else %} text-pink-500 {% endif %} uppercase mb-6 italic">
             {{ 'FINALIZAR TURNO' if estado_club == 'ABIERTO' else 'GESTIÓN DE TURNO' }}
         </h3>
         
         <form action="/gestionar_club" method="post" class="space-y-6">
             {% if estado_club == 'ABIERTO' %}
-                <!-- VISTA PARA CERRAR -->
                 <input type="hidden" name="accion" value="CERRAR">
-                
                 <p class="text-lg">¿Estás seguro que deseas cerrar el <strong>{{ turno }}</strong>?</p>
                 <p class="text-zinc-500 text-xs uppercase">Esta acción quedará registrada en el sistema.</p>
-
                 <button type="submit" class="btn btn-error w-full font-black text-lg shadow-lg">
                     SÍ, CERRAR TURNO AHORA
                 </button>
             {% else %}
-                <!-- VISTA PARA ABRIR -->
                 <input type="hidden" name="accion" value="ABRIR">
-                
                 <div class="form-control">
                     <label class="label"><span class="label-text text-zinc-400">Seleccione el Turno:</span></label>
                     <select name="turno" class="select select-bordered w-full bg-black text-white font-bold">
@@ -2179,9 +1621,8 @@ function confirmarVentaMixtaMulti() {
                     </select>
                 </div>
 
-                <!-- NUEVO CAMPO: MONTO DE APERTURA -->
                 <div class="form-control mt-2 mb-6">
-                    <label class="label"><span class="label-text text-warning font-black uppercase text-[10px] tracking-wider">Monto de Apertura de Caja (Sencillo)</span></label>
+                    <label class="label"><span class="label-text text-warning font-black uppercase text-[10px] tracking-wider">Monto de Apertura de Caja</span></label>
                     <input type="number" name="caja_chica_inicio" value="100000" step="1000" class="input input-bordered w-full bg-black text-center text-white text-xl font-black" required>
                 </div>
 
@@ -2196,25 +1637,22 @@ function confirmarVentaMixtaMulti() {
         </div>
     </div>
 </dialog>
+
 <!-- MODAL DE BAILARINAS PROFESIONAL -->
 <dialog id="modal_bailarinas_pro" class="modal">
     <div id="modal_bailarinas_inner_box" class="modal-box bg-zinc-950 border-2 border-purple-500 max-w-4xl p-0 overflow-hidden flex flex-col">
-        
-        <!-- CABECERA FIJA -->
         <div class="sticky top-0 z-50 bg-zinc-950 border-b border-purple-500/30 p-6 flex justify-between items-center">
             <div>
                 <h3 class="font-black text-2xl text-purple-500 uppercase italic tracking-tighter">Control de Pista</h3>
                 <p class="text-[9px] font-bold text-zinc-500 uppercase">Gestión en tiempo real</p>
             </div>
             <button class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider" 
-        onclick="document.getElementById('modal_bailarinas_pro').close()">
-    ← SALÓN
-</button>
+                    onclick="document.getElementById('modal_bailarinas_pro').close()">
+                ← SALÓN
+            </button>
         </div>
 
         <div class="p-6 space-y-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
-            
-            <!-- 1. EN PISTA / CON SHOWS -->
             {% if bailando_hoy %}
             <div>
                 <h4 class="text-[10px] font-black text-purple-400 uppercase tracking-[4px] mb-4 flex items-center gap-2">
@@ -2229,7 +1667,6 @@ function confirmarVentaMixtaMulti() {
                         </div>
                         
                         <div class="flex items-center gap-3">
-                            <!-- Formulario de Monto -->
                             <form onsubmit="event.preventDefault(); const monto = parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL'); if(confirm('¿Está seguro de subir a la pista a {{ b.nombre }} cobrando un show de $' + monto + '?')) { ejecutarAccionBailarina(event, this); }" action="/registrar_pago_show" method="post" class="flex items-center gap-3">
                                 <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
                                 <div class="flex gap-1">
@@ -2239,7 +1676,6 @@ function confirmarVentaMixtaMulti() {
                                 </div>
                             </form>
 
-                            <!-- BOTÓN QUITAR DE PISTA (NUEVO) -->
                             <form onsubmit="ejecutarAccionBailarina(event, this)" action="/registrar_pago_show" method="post">
                                 <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
                                 <input type="hidden" name="monto_total" value="0">
@@ -2252,7 +1688,6 @@ function confirmarVentaMixtaMulti() {
             </div>
             {% endif %}
 
-<!-- 2. DISPONIBLES EN ESPERA (CON INPUT DE COBRO INTEGRADO EN EL MODAL) -->
             <div>
                 <h4 class="text-[10px] font-black text-green-500 uppercase tracking-[4px] mb-4 italic">● DISPONIBLES</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2263,27 +1698,24 @@ function confirmarVentaMixtaMulti() {
                             <span class="font-black text-white uppercase text-sm italic">{{ b.nombre }}</span>
                         </div>
                         
-                        <!-- 💡 Formulario dinámico con confirmación integrada en la tarjeta -->
                         <form onsubmit="ejecutarAccionBailarina(event, this)" action="/registrar_pago_show" method="post" class="flex items-center gap-3">
                             <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
                             
-                            <!-- Contenedor Estado Normal (Solo interactivo para operacionales) -->
-<div class="flex items-center gap-3 normal-state">
-    <div class="flex flex-col items-center">
-        <span class="text-[8px] text-zinc-500 mb-1 uppercase font-bold">Monto Show</span>
-        <input name="monto_total" type="number" value="30000" required {% if role not in ['admin1', 'administrador', 'cajera'] %} disabled {% endif %}
-               class="input input-bordered input-xs w-20 bg-black text-center text-green-400 font-black">
-    </div>
-    {% if role in ['admin1', 'administrador', 'cajera'] %}
-    <button type="button" onclick="mostrarConfirmacionTarjeta(this)" class="btn btn-xs btn-success font-black uppercase text-[9px] px-4 rounded-full h-8 mt-4">
-        SUBIR
-    </button>
-    {% else %}
-    <span class="text-[9px] font-bold text-zinc-600 uppercase mt-4">🔒 LECTURA</span>
-    {% endif %}
-</div>
+                            <div class="flex items-center gap-3 normal-state">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[8px] text-zinc-500 mb-1 uppercase font-bold">Monto Show</span>
+                                    <input name="monto_total" type="number" value="30000" required {% if role not in ['admin1', 'administrador', 'cajera'] %} disabled {% endif %}
+                                           class="input input-bordered input-xs w-20 bg-black text-center text-green-400 font-black">
+                                </div>
+                                {% if role in ['admin1', 'administrador', 'cajera'] %}
+                                <button type="button" onclick="mostrarConfirmacionTarjeta(this)" class="btn btn-xs btn-success font-black uppercase text-[9px] px-4 rounded-full h-8 mt-4">
+                                    SUBIR
+                                </button>
+                                {% else %}
+                                <span class="text-[9px] font-bold text-zinc-600 uppercase mt-4">🔒 LECTURA</span>
+                                {% endif %}
+                            </div>
 
-                            <!-- Contenedor 2: Estado de Confirmación (Oculto al inicio) -->
                             <div class="hidden flex flex-col items-end gap-1 confirm-state">
                                 <span class="text-[9px] font-black text-yellow-500 uppercase block tracking-wider confirm-text">¿Confirmas subir?</span>
                                 <div class="flex gap-1">
@@ -2297,7 +1729,6 @@ function confirmarVentaMixtaMulti() {
                 </div>
             </div>
             
-            <!-- 3. AUSENTES -->
             <div>
                 <h4 class="text-[10px] font-black text-zinc-700 uppercase tracking-[4px] mb-4 italic">○ NO HAN LLEGADO</h4>
                 <div class="flex flex-wrap gap-3 opacity-40">
@@ -2312,17 +1743,16 @@ function confirmarVentaMixtaMulti() {
         </div>
     </div>
 </dialog>
-<!-- MODAL INTELIGENTE: APERTURA DE BOTELLA DE RESPALDO -->
+
 <dialog id="modal_abrir_respaldo" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box bg-zinc-950 border-2 border-warning p-8 text-center rounded-[40px] max-w-md">
         <h3 class="font-black text-2xl text-warning uppercase italic tracking-tighter mb-4">🍾 ¿ABRIR BOTELLA?</h3>
         <p class="text-xs text-zinc-400 uppercase mb-6 leading-relaxed">
-            La botella activa actual se encuentra <span class="text-red-500 font-bold">agotada</span>. Para continuar ingresando el corto, selecciona cuál de tus botellas de respaldo deseas abrir:
+            La botella activa actual se encuentra <span class="text-red-500 font-bold">agotada</span>. Selecciona de las botellas de respaldo para descorchar:
         </p>
         <form id="form_abrir_respaldo" class="space-y-6">
             <input type="hidden" id="abrir_corto_id">
             <select id="select_respaldo_botella" class="select select-bordered w-full bg-black text-white font-black border-zinc-800" required>
-                <!-- Las opciones se cargarán dinámicamente por JS -->
             </select>
             <div class="flex gap-2">
                 <button type="button" onclick="document.getElementById('modal_abrir_respaldo').close()" class="btn btn-ghost flex-1 font-bold">CANCELAR</button>
@@ -2331,5 +1761,11 @@ function confirmarVentaMixtaMulti() {
         </form>
     </div>
 </dialog>
+
+<script>
+    // Corrección para evitar advertencias de CSS parsing en IDEs
+    document.getElementById('thermometer_bar').style.width = '{{ porcentaje }}%';
+</script>
 </body>
 </html>
+<!-- END OF FILE templates/index.html -->
