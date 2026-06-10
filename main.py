@@ -411,14 +411,9 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         ventas_pagadas = [v for v in ventas_hoy if v.dama_id == dama.id and v.liquidada and v.servicio != "PRIVADO"]
         ventas_pendientes = [v for v in ventas_hoy if v.dama_id == dama.id and not v.liquidada and v.servicio != "PRIVADO"]
 
-        # Cálculo de Bonos Base del turno (Bono de asistencia, shows y descuento residencia)
-        monto_bono_base = 0
+        # Bonos de Asistencia y Residencia
+        monto_bono_base = asis.bono_asistencia or 0.0
         costo_residencia_base = 0
-        if asis.turno == "Turno 1":
-            if asis.tipo_llegada == "Residente" and ("22:00" <= asis.hora_libro <= "22:36"):
-                monto_bono_base = 10000
-            elif asis.tipo_llegada == "Externa" and ("22:30" <= asis.hora_libro <= "23:06"):
-                monto_bono_base = 10000
         if asis.tipo_llegada == "Residente":
             costo_residencia_base = 5000
 
@@ -621,7 +616,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     deudas_global = db.query(models.Venta).filter(models.Venta.metodo_pago == "CUENTA").all()
 
     # =========================================================================
-    # 🔒 7. BÚSQUEDA GLOBAL DE LIQUIDACIONES PENDIENTES (EXCLUYENDO PRIVADOS)
+    # 🔒 7. BÚSQUEDA GLOBAL DE LIQUIDACIONES PENDIENTES (SÓLO DÍAS ANTERIORES)
     # =========================================================================
     asis_no_liq = db.query(models.Asistencia).filter(
         models.Asistencia.liquidada == False
@@ -661,7 +656,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     asistencias_pendientes = asis_no_liq + asis_fichas_extras
     asistencias_pendientes.sort(key=lambda x: x.fecha, reverse=True)
 
-    pendientes_global = []
+    pendientes_global_completo = []
 
     if asistencias_pendientes:
         damas_dict = {d.id: d for d in db.query(models.Dama).all()}
@@ -682,13 +677,8 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 ganancia_bailes_p = 0
                 nombre_ficha_label = f"{dama_p.nombre_artistico} (FICHA 2)"
             else:
-                monto_bono_p = 0
+                monto_bono_p = asis_p.bono_asistencia or 0.0
                 costo_residencia_p = 0
-                if asis_p.turno == "Turno 1":
-                    if asis_p.tipo_llegada == "Residente" and ("22:00" <= asis_p.hora_libro <= "22:36"):
-                        monto_bono_p = 10000
-                    elif asis_p.tipo_llegada == "Externa" and ("22:30" <= asis_p.hora_libro <= "23:06"):
-                        monto_bono_p = 10000
                 if asis_p.tipo_llegada == "Residente":
                     costo_residencia_p = 5000
                 ganancia_bailes_p = asis_p.bono_show
@@ -773,7 +763,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 msg_p_encoded = urllib.parse.quote(msg_p)
                 link_wa_p = f"https://wa.me/{whatsapp_p_limpio}?text={msg_p_encoded}"
 
-                pendientes_global.append({
+                pendientes_global_completo.append({
                     "dama_id": dama_p.id,
                     "nombre": f"{dama_p.nombre_artistico} (ELIMINADA) (FICHA 2)" if dama_p.borrada and asis_p.liquidada else (f"{dama_p.nombre_artistico} (ELIMINADA) (FICHA 1)" if dama_p.borrada else nombre_ficha_label),
                     "fecha": asis_p.fecha,
@@ -782,8 +772,11 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                     "link_wa": link_wa_p
                 })
 
+    # Filtrar estrictamente para que solo aparezcan fichas de días anteriores en el modal de pendientes
+    pendientes_global = [p for p in pendientes_global_completo if p["fecha"] != fecha_param or p["turno"] != turno_filter]
+
     # =========================================================================
-    # 🔒 AGRUPACIÓN DE PRIVADOS POR DAMA (SÓLO TURNOS ACTIVOS VS DIAS ANTERIORES)
+    # 🔒 AGRUPACIÓN DE PRIVADOS POR DAMA (FECHAS Y TURNOS DETALLADOS)
     # =========================================================================
     privados_todos = db.query(models.Venta).filter(models.Venta.servicio == "PRIVADO").all()
     

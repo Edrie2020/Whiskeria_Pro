@@ -1,3 +1,4 @@
+<!-- START OF FILE templates/asistencia.html -->
 <!DOCTYPE html>
 <html lang="es" data-theme="night">
 <head>
@@ -13,14 +14,6 @@
             border: 1px solid rgba(255, 255, 255, 0.05); 
             transition: all 0.3s;
         }
-        .input-time-pro { 
-            background-color: black !important; 
-            color: white !important; 
-            font-size: 1rem !important; 
-            font-weight: 800;
-            border: 2px solid #3f3f46;
-        }
-        /* Limitar el ancho del nombre para que no empuje el formulario */
         .nombre-artista {
             max-width: 150px;
             overflow: hidden;
@@ -33,12 +26,12 @@
 
     <!-- HEADER -->
     <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center mb-6 border-b border-green-500/20 pb-4 gap-4">
-    <div class="flex items-center justify-between w-full sm:w-auto gap-4">
-        <h1 class="text-2xl sm:text-3xl font-black uppercase tracking-tighter neon-green italic">Asistencia Diaria</h1>
-        <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider">
-            ← SALÓN
-        </a>
-    </div>
+        <div class="flex items-center justify-between w-full sm:w-auto gap-4">
+            <h1 class="text-2xl sm:text-3xl font-black uppercase tracking-tighter neon-green italic">Asistencia Diaria</h1>
+            <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider">
+                ← SALÓN
+            </a>
+        </div>
 
         <div class="text-right bg-green-500/10 p-4 rounded-3xl border border-green-500/30 w-full md:w-auto">
             <span class="text-xs font-black text-zinc-400 uppercase block tracking-widest mb-1 text-center md:text-right">Turno Activo</span>
@@ -46,8 +39,8 @@
         </div>
     </div>
 
-    
     <div class="max-w-7xl mx-auto {% if role not in ['admin1', 'administrador', 'cajera'] %} pointer-events-none opacity-85 {% endif %}">
+        
         <!-- SECCIÓN AUSENTES -->
         <h2 class="text-[10px] font-black text-zinc-500 uppercase tracking-[4px] mb-6 text-center md:text-left italic">● Damas por Ingresar (Ausentes)</h2>
         
@@ -55,7 +48,7 @@
             {% for dama in ausentes %}
             <div class="card-pro p-4 rounded-[30px] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
                 
-                <!-- IZQUIERDA: FOTO Y NOMBRE (Ancho fijo para que no baile) -->
+                <!-- IZQUIERDA: FOTO Y NOMBRE -->
                 <div class="flex items-center gap-4 w-full sm:w-1/3">
                     <img src="{{ dama.foto_url }}" 
                          class="w-14 h-14 rounded-full object-cover border-2 border-zinc-700 flex-none shadow-lg">
@@ -64,23 +57,24 @@
                     </h3>
                 </div>
                 
-                <!-- DERECHA: FORMULARIO -->
-                <form action="/marcar_asistencia" method="post" class="flex flex-wrap sm:flex-nowrap gap-2 items-center justify-center sm:justify-end w-full sm:w-2/3">
+                <!-- DERECHA: FORMULARIO SIMPLIFICADO -->
+                <form action="/marcar_asistencia" method="post" class="flex flex-wrap sm:flex-nowrap gap-3 items-center justify-center sm:justify-end w-full sm:w-2/3">
                     <input type="hidden" name="dama_id" value="{{ dama.id }}">
                     
-                    {% if turno == 'Turno 1' %}
-                    <select name="tipo_llegada" class="select select-bordered select-sm bg-black text-pink-400 font-black border-zinc-700 text-xs">
+                    <select name="tipo_llegada" class="select select-bordered select-sm bg-black text-pink-400 font-black border-zinc-700 text-xs rounded-xl">
                         <option value="Externa">Externa</option>
                         <option value="Residente">Residente</option>
                     </select>
-                    <input name="hora_libro" type="time" class="input input-bordered input-sm input-time-pro w-28 text-center" required>
-                    {% else %}
-                    <input type="hidden" name="tipo_llegada" value="T2">
-                    <input type="hidden" name="hora_libro" value="00:00">
-                    <span class="text-[9px] font-bold text-zinc-600 uppercase tracking-widest italic mr-2">Madrugada</span>
+                    
+                    {% if turno == 'Turno 1' %}
+                    <!-- Checkbox interactivo rápido para asignar bono de asistencia -->
+                    <label class="label cursor-pointer flex items-center gap-2 bg-black/40 px-4 py-1.5 rounded-xl border border-zinc-800">
+                        <span class="label-text text-[10px] font-black uppercase text-zinc-400">¿Recibe Pago?</span>
+                        <input type="checkbox" name="bono_asistencia" class="checkbox checkbox-xs checkbox-success" value="on">
+                    </label>
                     {% endif %}
                     
-                    <button type="submit" class="btn btn-success btn-sm font-black px-6 shadow-lg shadow-green-500/20">ASISTENTE</button>
+                    <button type="submit" class="btn btn-success btn-sm font-black px-6 shadow-lg shadow-green-500/20 rounded-xl">ASISTENTE</button>
                 </form>
             </div>
             {% endfor %}
@@ -98,7 +92,7 @@
                     <button type="submit" class="btn btn-circle btn-xs btn-error btn-outline" onclick="return confirm('¿Dar salida a {{ dama.nombre_artistico }}?')">✕</button>
                 </form>
 
-                <!-- Foto con círculo perfecto -->
+                <!-- Foto con círculo de estado -->
                 <div class="relative mb-3">
                     <img src="{{ dama.foto_url }}" 
                          class="w-20 h-20 rounded-full object-cover border-4 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] flex-none">
@@ -113,3 +107,4 @@
     </div>
 </body>
 </html>
+<!-- END OF FILE templates/asistencia.html -->

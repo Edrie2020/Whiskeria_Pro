@@ -11,13 +11,16 @@ if os.environ.get("RENDER"):
         SQLALCHEMY_DATABASE_URL = "sqlite:////data/whiskeria.db"
     except PermissionError:
         # Fallback inteligente para la CAPA GRATUITA (Render Free) sin disco montado:
-        # Guardamos localmente en el directorio de la aplicación para poder testear gratis
         SQLALCHEMY_DATABASE_URL = "sqlite:///./whiskeria.db"
 else:
     # Si estamos trabajando en nuestra computadora local
     SQLALCHEMY_DATABASE_URL = "sqlite:///./whiskeria.db"
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+# Se configura 'timeout': 30 para evitar bloqueos de concurrencia (SQLite Lock)
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, 
+    connect_args={"check_same_thread": False, "timeout": 30}
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

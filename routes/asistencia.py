@@ -1,10 +1,10 @@
+# START OF FILE routes/asistencia.py
 from fastapi import APIRouter, Form, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import models
 from datetime import time, timedelta
-from services.asistencia_service import registrar_asistencia
 from services.config_service import obtener_config
 from services.time_service import obtener_ahora_local
 from database import get_db
@@ -14,12 +14,8 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 # ---------------------------------------------------------
-# 1. VER PANEL DE ASISTENCIA (MIGRADO DESDE MAIN.PY)
+# 1. VER PANEL DE ASISTENCIA
 # ---------------------------------------------------------
-# routes/asistencia.py (Líneas de la ruta /asistencia)
-
-# routes/asistencia.py
-
 @router.get("/asistencia", response_class=HTMLResponse)
 async def asistencia_page(request: Request, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
@@ -29,7 +25,6 @@ async def asistencia_page(request: Request, db: Session = Depends(get_db)):
 
     conf = obtener_config(db)
     
-    # Obtener fecha operativa local
     ahora = obtener_ahora_local()
     if ahora.time() < time(6, 0):
         hoy = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -43,9 +38,7 @@ async def asistencia_page(request: Request, db: Session = Depends(get_db)):
 
     ids_presentes = [a.dama_id for a in asistencias_hoy]
     
-    # EVITAR FILTRADO INCORRECTO SI LA LISTA ESTÁ VACÍA
     if ids_presentes:
-        # Se ocultan las damas borradas (borrada == False) del listado de ausentes
         ausentes = db.query(models.Dama).filter(
             models.Dama.esta_activa == True, 
             models.Dama.borrada == False, 
@@ -56,7 +49,6 @@ async def asistencia_page(request: Request, db: Session = Depends(get_db)):
             models.Dama.id.in_(ids_presentes)
         ).all()
     else:
-        # Si no hay presentes, se listan todas las damas activas y no borradas
         ausentes = db.query(models.Dama).filter(
             models.Dama.esta_activa == True, 
             models.Dama.borrada == False
@@ -76,44 +68,56 @@ async def asistencia_page(request: Request, db: Session = Depends(get_db)):
     )
 
 # ---------------------------------------------------------
-# 2. MARCAR ASISTENCIA (DE AUSENTE A PRESENTE)
+# 2. MARCAR ASISTENCIA (DE AUSENTE A PRESENTE CON BONO DIRECTO)
 # ---------------------------------------------------------
 @router.post("/marcar_asistencia")
 async def marcar_asistencia(
     request: Request,
     dama_id: int = Form(...),
     tipo_llegada: str = Form(None),
-    hora_libro: str = Form(None),
+    bono_asistencia: str = Form("off"),
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
-    
-    # Seguridad: Solo admin1 y cajera pueden registrar asistencia
     if not username or user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/asistencia", status_code=303)
 
     conf = obtener_config(db)
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
 
-    nueva = registrar_asistencia(
-        dama,
-        conf.turno_activo,
-        tipo_llegada,
-        hora_libro
+    ahora = obtener_ahora_local()
+    if ahora.time() < time(6, 0):
+        fecha_op = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        fecha_op = ahora.strftime("%Y-%m-%d")
+
+    if conf.turno_activo == "Turno 1":
+        dama.dias_t1 += 1
+    else:
+        dama.dias_t2 += 1
+
+    # Asigna directamente el bono si el checkbox fue marcado
+    monto_bono = 10000.0 if bono_asistencia == "on" else 0.0
+
+    nueva_asis = models.Asistencia(
+        dama_id=dama.id,
+        tipo_llegada=tipo_llegada if tipo_llegada else "T2",
+        turno=conf.turno_activo,
+        hora_libro="00:00",
+        bono_asistencia=monto_bono,
+        fecha=fecha_op
     )
 
-    db.add(nueva)
+    db.add(nueva_asis)
     db.commit()
     return RedirectResponse(url="/asistencia", status_code=303)
 
 # ---------------------------------------------------------
-# 3. DAR SALIDA (BORRAR ASISTENCIA DE HOY)
+# 3. DAR SALIDA (REMOVER DE SALÓN)
 # ---------------------------------------------------------
 @router.post("/dar_salida/{dama_id}")
 async def dar_salida(request: Request, dama_id: int, db: Session = Depends(get_db)):
     username, user_role = obtener_usuario_sesion(request)
-    
-    # Seguridad: Solo admin1 y cajera pueden quitar asistencias de salón
     if not username or user_role not in ["admin1", "administrador", "cajera"]:
         return RedirectResponse(url="/asistencia", status_code=303)
 
@@ -143,3 +147,4 @@ async def dar_salida(request: Request, dama_id: int, db: Session = Depends(get_d
         db.commit()
 
     return RedirectResponse(url="/asistencia", status_code=303)
+# END OF FILE routes/asistencia.py
