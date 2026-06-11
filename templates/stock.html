@@ -9,13 +9,7 @@
     <title>Inventario Pro - Whiskeria 2000</title>
     
     <style>
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(34, 211, 238, 0.3);
-            border-radius: 10px;
-        }
+        .evitar-salto { page-break-inside: avoid; }
     </style>
 </head>
 <body class="bg-[#020202] text-white p-3 md:p-8 font-sans overflow-x-hidden">
@@ -64,35 +58,13 @@
             </div>
         </div>
 
-        <!-- SECCIÓN DE ALERTAS DE STOCK CRÍTICO (5 unidades o menos) -->
-        {% if alertas_criticas %}
-        <div class="bg-red-500/10 border border-red-500/30 rounded-[24px] p-4 mb-6 shadow-2xl no-print">
-            <h3 class="text-xs font-black text-red-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                🚨 ALERTAS DE STOCK CRÍTICO (BAJO MÍNIMO)
-            </h3>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {% for a in alertas_criticas %}
-                <div class="bg-black/40 border border-red-500/20 p-3 rounded-2xl flex justify-between items-center">
-                    <div>
-                        <p class="font-black text-white text-[11px] uppercase truncate max-w-[100px]">{{ a.nombre }}</p>
-                        <span class="text-[8px] text-zinc-500 uppercase font-bold">{% if a.tipo == 'PRODUCTO' %}Cooler (Damas){% else %}Barra (Clientes){% endif %}</span>
-                    </div>
-                    <span class="badge badge-error font-black text-xs py-2 px-2.5">{{ a.saldo }}</span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- CONTROLES: BUSCADOR Y ORDENAMIENTO -->
+        <!-- CONTROLES GLOBALES DE ORDENAMIENTO -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 no-print">
-            <!-- BUSCADOR -->
             <div class="md:col-span-2">
                 <input type="text" id="buscadorStock" onkeyup="filtrarStock()" 
-                       placeholder="🔍 BUSCAR PRODUCTO O LICOR..." 
-                       class="input input-bordered w-full bg-zinc-900 border-zinc-700 font-bold uppercase text-center focus:border-cyan-400 shadow-2xl h-11 text-sm rounded-2xl">
+                       placeholder="🔍 BUSCAR BEBIDA EN ESTE TURNO..." 
+                       class="input input-bordered w-full bg-zinc-900 border-zinc-700 font-bold uppercase text-center focus:border-cyan-400 shadow-2xl h-11 text-sm rounded-2xl text-white">
             </div>
-            <!-- ORDENAMIENTO -->
             <div>
                 <form action="/stock" method="get" class="w-full">
                     <input type="hidden" name="fecha" value="{{ fecha_filtro }}">
@@ -106,14 +78,7 @@
             </div>
         </div>
 
-        <!-- MODO CONSULTA (SÓLO LECTURA) -->
-        {% if fecha_filtro != fecha_actual or turno_filtro != turno_actual or estado_club != 'ABIERTO' %}
-        <div class="bg-yellow-500/10 border border-yellow-500/30 p-3 rounded-2xl mb-6 text-yellow-500 text-xs font-black uppercase tracking-wider text-center flex items-center justify-center gap-2 no-print">
-            🔒 MODO CONSULTA (SÓLO LECTURA)
-        </div>
-        {% endif %}
-
-        <!-- FORMULARIO NUEVO PRODUCTO -->
+        <!-- FORMULARIO NUEVO PRODUCTO (COLLAPSIBLE) -->
         {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
         <div class="collapse collapse-plus bg-cyan-500/10 border border-cyan-500/30 mb-6 rounded-2xl no-print">
             <input type="checkbox" /> 
@@ -124,12 +89,12 @@
                 <form action="/agregar_producto_stock" method="post" class="space-y-3 p-1" onsubmit="return confirm('¿DESEA CREAR ESTE PRODUCTO?')">
                     <div class="form-control">
                         <label class="label py-1"><span class="label-text text-[9px] font-bold text-zinc-400">NOMBRE</span></label>
-                        <input name="nombre" placeholder="EJ: CORONA" class="input input-bordered w-full bg-black uppercase font-bold text-xs h-9" required />
+                        <input name="nombre" placeholder="EJ: CORONA" class="input input-bordered w-full bg-black uppercase font-bold text-xs h-9 text-white" required />
                     </div>
                     <div class="form-control">
                         <label class="label py-1"><span class="label-text text-[9px] font-bold text-zinc-400">CATEGORÍA</span></label>
                         <select name="tipo" id="reg_tipo" onchange="toggleFormularioBotella()" class="select select-bordered w-full bg-black font-bold text-xs h-9 min-h-0 text-white">
-                            <option value="PRODUCTO">PRODUCTO (COOLER - DAMAS Y CLIENTES)</option>
+                            <option value="PRODUCTO">PRODUCTO (COOLER - DAMAS)</option>
                             <option value="BOTELLA">BOTELLA (BARRA - CLIENTES)</option>
                         </select>
                     </div>
@@ -154,25 +119,26 @@
 
                     <div class="form-control">
                         <label class="label py-1"><span class="label-text text-[9px] font-bold text-zinc-400">STOCK INICIAL (BOTELLAS O LATAS)</span></label>
-                        <input name="inicio" type="number" placeholder="0" class="input input-bordered w-full bg-black font-bold text-xs h-9" required />
+                        <input name="inicio" type="number" placeholder="0" class="input input-bordered w-full bg-black font-bold text-xs h-9 text-white" required />
                     </div>
-                    <button type="submit" class="btn btn-info btn-sm w-full font-black text-xs">GUARDAR EN SISTEMA</button>
+                    <button type="submit" class="btn btn-info btn-sm w-full font-black text-xs text-black">GUARDAR EN SISTEMA</button>
                 </form>
             </div>
         </div>
         {% endif %}
 
-        <!-- NAVEGACIÓN POR PESTAÑAS (TABS) PARA COMODIDAD EN MÓVIL -->
-        <div role="tablist" class="tabs tabs-lifted mb-6 no-print">
-            
-            <!-- PESTAÑA 1: COOLERS (PRODUCTOS PARA DAMAS) -->
-            <input type="radio" name="stock_tabs" role="tab" class="tab font-black uppercase text-[10px] sm:text-xs text-white" aria-label="📦 Cooler (Damas)" checked />
-            <div role="tabpanel" class="tab-content bg-zinc-950 border-zinc-800 p-4 rounded-b-2xl">
+        <!-- DESPLEGABLE 1: COOLER DAMAS 🍷 (DESPLEGABLE HOMOLOGADO) -->
+        <div class="collapse collapse-arrow bg-zinc-900/50 border border-pink-500/20 mb-4 rounded-2xl no-print">
+            <input type="checkbox" checked /> 
+            <div class="collapse-title text-xs font-black text-pink-400 uppercase tracking-widest flex items-center gap-2">
+                🍷 COOLER DAMAS (CERVEZAS / JUGOS)
+            </div>
+            <div class="collapse-content px-1 sm:px-4 pb-4">
                 
                 <!-- Vista en Tarjetas para Celulares -->
                 <div class="grid grid-cols-1 sm:hidden gap-3 mt-2">
                     {% for p in inv_productos %}
-                    <div class="card-item-stock bg-zinc-900 border border-white/5 p-4 rounded-[24px] flex justify-between items-center" data-nombre="{{ p.nombre }}">
+                    <div class="card-item-stock bg-black/60 border border-white/5 p-4 rounded-[24px] flex justify-between items-center" data-nombre="{{ p.nombre }}">
                         <div>
                             <h4 class="font-black text-white text-lg uppercase leading-tight">{{ p.nombre }}</h4>
                             <div class="flex gap-4 text-[10px] text-zinc-400 font-bold mt-1 uppercase">
@@ -182,10 +148,7 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="badge text-base font-black py-4 px-3.5 
-                                {% if p.saldo <= 0 %} badge-error text-white
-                                {% elif p.saldo <= 5 %} badge-warning text-black
-                                {% else %} badge-accent text-black {% endif %}">
+                            <span class="badge text-base font-black py-4 px-3.5 badge-accent text-black">
                                 {{ p.saldo }}
                             </span>
                             {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
@@ -196,7 +159,7 @@
                     {% endfor %}
                 </div>
 
-                <!-- Vista en Tabla para Computadoras/Notebooks -->
+                <!-- Vista en Tabla para Notebooks -->
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="table table-xs w-full text-center">
                         <thead>
@@ -206,7 +169,7 @@
                                 <th>Repo (+)</th>
                                 <th>Venta (-)</th>
                                 <th>Falt (-)</th>
-                                <th class="text-cyan-400 font-black">Saldo</th>
+                                <th class="text-pink-400 font-black">Saldo</th>
                                 <th class="text-right pr-1 no-print">Acción</th>
                             </tr>
                         </thead>
@@ -218,10 +181,7 @@
                                 <td class="text-blue-400">+{{ p.reposicion }}</td>
                                 <td class="text-red-400">{{ p.salida_visual }}</td>
                                 <td class="text-orange-400">{{ p.faltante }}</td>
-                                <td class="text-base font-black 
-                                    {% if p.saldo <= 0 %} text-red-500 
-                                    {% elif p.saldo <= 5 %} text-amber-500 
-                                    {% else %} text-cyan-400 {% endif %}">
+                                <td class="text-base font-black text-pink-400">
                                     {{ p.saldo_visual }}
                                 </td>
                                 {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
@@ -241,15 +201,20 @@
                     </table>
                 </div>
             </div>
+        </div>
 
-            <!-- PESTAÑA 2: BARRAS (LICORES Y BOTELLAS PARA CLIENTES) -->
-            <input type="radio" name="stock_tabs" role="tab" class="tab font-black uppercase text-[10px] sm:text-xs text-white" aria-label="🍾 Barra (Clientes)" />
-            <div role="tabpanel" class="tab-content bg-zinc-950 border-zinc-800 p-4 rounded-b-2xl">
+        <!-- DESPLEGABLE 2: BARRA CLIENTES 🥃 (DESPLEGABLE HOMOLOGADO) -->
+        <div class="collapse collapse-arrow bg-zinc-900/50 border border-purple-500/20 mb-4 rounded-2xl no-print">
+            <input type="checkbox" checked /> 
+            <div class="collapse-title text-xs font-black text-purple-400 uppercase tracking-widest flex items-center gap-2">
+                🥛 BARRA CLIENTES (LICORES BOTELLAS)
+            </div>
+            <div class="collapse-content px-1 sm:px-4 pb-4">
                 
                 <!-- Vista en Tarjetas para Celulares -->
                 <div class="grid grid-cols-1 sm:hidden gap-3 mt-2">
                     {% for b in inv_botellas %}
-                    <div class="card-item-stock bg-zinc-900 border border-white/5 p-4 rounded-[24px] flex justify-between items-center" data-nombre="{{ b.nombre }}">
+                    <div class="card-item-stock bg-black/60 border border-white/5 p-4 rounded-[24px] flex justify-between items-center" data-nombre="{{ b.nombre }}">
                         <div>
                             <h4 class="font-black text-white text-lg uppercase leading-tight">{{ b.nombre }}</h4>
                             <div class="flex gap-4 text-[10px] text-zinc-400 font-bold mt-1 uppercase">
@@ -259,10 +224,7 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="badge text-base font-black py-4 px-3.5 
-                                {% if b.saldo <= 0 %} badge-error text-white
-                                {% elif b.saldo <= 5 %} badge-warning text-black
-                                {% else %} badge-accent text-black {% endif %}">
+                            <span class="badge text-base font-black py-4 px-3.5 badge-accent text-black">
                                 {{ b.saldo }}
                             </span>
                             {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
@@ -273,7 +235,7 @@
                     {% endfor %}
                 </div>
 
-                <!-- Vista en Tabla para Computadoras/Notebooks -->
+                <!-- Vista en Tabla para Notebooks -->
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="table table-xs w-full text-center">
                         <thead>
@@ -283,7 +245,7 @@
                                 <th>Repo (+)</th>
                                 <th>Venta (-)</th>
                                 <th>Falt (-)</th>
-                                <th class="text-warning font-black">Saldo</th>
+                                <th class="text-purple-400 font-black">Saldo</th>
                                 <th class="text-right pr-1 no-print">Acción</th>
                             </tr>
                         </thead>
@@ -295,10 +257,7 @@
                                 <td class="text-blue-400">+{{ b.reposicion }}</td>
                                 <td class="text-red-400">{{ b.salida_visual }}</td>
                                 <td class="text-orange-400">{{ b.faltante }}</td>
-                                <td class="text-base font-black 
-                                    {% if b.saldo <= 0 %} text-red-500 
-                                    {% elif b.saldo <= 5 %} text-amber-500 
-                                    {% else %} text-warning {% endif %}">
+                                <td class="text-base font-black text-purple-400">
                                     {{ b.saldo_visual }}
                                 </td>
                                 {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
@@ -320,10 +279,87 @@
             </div>
         </div>
 
+        <!-- DESPLEGABLE 3: ALERTAS DE STOCK CERO 🚨 (REDISEÑADO AL FINAL DE LA JORNADA) -->
+        <div class="collapse collapse-plus bg-red-500/10 border border-red-500/30 mb-6 rounded-2xl no-print">
+            <input type="checkbox" /> 
+            <div class="collapse-title text-xs font-black text-red-500 uppercase tracking-widest flex items-center gap-2">
+                🚨 ALERTAS DE STOCK CRÍTICO (SALDO 0)
+            </div>
+            <div class="collapse-content px-1 sm:px-4 pb-4">
+                
+                <!-- Buscador Dinámico Interno para Alertas -->
+                <div class="mb-4">
+                    <input type="text" id="buscadorAlertas" onkeyup="filtrarAlertas()" 
+                           placeholder="🔍 FILTRAR BEBIDAS EN CERO..." 
+                           class="input input-bordered input-sm w-full bg-black border-red-500/30 text-center font-bold uppercase focus:border-red-500 text-xs h-9 text-white rounded-xl">
+                </div>
+
+                <!-- Vista en Tarjetas para Celulares -->
+                <div class="grid grid-cols-1 sm:hidden gap-3">
+                    {% for a in alertas_criticas %}
+                    <div class="card-item-alerta bg-black/60 border border-red-500/20 p-4 rounded-[24px] flex justify-between items-center" data-nombre="{{ a.nombre }}">
+                        <div>
+                            <h4 class="font-black text-red-500 text-lg uppercase leading-tight">{{ a.nombre }}</h4>
+                            <span class="text-[8px] text-zinc-500 font-bold uppercase">{% if a.tipo == 'PRODUCTO' %}Cooler (Damas){% else %}Barra (Clientes){% endif %}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="badge badge-error font-black text-xs py-3 px-2">0</span>
+                            {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
+                            <button onclick="abrirModalMov('{{ a.id }}', '{{ a.nombre }}')" class="btn btn-xs btn-info text-black font-black">REPOSICIÓN</button>
+                            <form action="/eliminar_producto/{{ a.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ a.nombre }} DEL SISTEMA?')">
+                                <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
+                                <button class="btn btn-xs btn-error btn-outline">ELIMINAR</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Vista en Tabla para Notebooks -->
+                <div class="hidden sm:block overflow-x-auto">
+                    <table class="table table-xs w-full text-center">
+                        <thead>
+                            <tr class="text-zinc-500 uppercase text-[9px] border-b border-white/5">
+                                <th class="text-left pl-1">Nombre</th>
+                                <th>Categoría</th>
+                                <th class="text-red-500 font-black">Saldo</th>
+                                <th class="text-right pr-1">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-bold uppercase text-xs">
+                            {% for a in alertas_criticas %}
+                            <tr class="border-b border-white/5 item-alerta" data-nombre="{{ a.nombre }}">
+                                <td class="text-left text-white pl-1">{{ a.nombre }}</td>
+                                <td class="text-zinc-400">{% if a.tipo == 'PRODUCTO' %}Cooler (Damas){% else %}Barra (Clientes){% endif %}</td>
+                                <td class="text-red-500 text-sm font-black">0</td>
+                                <td class="flex gap-1 justify-end pr-1 pt-1">
+                                    {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
+                                    <button onclick="abrirModalMov('{{ a.id }}', '{{ a.nombre }}')" class="btn btn-xs btn-info text-black font-black" title="Reponer">REPOSICIÓN</button>
+                                    <form action="/eliminar_producto/{{ a.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ a.nombre }} DEL SISTEMA?')">
+                                        <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
+                                        <button class="btn btn-xs btn-error btn-outline btn-square">✕</button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-zinc-600 text-[10px]">🔒 LECTURA</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if not alertas_criticas %}
+                <p class="text-center text-[10px] text-zinc-600 uppercase font-bold py-6">No hay bebidas agotadas (saldo 0) en este turno</p>
+                {% endif %}
+            </div>
+        </div>
+
         <!-- SECCIÓN EXCLUSIVA PARA LA IMPRESIÓN (MUESTRA AMBAS TABLAS DE UNA VEZ SIN PESTAÑAS) -->
         <div class="hidden print:block space-y-8">
             <div>
-                <h2 class="text-sm font-bold uppercase border-b-2 border-black pb-2 mb-3 text-black">📦 PRODUCTOS COOLER (CERVEZAS / JUGOS)</h2>
+                <h2 class="text-sm font-bold uppercase border-b-2 border-black pb-2 mb-3 text-black">🍷 PRODUCTOS COOLER (CERVEZAS / JUGOS - DAMAS)</h2>
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
                         <tr style="border-bottom: 2px solid black; font-size: 11px;">
@@ -351,7 +387,7 @@
             </div>
 
             <div>
-                <h2 class="text-sm font-bold uppercase border-b-2 border-black pb-2 mb-3 text-black">🍾 BOTELLAS BARRA (LICORES)</h2>
+                <h2 class="text-sm font-bold uppercase border-b-2 border-black pb-2 mb-3 text-black">🥃 BOTELLAS BARRA (LICORES - CLIENTES)</h2>
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
                         <tr style="border-bottom: 2px solid black; font-size: 11px;">
@@ -380,7 +416,7 @@
         </div>
 
         <!-- AUDITORÍA DE MOVIMIENTOS -->
-        <div class="bg-zinc-900 p-4 rounded-[25px] border border-zinc-800 no-print">
+        <div class="bg-zinc-900 p-4 rounded-[25px] border border-zinc-800 no-print col-span-2">
             <h3 class="text-[10px] font-black text-zinc-500 uppercase mb-4 text-center tracking-widest">Auditoría de Acciones - {{ turno_filtro }}</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {% for log in auditoria %}
@@ -432,7 +468,7 @@
             document.getElementById('modal_movimiento').showModal();
         }
 
-        // Buscador Inteligente Adaptado para Tablas y Tarjetas Celular
+        // Buscador Inteligente Adaptado para Tablas y Tarjetas Celular (General)
         function filtrarStock() {
             let filter = document.getElementById("buscadorStock").value.toUpperCase();
             
@@ -449,6 +485,33 @@
 
             // Filtrar Tarjetas Celular
             let itemsCards = document.querySelectorAll(".card-item-stock");
+            itemsCards.forEach(item => {
+                let nombre = item.getAttribute("data-nombre");
+                if (nombre && nombre.toUpperCase().indexOf(filter) > -1) {
+                    item.style.display = "flex";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        }
+
+        // Buscador Independiente para la sección de Alertas Stock Cero
+        function filtrarAlertas() {
+            let filter = document.getElementById("buscadorAlertas").value.toUpperCase();
+            
+            // Filtrar Filas de Tabla de Alertas
+            let itemsTable = document.querySelectorAll(".item-alerta");
+            itemsTable.forEach(item => {
+                let nombre = item.getAttribute("data-nombre");
+                if (nombre && nombre.toUpperCase().indexOf(filter) > -1) {
+                    item.style.display = "";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+
+            // Filtrar Tarjetas de Alertas Celular
+            let itemsCards = document.querySelectorAll(".card-item-alerta");
             itemsCards.forEach(item => {
                 let nombre = item.getAttribute("data-nombre");
                 if (nombre && nombre.toUpperCase().indexOf(filter) > -1) {

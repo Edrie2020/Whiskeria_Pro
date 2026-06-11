@@ -17,7 +17,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 # ---------------------------------------------------------
-# 1. VER EL PANEL DE STOCK
+# 1. VER EL PANEL DE STOCK (DISEÑO PREMIUM HOMOLOGADO)
 # ---------------------------------------------------------
 @router.get("/stock", response_class=HTMLResponse)
 async def stock_page(
@@ -44,7 +44,7 @@ async def stock_page(
     fecha_f = fecha if fecha else fecha_actual
     turno_f = turno if turno else turno_actual
 
-    # Obtenemos solo los licores y productos activos de este turno específico
+    # Obtenemos los licores y productos activos de este turno específico
     productos_db = db.query(models.Producto).filter(
         models.Producto.es_corto == False,
         models.Producto.turno == turno_f
@@ -64,7 +64,6 @@ async def stock_page(
         if inv_turno:
             inicio_stock = inv_turno.inicio
         else:
-            # Búsqueda del último estado del producto filtrando estrictamente por el mismo nombre de turno
             ultimo_registro = db.query(models.InventarioTurno).filter(
                 models.InventarioTurno.producto_id == p.id,
                 models.InventarioTurno.turno == turno_f
@@ -148,17 +147,17 @@ async def stock_page(
             "saldo_visual": saldo_visual,
             "tipo": p.tipo
         }
-        
-        if p.tipo == "PRODUCTO": 
-            inv_productos.append(datos)
-        else: 
-            inv_botellas.append(datos)
 
-        # Agregar a alertas si el stock es crítico (5 o menos unidades)
-        if saldo <= 5:
+        # REGLA DE NEGOCIO: Si el saldo es 0, va a Alertas Críticas y SALE de las listas originales
+        if saldo == 0:
             alertas_criticas.append(datos)
+        else:
+            if p.tipo == "PRODUCTO": 
+                inv_productos.append(datos)
+            else: 
+                inv_botellas.append(datos)
 
-    # Lógica de Ordenamiento Dinámico
+    # Lógica de Ordenamiento Dinámico por Python
     if ordenar_por == "menor_stock":
         inv_productos.sort(key=lambda x: x["saldo"])
         inv_botellas.sort(key=lambda x: x["saldo"])
@@ -328,7 +327,7 @@ async def registrar_mov(
     if fecha != fecha_real or turno != conf.turno_activo or conf.estado_club != "ABIERTO":
         return RedirectResponse(url=f"/stock?fecha={fecha_real}&turno={conf.turno_activo}", status_code=303)
 
-    hora = agora = ahora.strftime("%H:%M")
+    hora = ahora.strftime("%H:%M")
     
     if offset_repo > 0:
         mov = models.StockMovimiento(
@@ -473,7 +472,7 @@ async def abrir_botella_respaldo(
             producto_id=nueva_botella.id,
             tipo_movimiento="APERTURA BOTELLA",
             cantidad=1,
-            username=username,
+            usuario=username,
             fecha=fecha_hoy,
             turno=conf.turno_activo,
             hora=ahora.strftime("%H:%M")
