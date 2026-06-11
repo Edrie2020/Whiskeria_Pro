@@ -1,5 +1,4 @@
-# routes/stock.py
-
+# START OF FILE routes/stock.py
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -21,7 +20,13 @@ templates = Jinja2Templates(directory="templates")
 # 1. VER EL PANEL DE STOCK
 # ---------------------------------------------------------
 @router.get("/stock", response_class=HTMLResponse)
-async def stock_page(request: Request, fecha: str = None, turno: str = None, db: Session = Depends(get_db)):
+async def stock_page(
+    request: Request, 
+    fecha: str = None, 
+    turno: str = None, 
+    ordenar_por: str = "alfabetico", # Opciones: alfabetico, menor_stock, mayor_stock
+    db: Session = Depends(get_db)
+):
     username, user_role = obtener_usuario_sesion(request)
     if not username or user_role not in ["admin1", "administrador", "cajera", "jefe_guillermo", "encargado"]:
         return RedirectResponse(url="/", status_code=303)
@@ -39,14 +44,15 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
     fecha_f = fecha if fecha else fecha_actual
     turno_f = turno if turno else turno_actual
 
-    # 💡 Obtenemos solo los licores y productos activos de este turno específico
+    # Obtenemos solo los licores y productos activos de este turno específico
     productos_db = db.query(models.Producto).filter(
         models.Producto.es_corto == False,
-        models.Producto.turno == turno_f  # Filtrado por turno seleccionado
+        models.Producto.turno == turno_f
     ).all()
 
     inv_productos = []
     inv_botellas = []
+    alertas_criticas = []
     
     for p in productos_db:
         inv_turno = db.query(models.InventarioTurno).filter(
@@ -139,12 +145,29 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
             "salida_visual": salida_visual, 
             "faltante": falts, 
             "saldo": saldo,
-            "saldo_visual": saldo_visual
+            "saldo_visual": saldo_visual,
+            "tipo": p.tipo
         }
+        
         if p.tipo == "PRODUCTO": 
             inv_productos.append(datos)
         else: 
             inv_botellas.append(datos)
+
+        # Agregar a alertas si el stock es crítico (5 o menos unidades)
+        if saldo <= 5:
+            alertas_criticas.append(datos)
+
+    # Lógica de Ordenamiento Dinámico
+    if ordenar_por == "menor_stock":
+        inv_productos.sort(key=lambda x: x["saldo"])
+        inv_botellas.sort(key=lambda x: x["saldo"])
+    elif ordenar_por == "mayor_stock":
+        inv_productos.sort(key=lambda x: x["saldo"], reverse=True)
+        inv_botellas.sort(key=lambda x: x["saldo"], reverse=True)
+    else: # Alfabético
+        inv_productos.sort(key=lambda x: x["nombre"])
+        inv_botellas.sort(key=lambda x: x["nombre"])
 
     audit_db = db.query(models.StockMovimiento).filter(
         models.StockMovimiento.fecha == fecha_f,
@@ -159,16 +182,20 @@ async def stock_page(request: Request, fecha: str = None, turno: str = None, db:
             "cantidad": a.cantidad, "usuario": a.usuario
         })
 
-    # 💡 CORRECCIÓN DE CLAVES CONTEXTUALES: Alineado con stock.html
+    error_msg = request.query_params.get("error")
+
     return templates.TemplateResponse(request=request, name="stock.html", context={
         "inv_productos": inv_productos, 
         "inv_botellas": inv_botellas,
+        "alertas_criticas": alertas_criticas,
         "auditoria": auditoria, 
         "fecha_filtro": fecha_f, 
         "turno_filtro": turno_f, 
         "fecha_actual": fecha_actual, 
         "turno_actual": turno_actual, 
         "estado_club": estado_club,
+        "ordenar_por": ordenar_por,
+        "error_msg": error_msg,
         "role": user_role  
     })
 
@@ -210,7 +237,7 @@ async def agregar_producto(
         fecha_actual = ahora.strftime("%Y-%m-%d")
 
     try:
-        # 1. 💡 Verificar si el producto ya existe en el catálogo de este turno específico
+        # 1. Verificar si el producto ya existe en el catálogo de este turno específico
         existe_producto_global = db.query(models.Producto).filter(
             models.Producto.nombre == nombre_sistema,
             models.Producto.turno == conf.turno_activo
@@ -225,7 +252,7 @@ async def agregar_producto(
             tipo=tipo, 
             inicio=inicio,
             capacidad_cortos=capacidad,
-            turno=conf.turno_activo  # 💡 Almacenamos el turno activo
+            turno=conf.turno_activo  # Almacenamos el turno activo
         )
         db.add(nuevo)
         db.flush() 
@@ -245,7 +272,7 @@ async def agregar_producto(
                     inicio=0,
                     es_corto=True,
                     parent_botella_id=nuevo.id,
-                    turno=conf.turno_activo  # 💡 Almacenamos el turno activo
+                    turno=conf.turno_activo  # Almacenamos el turno activo
                 )
                 db.add(corto_db)
                 db.flush()
@@ -301,7 +328,7 @@ async def registrar_mov(
     if fecha != fecha_real or turno != conf.turno_activo or conf.estado_club != "ABIERTO":
         return RedirectResponse(url=f"/stock?fecha={fecha_real}&turno={conf.turno_activo}", status_code=303)
 
-    hora = ahora.strftime("%H:%M")
+    hora = agora = ahora.strftime("%H:%M")
     
     if offset_repo > 0:
         mov = models.StockMovimiento(
@@ -446,7 +473,7 @@ async def abrir_botella_respaldo(
             producto_id=nueva_botella.id,
             tipo_movimiento="APERTURA BOTELLA",
             cantidad=1,
-            usuario=username,
+            username=username,
             fecha=fecha_hoy,
             turno=conf.turno_activo,
             hora=ahora.strftime("%H:%M")
@@ -456,3 +483,4 @@ async def abrir_botella_respaldo(
         return {"status": "success", "parent_nombre": nueva_botella.nombre}
         
     return JSONResponse(status_code=400, content={"status": "error", "message": "Productos inválidos"})
+# END OF FILE routes/stock.py

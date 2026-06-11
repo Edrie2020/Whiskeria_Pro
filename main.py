@@ -183,6 +183,22 @@ app.include_router(stock.router)
 app.include_router(auth.router)
 app.include_router(usuarios.router)
 
+# ⚡ MANEJADOR GLOBAL DE EXCEPCIONES PARA EVITAR CAÍDAS DEL SISTEMA (EVITA ERROR 500)
+from sqlalchemy.exc import IntegrityError
+@app.exception_handler(IntegrityError)
+async def integrity_exception_handler(request: Request, exc: IntegrityError):
+    # Detecta de qué formulario proviene el error y lo redirige con un mensaje descriptivo
+    referring_url = request.headers.get("referer", "/")
+    base_url = referring_url.split("?")[0]
+    
+    # Mensaje simplificado y descriptivo
+    error_detalle = "Error: El RUT, Nombre Artístico, Nombre de Usuario o Teléfono ingresado ya se encuentra registrado en el sistema."
+    
+    return RedirectResponse(
+        url=f"{base_url}?error={urllib.parse.quote(error_detalle)}", 
+        status_code=303
+    )
+
 # ---------------------------------------------------------
 # RUTA PRINCIPAL (DASHBOARD) - FILTRADO DINÁMICO POR TURNO
 # ---------------------------------------------------------

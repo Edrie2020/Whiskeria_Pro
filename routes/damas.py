@@ -1,5 +1,4 @@
-# routes/damas.py
-
+# START OF FILE routes/damas.py
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
@@ -13,13 +12,55 @@ from database import get_db
 import os
 import shutil
 import uuid
+from typing import Optional
 
+# Importar PIL para compresión ligera defensiva (si Pillow está instalado)
+try:
+    from PIL import Image
+    pillow_disponible = True
+except ImportError:
+    pillow_disponible = False
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+def optimizar_y_guardar_imagen(foto: UploadFile, uploads_path: str) -> str:
+    """Optimiza, comprime y guarda la imagen subida para ahorrar espacio y mejorar carga."""
+    ext = os.path.splitext(foto.filename)[1].lower()
+    if not ext:
+        ext = ".jpg"
+    nombre_unico = f"{uuid.uuid4()}{ext}"
+    file_location = os.path.join(uploads_path, nombre_unico)
+
+    if pillow_disponible and ext in [".jpg", ".jpeg", ".png"]:
+        try:
+            # Compresión y redimensionamiento dinámico defensivo con Pillow
+            img = Image.open(foto.file)
+            # Convertir a RGB si es necesario (evita error en formato PNG transparente)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            
+            # Redimensionar si la imagen es excesivamente grande
+            max_size = 900
+            if img.width > max_size or img.height > max_size:
+                img.thumbnail((max_size, max_size))
+            
+            # Guardar con compresión de calidad 75
+            img.save(file_location, "JPEG", quality=75, optimize=True)
+            return f"/static/uploads/{nombre_unico}"
+        except Exception as err:
+            print(f"⚠️ Error al optimizar con Pillow: {str(err)}")
+            # Fallback si falla la compresión
+
+    # Guardar copia física directa (si Pillow no está o falla)
+    foto.file.seek(0)
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(foto.file, buffer)
+    return f"/static/uploads/{nombre_unico}"
+
+
 # ---------------------------------------------------------
-# 1. PANEL DE ADMINISTRACIÓN DE PERSONAL (VER TODOS LOS ROLES PERMITIDOS)
+# 1. PANEL DE ADMINISTRACIÓN DE PERSONAL
 # ---------------------------------------------------------
 @router.get("/admin_personal")
 def admin_personal(request: Request, db: Session = Depends(get_db)):
@@ -33,10 +74,9 @@ def admin_personal(request: Request, db: Session = Depends(get_db)):
     activas = []
     inactivas = []
     
-    # EVITAR CRASH POR VALORES NONE Y UNIFICAR HORA DE COMPARACIÓN
     for d in todas:
         if not d.ultima_asistencia:
-            d.ultima_asistencia = ahora  # Asignación segura en memoria
+            d.ultima_asistencia = ahora
             
         diff_days = (ahora - d.ultima_asistencia).days
         if diff_days <= 30:
@@ -45,6 +85,7 @@ def admin_personal(request: Request, db: Session = Depends(get_db)):
             inactivas.append(d)
             
     garzones = db.query(models.Mesero).all()
+    error_msg = request.query_params.get("error")
 
     return templates.TemplateResponse(
         request=request,
@@ -54,12 +95,13 @@ def admin_personal(request: Request, db: Session = Depends(get_db)):
             "inactivas": inactivas,
             "garzones": garzones,
             "role": user_role,
+            "error_msg": error_msg,
             "username": request.cookies.get("session_user")
         }
     )
 
 # ---------------------------------------------------------
-# 2. AGREGAR NUEVA DAMA (SÓLO ADMIN1, ADMINISTRADOR, CAJERA)
+# 2. AGREGAR NUEVA DAMA (CON COMPRESIÓN)
 # ---------------------------------------------------------
 @router.post("/agregar_dama")
 async def agregar_dama(
@@ -81,22 +123,17 @@ async def agregar_dama(
     uploads_path = os.path.join(base_path, "static", "uploads")
     os.makedirs(uploads_path, exist_ok=True)
     
-    ext = os.path.splitext(foto.filename)[1].lower()
-    nombre_unico = f"{uuid.uuid4()}{ext}"
-    
-    file_location = os.path.join(uploads_path, nombre_unico)
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(foto.file, buffer)
+    # Guarda de forma comprimida si es posible
+    ruta_foto_url = optimizar_y_guardar_imagen(foto, uploads_path)
 
-    # USAR OBTENER_AHORA_LOCAL() EN LUGAR DE DATETIME.NOW()
     nueva = models.Dama(
-        nombre_artistico=nombre_artistico.upper(),
-        nombre_real=nombre_real,
-        whatsapp=whatsapp,
-        rut=rut,
+        nombre_artistico=nombre_artistico.upper().strip(),
+        nombre_real=nombre_real.strip(),
+        whatsapp=whatsapp.strip(),
+        rut=rut.strip(),
         tipo_documento=tipo_documento,
         es_bailarina=(es_bailarina == "on"),
-        foto_url=f"/static/uploads/{nombre_unico}",
+        foto_url=ruta_foto_url,
         esta_activa=True,
         ultima_asistencia=obtener_ahora_local()
     )
@@ -106,7 +143,7 @@ async def agregar_dama(
     return RedirectResponse(url="/admin_personal", status_code=303)
 
 # ---------------------------------------------------------
-# 3. EDITAR FICHA (SÓLO ADMIN1, ADMINISTRADOR, CAJERA)
+# 3. EDITAR FICHA (CON ACTUALIZACIÓN OPCIONAL DE FOTO DE PERFIL)
 # ---------------------------------------------------------
 @router.post("/editar_dama/{dama_id}")
 async def editar_dama(
@@ -117,6 +154,7 @@ async def editar_dama(
     rut: str = Form(...),
     whatsapp: str = Form(...),
     es_bailarina: str = Form("off"),
+    foto: Optional[UploadFile] = File(None),  # Carga opcional de nueva foto
     db: Session = Depends(get_db)
 ):
     user_role = obtener_usuario_sesion(request)[1]
@@ -125,16 +163,26 @@ async def editar_dama(
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
     if dama:
-        dama.nombre_artistico = nombre_artistico.upper()
-        dama.nombre_real = nombre_real.upper()
-        dama.rut = rut
-        dama.whatsapp = whatsapp
+        dama.nombre_artistico = nombre_artistico.upper().strip()
+        dama.nombre_real = nombre_real.strip()
+        dama.rut = rut.strip()
+        dama.whatsapp = whatsapp.strip()
         dama.es_bailarina = (es_bailarina == "on")
+        
+        # Si se subió un nuevo archivo de foto, se optimiza y se actualiza
+        if foto and foto.filename:
+            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            uploads_path = os.path.join(base_path, "static", "uploads")
+            os.makedirs(uploads_path, exist_ok=True)
+            
+            nueva_foto_url = optimizar_y_guardar_imagen(foto, uploads_path)
+            dama.foto_url = nueva_foto_url
+            
         db.commit()
     return RedirectResponse(url="/admin_personal", status_code=303)
 
 # ---------------------------------------------------------
-# 4. REACTIVAR (SÓLO ADMIN1, ADMINISTRADOR, CAJERA)
+# 4. REACTIVAR DAMA
 # ---------------------------------------------------------
 @router.post("/reactivar_dama/{dama_id}")
 async def reactivar_dama(request: Request, dama_id: int, db: Session = Depends(get_db)):
@@ -171,10 +219,8 @@ async def activar_baile(
     return RedirectResponse(url="/", status_code=303)
 
 # ---------------------------------------------------------
-# ELIMINAR DAMA (SÓLO ADMIN1, ADMINISTRADOR, CAJERA)
+# 6. ELIMINAR DAMA (SOFT DELETE)
 # ---------------------------------------------------------
-# routes/damas.py
-
 @router.post("/eliminar_dama/{dama_id}")
 async def eliminar_dama(request: Request, dama_id: int, db: Session = Depends(get_db)):
     user_role = obtener_usuario_sesion(request)[1]
@@ -185,7 +231,6 @@ async def eliminar_dama(request: Request, dama_id: int, db: Session = Depends(ge
 
     dama = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
     if dama:
-        # SOFT DELETE: Oculta la dama del salón pero preserva su registro para reportes históricos
         dama.borrada = True
         log = models.LogAuditoria(
             usuario=username, 
@@ -195,3 +240,4 @@ async def eliminar_dama(request: Request, dama_id: int, db: Session = Depends(ge
         db.commit()
 
     return RedirectResponse(url="/admin_personal", status_code=303)
+# END OF FILE routes/damas.py

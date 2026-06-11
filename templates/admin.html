@@ -47,7 +47,15 @@
 </a>
         </div>
 
+<!-- ALERTA DE ERROR POR DUPLICIDAD (SI EXISTE) -->
+        {% if error_msg %}
+        <div class="alert alert-warning shadow-lg mb-6 border border-yellow-500/40 rounded-3xl bg-yellow-500/10 text-yellow-500 text-xs font-black uppercase text-center">
+            ⚠️ {{ error_msg }}
+        </div>
+        {% endif %}
+
         <div role="tablist" class="tabs tabs-lifted">
+    
             
             <!-- 1. DAMAS ACTIVAS -->
             <input type="radio" name="tabs_personal" role="tab" 
@@ -92,6 +100,7 @@
                     {% endfor %}
                 </div>
             </div>
+
 
             <!-- 2. NUEVA FICHA -->
             <input type="radio" name="tabs_personal" role="tab" 
@@ -159,11 +168,12 @@
         </div>
     </dialog>
 
-    <!-- MODAL EDITAR (CORREGIDO SIN SCROLL Y BOTONES ALINEADOS) -->
+    <!-- MODAL EDITAR (SOPORTA ACTUALIZACIÓN OPCIONAL DE FOTO DE PERFIL) -->
     <dialog id="modal_editar" class="modal">
         <div class="modal-box modal-edit-compact">
             <h3 class="font-black text-2xl text-blue-400 uppercase text-center mb-6 italic tracking-tighter">Editar Ficha</h3>
-            <form id="form_editar" method="post" class="space-y-3">
+            <!-- Se agregó enctype="multipart/form-data" para permitir subir la nueva foto -->
+            <form id="form_editar" method="post" enctype="multipart/form-data" class="space-y-3">
                 <input name="nombre_artistico" id="edit_artista" class="input input-bordered w-full bg-black border-zinc-800 font-bold text-blue-400" placeholder="Artístico" required />
                 <input name="nombre_real" id="edit_real" class="input input-bordered w-full bg-black border-zinc-800 text-sm" placeholder="Nombre Real" required />
                 <input name="rut" id="edit_rut" class="input input-bordered w-full bg-black border-zinc-800 text-sm font-mono" placeholder="RUT/Pasaporte" required />
@@ -173,6 +183,12 @@
                     <span class="label-text text-zinc-300 font-black uppercase text-[10px]">💃 Bailarina Profesional</span> 
                     <input type="checkbox" name="es_bailarina" id="edit_baile" class="checkbox checkbox-primary checkbox-sm" />
                 </label>
+
+                <!-- NUEVO CAMPO: ACTUALIZAR FOTO OPCIONAL -->
+                <div class="form-control mt-1 bg-black/30 p-3 rounded-xl border border-zinc-800/40">
+                    <label class="label py-0.5"><span class="label-text text-[9px] font-black text-zinc-500 uppercase">Actualizar Foto (Opcional)</span></label>
+                    <input name="foto" type="file" class="file-input file-input-bordered file-input-primary file-input-xs w-full bg-black text-[10px] mt-1 text-white" accept="image/*" />
+                </div>
                 
                 <!-- BOTONES ALINEADOS CORRECTAMENTE -->
                 <div class="flex gap-3 mt-6">

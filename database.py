@@ -1,7 +1,9 @@
+# START OF FILE database.py
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.event import listens_for
 
 # 🔒 Detección automática de la nube (Evita pérdida de datos en producción)
 if os.environ.get("RENDER"):
@@ -21,6 +23,15 @@ engine = create_engine(
     SQLALCHEMY_DATABASE_URL, 
     connect_args={"check_same_thread": False, "timeout": 30}
 )
+
+# ⚡ ACTIVACIÓN DE MODO WAL PARA EVITAR CAÍDAS POR CONCURRENCIA EN SQLITE
+@listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.close()
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -31,3 +42,4 @@ def get_db():
         yield db
     finally:
         db.close()
+# END OF FILE database.py
