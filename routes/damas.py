@@ -7,8 +7,9 @@ from database import SessionLocal
 from services.auth_service import obtener_usuario_sesion
 from services.time_service import obtener_ahora_local  
 import models
-from datetime import datetime
+from datetime import datetime, time, timedelta
 from database import get_db
+from services.config_service import obtener_config
 import os
 import shutil
 import uuid
@@ -36,12 +37,11 @@ def optimizar_y_guardar_imagen(foto: UploadFile, uploads_path: str) -> str:
         try:
             # Compresión y redimensionamiento dinámico defensivo con Pillow
             img = Image.open(foto.file)
-            # Convertir a RGB si es necesario (evita error en formato PNG transparente)
             if img.mode in ("RGBA", "P"):
                 img = img.convert("RGB")
             
-            # Redimensionar si la imagen es excesivamente grande
-            max_size = 900
+            # Redimensionar si la imagen es excesivamente grande para móviles
+            max_size = 800
             if img.width > max_size or img.height > max_size:
                 img.thumbnail((max_size, max_size))
             
@@ -50,7 +50,6 @@ def optimizar_y_guardar_imagen(foto: UploadFile, uploads_path: str) -> str:
             return f"/static/uploads/{nombre_unico}"
         except Exception as err:
             print(f"⚠️ Error al optimizar con Pillow: {str(err)}")
-            # Fallback si falla la compresión
 
     # Guardar copia física directa (si Pillow no está o falla)
     foto.file.seek(0)
@@ -60,7 +59,7 @@ def optimizar_y_guardar_imagen(foto: UploadFile, uploads_path: str) -> str:
 
 
 # ---------------------------------------------------------
-# 1. PANEL DE ADMINISTRACIÓN DE PERSONAL
+# 1. PANEL DE ADMINISTRACIÓN DE PERSONAL (CON MÉTRICAS REALES)
 # ---------------------------------------------------------
 @router.get("/admin_personal")
 def admin_personal(request: Request, db: Session = Depends(get_db)):
@@ -87,6 +86,25 @@ def admin_personal(request: Request, db: Session = Depends(get_db)):
     garzones = db.query(models.Mesero).all()
     error_msg = request.query_params.get("error")
 
+    # 📊 CONSULTAS DE MÉTRICAS OPERATIVAS DE DAMAS
+    conf = obtener_config(db)
+    if ahora.time() < time(6, 0):
+        hoy_str = (ahora - timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        hoy_str = ahora.strftime("%Y-%m-%d")
+
+    # 1. Cantidad de damas activas y no borradas
+    cant_damas_activas = db.query(models.Dama).filter(
+        models.Dama.esta_activa == True,
+        models.Dama.borrada == False
+    ).count()
+
+    # 2. Cantidad de damas que marcaron asistencia hoy en el turno en curso
+    cant_damas_presentes = db.query(models.Asistencia).filter(
+        models.Asistencia.fecha == hoy_str,
+        models.Asistencia.turno == conf.turno_activo
+    ).count()
+
     return templates.TemplateResponse(
         request=request,
         name="admin.html",
@@ -96,6 +114,9 @@ def admin_personal(request: Request, db: Session = Depends(get_db)):
             "garzones": garzones,
             "role": user_role,
             "error_msg": error_msg,
+            "damas_activas": cant_damas_activas,
+            "damas_presentes": cant_damas_presentes,
+            "turno_activo": conf.turno_activo,
             "username": request.cookies.get("session_user")
         }
     )
@@ -123,7 +144,7 @@ async def agregar_dama(
     uploads_path = os.path.join(base_path, "static", "uploads")
     os.makedirs(uploads_path, exist_ok=True)
     
-    # Guarda de forma comprimida si es posible
+    # Guarda de forma comprimida optimizada para web móvil
     ruta_foto_url = optimizar_y_guardar_imagen(foto, uploads_path)
 
     nueva = models.Dama(
@@ -143,7 +164,7 @@ async def agregar_dama(
     return RedirectResponse(url="/admin_personal", status_code=303)
 
 # ---------------------------------------------------------
-# 3. EDITAR FICHA (CON ACTUALIZACIÓN OPCIONAL DE FOTO DE PERFIL)
+# 3. EDITAR FICHA (ACTUALIZAR DATOS Y FOTO DE PERFIL)
 # ---------------------------------------------------------
 @router.post("/editar_dama/{dama_id}")
 async def editar_dama(
@@ -154,7 +175,7 @@ async def editar_dama(
     rut: str = Form(...),
     whatsapp: str = Form(...),
     es_bailarina: str = Form("off"),
-    foto: Optional[UploadFile] = File(None),  # Carga opcional de nueva foto
+    foto: Optional[UploadFile] = File(None),  # Nueva foto opcional
     db: Session = Depends(get_db)
 ):
     user_role = obtener_usuario_sesion(request)[1]
@@ -169,7 +190,7 @@ async def editar_dama(
         dama.whatsapp = whatsapp.strip()
         dama.es_bailarina = (es_bailarina == "on")
         
-        # Si se subió un nuevo archivo de foto, se optimiza y se actualiza
+        # Si se subió un nuevo archivo de foto, se optimiza y se guarda
         if foto and foto.filename:
             base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             uploads_path = os.path.join(base_path, "static", "uploads")

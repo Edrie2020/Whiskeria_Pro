@@ -1,3 +1,4 @@
+<!-- START OF FILE templates/admin.html -->
 <!DOCTYPE html>
 <html lang="es" data-theme="night">
 <head>
@@ -38,16 +39,28 @@
 
     <div class="max-w-6xl mx-auto">
         <!-- HEADER -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-zinc-800 pb-6 gap-4">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-zinc-800 pb-6 gap-4">
             <h1 class="text-3xl md:text-4xl font-black text-pink-500 uppercase italic tracking-tighter text-center md:text-left">
                 Gestión de Damas
             </h1>
             <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider">
-    ← SALÓN
-</a>
+                ← SALÓN
+            </a>
         </div>
 
-<!-- ALERTA DE ERROR POR DUPLICIDAD (SI EXISTE) -->
+        <!-- ⚡ BARRA DE ESTADÍSTICAS OPERATIVAS DE DAMAS (ALTA GAMA) -->
+        <div class="grid grid-cols-2 gap-4 bg-zinc-900/40 p-4 rounded-[30px] border border-pink-500/10 shadow-2xl mb-6 text-center">
+            <div class="flex flex-col justify-center bg-black/40 p-3 rounded-2xl border border-zinc-800/40">
+                <span class="text-[8px] font-black text-zinc-500 uppercase tracking-widest block mb-1">Damas Activas 👥</span>
+                <span class="text-base font-black text-pink-500 italic">{{ damas_activas }} Registradas</span>
+            </div>
+            <div class="flex flex-col justify-center bg-black/40 p-3 rounded-2xl border border-zinc-800/40">
+                <span class="text-[8px] font-black text-zinc-500 uppercase tracking-widest block mb-1">Hoy en Salón ({{ turno_activo }}) 💃</span>
+                <span class="text-base font-black text-green-400 italic">{{ damas_presentes }} Presentes</span>
+            </div>
+        </div>
+
+        <!-- ALERTA DE ERROR POR DUPLICIDAD (SI EXISTE) -->
         {% if error_msg %}
         <div class="alert alert-warning shadow-lg mb-6 border border-yellow-500/40 rounded-3xl bg-yellow-500/10 text-yellow-500 text-xs font-black uppercase text-center">
             ⚠️ {{ error_msg }}
@@ -55,7 +68,6 @@
         {% endif %}
 
         <div role="tablist" class="tabs tabs-lifted">
-    
             
             <!-- 1. DAMAS ACTIVAS -->
             <input type="radio" name="tabs_personal" role="tab" 
@@ -63,44 +75,52 @@
                    aria-label="Activas" checked />
             <div role="tabpanel" class="tab-content bg-zinc-900/20 border-zinc-800 p-4 md:p-6 rounded-box">
 
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-4">
+                <!-- Grilla responsiva adaptada para móviles para evitar el descuadre de tarjetas -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-4">
                     {% for dama in activas %}
+                    <div class="bg-zinc-900/80 border border-zinc-800 p-4 rounded-[35px] flex flex-col items-center justify-between relative shadow-2xl h-full min-h-[260px] max-w-[240px] mx-auto w-full">
+                        
+                        {% if role in ['admin1', 'administrador', 'cajera'] %}
+                        <form action="/eliminar_dama/{{ dama.id }}" method="post" class="absolute top-4 right-4 z-10">
+                            <button type="submit" class="btn btn-circle btn-xs btn-error btn-outline" onclick="return confirm('¿Eliminar ficha de {{ dama.nombre_artistico }}?')">✕</button>
+                        </form>
+                        {% endif %}
 
-                    <div class="bg-zinc-900/80 border border-zinc-800 p-4 rounded-[35px] flex flex-col items-center relative shadow-2xl">
-                        {% if role in ['admin1', 'administrador', 'cajera'] %}
-<form action="/eliminar_dama/{{ dama.id }}" method="post" class="absolute top-4 right-4">
-    <button type="submit" class="btn btn-circle btn-xs btn-error btn-outline" onclick="return confirm('¿Eliminar ficha?')">✕</button>
-</form>
-{% endif %}
-                        <img src="{{ dama.foto_url }}" 
-     class="w-24 h-24 rounded-full object-cover border-4 border-pink-500 cursor-pointer" 
-     data-real="{{ dama.nombre_real }}"
-     data-rut="{{ dama.rut }}"
-     data-whatsapp="{{ dama.whatsapp }}"
-     data-artista="{{ dama.nombre_artistico }}"
-     data-bailarina="{{ dama.es_bailarina }}"
-     data-foto="{{ dama.foto_url }}"
-     onclick="mostrarDetallesDesdeAttr(this)">
-                        
-                        <h3 class="font-black uppercase text-2xl mt-4 text-white tracking-tighter text-center">
-                            {{ dama.nombre_artistico }} {% if dama.es_bailarina %} 💃 {% endif %}
-                        </h3>
-                        
-                        <div class="bg-black/60 px-4 py-1.5 rounded-full mt-3 flex gap-4 border border-zinc-800 font-bold">
-                            <span class="text-xs font-black text-pink-400">T1: {{ dama.dias_t1 }}</span>
-                            <span class="text-xs font-black text-blue-400">T2: {{ dama.dias_t2 }}</span>
+                        <!-- Contenedor central simétrico -->
+                        <div class="flex flex-col items-center text-center w-full">
+                            <img src="{{ dama.foto_url }}" 
+                                 class="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-pink-500 cursor-pointer shadow-lg" 
+                                 data-real="{{ dama.nombre_real }}"
+                                 data-rut="{{ dama.rut }}"
+                                 data-whatsapp="{{ dama.whatsapp }}"
+                                 data-artista="{{ dama.nombre_artistico }}"
+                                 data-bailarina="{{ dama.es_bailarina }}"
+                                 data-foto="{{ dama.foto_url }}"
+                                 onclick="mostrarDetallesDesdeAttr(this)">
+                            
+                            <!-- Tamaño adaptativo del nombre artístico para evitar desborde -->
+                            <h3 class="font-black uppercase text-base sm:text-lg md:text-xl mt-3 text-white tracking-tighter truncate max-w-[150px]" title="{{ dama.nombre_artistico }}">
+                                {{ dama.nombre_artistico }} {% if dama.es_bailarina %} 💃 {% endif %}
+                            </h3>
                         </div>
-                        {% if role in ['admin1', 'administrador', 'cajera'] %}
-<button onclick="prepararEdicion('{{ dama.id }}', '{{ dama.nombre_artistico }}', '{{ dama.nombre_real }}', '{{ dama.rut }}', '{{ dama.whatsapp }}', '{{ dama.es_bailarina }}')" 
-        class="btn btn-secondary btn-xs w-full mt-5 rounded-xl font-black uppercase tracking-widest">Editar Ficha</button>
-{% else %}
-<div class="text-zinc-600 text-[10px] mt-6 font-bold uppercase tracking-wider">🔒 Vista de Lectura</div>
-{% endif %}
+                        
+                        <!-- Sección de badges al fondo alineada -->
+                        <div class="w-full mt-4 flex flex-col items-center">
+                            <div class="bg-black/60 px-4 py-1.5 rounded-full flex gap-3 border border-zinc-800 font-bold text-[10px] sm:text-xs">
+                                <span class="font-black text-pink-400">T1: {{ dama.dias_t1 }}</span>
+                                <span class="font-black text-blue-400">T2: {{ dama.dias_t2 }}</span>
+                            </div>
+                            {% if role in ['admin1', 'administrador', 'cajera'] %}
+                            <button onclick="prepararEdicion('{{ dama.id }}', '{{ dama.nombre_artistico }}', '{{ dama.nombre_real }}', '{{ dama.rut }}', '{{ dama.whatsapp }}', '{{ dama.es_bailarina }}')" 
+                                    class="btn btn-secondary btn-xs w-full mt-4 rounded-xl font-black uppercase tracking-widest text-[9px] py-1.5 h-auto min-h-0">Editar Ficha</button>
+                            {% else %}
+                            <div class="text-zinc-600 text-[10px] mt-4 font-bold uppercase tracking-wider">🔒 Vista de Lectura</div>
+                            {% endif %}
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
-
 
             <!-- 2. NUEVA FICHA -->
             <input type="radio" name="tabs_personal" role="tab" 
@@ -112,17 +132,17 @@
                     <h2 class="text-2xl font-black text-pink-500 text-center mb-8 uppercase italic tracking-widest">Ingresar Datos</h2>
                     <form action="/agregar_dama" method="post" enctype="multipart/form-data" class="space-y-4">
                         <input name="nombre_artistico" placeholder="NOMBRE ARTÍSTICO" class="input input-bordered w-full bg-black border-zinc-700 font-black text-pink-500 text-lg uppercase" required />
-                        <input name="nombre_real" placeholder="NOMBRE REAL COMPLETO" class="input input-bordered w-full bg-black border-zinc-700 font-bold uppercase text-xs" required />
+                        <input name="nombre_real" placeholder="NOMBRE REAL COMPLETO" class="input input-bordered w-full bg-black border-zinc-700 font-bold uppercase text-xs text-white" required />
                         <div class="grid grid-cols-3 gap-2">
-                            <select name="tipo_documento" class="select select-bordered bg-black border-zinc-700 text-xs font-black"><option>RUT</option><option>PASAPORTE</option></select>
-                            <input name="rut" placeholder="NÚMERO" class="input input-bordered bg-black border-zinc-700 text-sm font-bold col-span-2" required />
+                            <select name="tipo_documento" class="select select-bordered bg-black border-zinc-700 text-xs font-black text-white"><option>RUT</option><option>PASAPORTE</option></select>
+                            <input name="rut" placeholder="NÚMERO" class="input input-bordered bg-black border-zinc-700 text-sm font-bold col-span-2 text-white" required />
                         </div>
-                        <input name="whatsapp" placeholder="WHATSAPP +56 9..." class="input input-bordered w-full bg-black border-zinc-700 font-bold" required />
+                        <input name="whatsapp" placeholder="WHATSAPP +56 9..." class="input input-bordered w-full bg-black border-zinc-700 font-bold text-white" required />
                         <label class="label cursor-pointer bg-black/60 p-4 rounded-2xl border border-zinc-800">
                             <span class="label-text text-zinc-300 font-black uppercase text-xs">💃 ¿Es Bailarina Profesional?</span> 
                             <input type="checkbox" name="es_bailarina" value="on" class="checkbox checkbox-secondary" />
                         </label>
-                        <input name="foto" type="file" class="file-input file-input-bordered file-input-secondary file-input-sm w-full bg-black" accept="image/*" required />
+                        <input name="foto" type="file" class="file-input file-input-bordered file-input-secondary file-input-sm w-full bg-black text-white" accept="image/*" required />
                         <div class="flex gap-3 pt-2">
                             <button type="button" onclick="window.location.reload()" class="btn btn-ghost border border-zinc-800 flex-1 font-bold">CANCELAR</button>
                             <button type="submit" class="btn btn-secondary flex-[2] font-black text-xl shadow-xl">GUARDAR DAMA</button>
@@ -143,7 +163,7 @@
                         <img src="{{ dama.foto_url }}" class="w-16 h-16 rounded-full grayscale opacity-50 object-cover">
                         <span class="font-black text-xl uppercase text-zinc-500 italic">{{ dama.nombre_artistico }}</span>
                     </div>
-                    <form action="/reactivar_dama/{{ dama.id }}" method="post"><button class="btn btn-success btn-sm font-black rounded-full px-8">REACTIVAR</button></form>
+                    <form action="/reactivar_dama/{{ dama.id }}" method="post"><button class="btn btn-success btn-sm font-black rounded-full px-8 text-black">REACTIVAR</button></form>
                 </div>
                 {% endfor %}
             </div>
@@ -168,32 +188,31 @@
         </div>
     </dialog>
 
-    <!-- MODAL EDITAR (SOPORTA ACTUALIZACIÓN OPCIONAL DE FOTO DE PERFIL) -->
+    <!-- MODAL EDITAR CON ACTUALIZACIÓN OPCIONAL DE FOTO DE PERFIL -->
     <dialog id="modal_editar" class="modal">
-        <div class="modal-box modal-edit-compact">
-            <h3 class="font-black text-2xl text-blue-400 uppercase text-center mb-6 italic tracking-tighter">Editar Ficha</h3>
-            <!-- Se agregó enctype="multipart/form-data" para permitir subir la nueva foto -->
+        <div class="modal-box modal-edit-compact rounded-[30px]">
+            <h3 class="font-black text-2xl text-blue-400 uppercase text-center mb-4 italic tracking-tighter">Editar Ficha</h3>
             <form id="form_editar" method="post" enctype="multipart/form-data" class="space-y-3">
-                <input name="nombre_artistico" id="edit_artista" class="input input-bordered w-full bg-black border-zinc-800 font-bold text-blue-400" placeholder="Artístico" required />
-                <input name="nombre_real" id="edit_real" class="input input-bordered w-full bg-black border-zinc-800 text-sm" placeholder="Nombre Real" required />
-                <input name="rut" id="edit_rut" class="input input-bordered w-full bg-black border-zinc-800 text-sm font-mono" placeholder="RUT/Pasaporte" required />
-                <input name="whatsapp" id="edit_wsp" class="input input-bordered w-full bg-black border-zinc-800 text-sm" placeholder="WhatsApp" required />
+                <input name="nombre_artistico" id="edit_artista" class="input input-bordered w-full bg-black border-zinc-800 font-bold text-blue-400 rounded-xl" placeholder="Artístico" required />
+                <input name="nombre_real" id="edit_real" class="input input-bordered w-full bg-black border-zinc-800 text-sm text-white rounded-xl" placeholder="Nombre Real" required />
+                <input name="rut" id="edit_rut" class="input input-bordered w-full bg-black border-zinc-800 text-sm font-mono text-white rounded-xl" placeholder="RUT/Pasaporte" required />
+                <input name="whatsapp" id="edit_wsp" class="input input-bordered w-full bg-black border-zinc-800 text-sm text-white rounded-xl" placeholder="WhatsApp" required />
                 
-                <label class="label cursor-pointer bg-black/60 px-4 py-3 rounded-xl border border-zinc-800 mt-2">
+                <label class="label cursor-pointer bg-black/60 px-4 py-2.5 rounded-xl border border-zinc-800 mt-1">
                     <span class="label-text text-zinc-300 font-black uppercase text-[10px]">💃 Bailarina Profesional</span> 
                     <input type="checkbox" name="es_bailarina" id="edit_baile" class="checkbox checkbox-primary checkbox-sm" />
                 </label>
 
-                <!-- NUEVO CAMPO: ACTUALIZAR FOTO OPCIONAL -->
-                <div class="form-control mt-1 bg-black/30 p-3 rounded-xl border border-zinc-800/40">
-                    <label class="label py-0.5"><span class="label-text text-[9px] font-black text-zinc-500 uppercase">Actualizar Foto (Opcional)</span></label>
-                    <input name="foto" type="file" class="file-input file-input-bordered file-input-primary file-input-xs w-full bg-black text-[10px] mt-1 text-white" accept="image/*" />
+                <!-- Campo para actualizar foto de perfil opcional -->
+                <div class="form-control bg-black/40 p-3 rounded-xl border border-zinc-800 mt-1">
+                    <label class="label py-0.5"><span class="label-text text-[9px] font-black text-zinc-500 uppercase">Cambiar Foto (Opcional)</span></label>
+                    <input name="foto" type="file" class="file-input file-input-bordered file-input-primary file-input-xs w-full bg-black text-xs text-white rounded-lg mt-1" accept="image/*" />
                 </div>
                 
                 <!-- BOTONES ALINEADOS CORRECTAMENTE -->
-                <div class="flex gap-3 mt-6">
-                    <button type="button" onclick="document.getElementById('modal_editar').close()" class="btn btn-ghost border border-zinc-800 flex-1 font-bold text-xs uppercase">Cancelar</button>
-                    <button type="submit" class="btn btn-primary flex-[2] font-black uppercase italic">Guardar Cambios</button>
+                <div class="flex gap-3 mt-5">
+                    <button type="button" onclick="document.getElementById('modal_editar').close()" class="btn btn-ghost border border-zinc-800 flex-1 font-bold text-xs uppercase rounded-xl">Cancelar</button>
+                    <button type="submit" class="btn btn-primary flex-[2] font-black uppercase italic rounded-xl text-black">Guardar Cambios</button>
                 </div>
             </form>
         </div>
@@ -218,15 +237,16 @@
             document.getElementById('modal_editar').showModal();
         }
         function mostrarDetallesDesdeAttr(element) {
-    const real = element.getAttribute('data-real');
-    const rut = element.getAttribute('data-rut');
-    const wsp = element.getAttribute('data-whatsapp');
-    const artista = element.getAttribute('data-artista');
-    const es_baile = element.getAttribute('data-bailarina');
-    const foto = element.getAttribute('data-foto');
-    
-    mostrarDetalles(real, rut, wsp, artista, es_baile, foto);
-}
+            const real = element.getAttribute('data-real');
+            const rut = element.getAttribute('data-rut');
+            const wsp = element.getAttribute('data-whatsapp');
+            const artista = element.getAttribute('data-artista');
+            const es_baile = element.getAttribute('data-bailarina');
+            const foto = element.getAttribute('data-foto');
+            
+            mostrarDetalles(real, rut, wsp, artista, es_baile, foto);
+        }
     </script>
 </body>
 </html>
+<!-- END OF FILE templates/admin.html -->
