@@ -73,6 +73,7 @@
                         <option value="alfabetico" {% if ordenar_por == 'alfabetico' %}selected{% endif %}>🔤 Alfabético (A-Z)</option>
                         <option value="menor_stock" {% if ordenar_por == 'menor_stock' %}selected{% endif %}>📉 Menor Stock Primero</option>
                         <option value="mayor_stock" {% if ordenar_por == 'mayor_stock' %}selected{% endif %}>📈 Mayor Stock Primero</option>
+                        <option value="ventas" {% if ordenar_por == 'ventas' %}selected{% endif %}>🔥 Ordenar por Ventas (Más Vendidos)</option>
                     </select>
                 </form>
             </div>
@@ -130,8 +131,10 @@
         <!-- DESPLEGABLE 1: COOLER DAMAS 🍷 (DESPLEGABLE HOMOLOGADO) -->
         <div class="collapse collapse-arrow bg-zinc-900/50 border border-pink-500/20 mb-4 rounded-2xl no-print">
             <input type="checkbox" checked /> 
-            <div class="collapse-title text-xs font-black text-pink-400 uppercase tracking-widest flex items-center gap-2">
-                🍷 COOLER DAMAS (CERVEZAS / JUGOS)
+            <div class="collapse-title text-xs font-black text-pink-400 uppercase tracking-widest flex items-center justify-between">
+                <span>🍷 COOLER DAMAS (CERVEZAS / JUGOS)</span>
+                <!-- Distintivo de variedad de productos Cooler -->
+                <span class="badge badge-outline border-pink-500/40 text-pink-400 text-[9px] px-2 py-2.5 shrink-0 ml-2 uppercase font-black">{{ inv_productos|length }} Variedades</span>
             </div>
             <div class="collapse-content px-1 sm:px-4 pb-4">
                 
@@ -203,11 +206,13 @@
             </div>
         </div>
 
-        <!-- DESPLEGABLE 2: BARRA CLIENTES 🥃 (DESPLEGABLE HOMOLOGADO) -->
+        <!-- DESPLEGABLE 2: BARRA CLIENTES 🥛 (DESPLEGABLE HOMOLOGADO) -->
         <div class="collapse collapse-arrow bg-zinc-900/50 border border-purple-500/20 mb-4 rounded-2xl no-print">
             <input type="checkbox" checked /> 
-            <div class="collapse-title text-xs font-black text-purple-400 uppercase tracking-widest flex items-center gap-2">
-                🥛 BARRA CLIENTES (LICORES BOTELLAS)
+            <div class="collapse-title text-xs font-black text-purple-400 uppercase tracking-widest flex items-center justify-between">
+                <span>🥛 BARRA CLIENTES (LICORES BOTELLAS)</span>
+                <!-- Distintivo de variedad de botellas de clientes -->
+                <span class="badge badge-outline border-purple-500/40 text-purple-400 text-[9px] px-2 py-2.5 shrink-0 ml-2 uppercase font-black">{{ inv_botellas|length }} Variedades</span>
             </div>
             <div class="collapse-content px-1 sm:px-4 pb-4">
                 
@@ -282,8 +287,10 @@
         <!-- DESPLEGABLE 3: ALERTAS DE STOCK CERO 🚨 (REDISEÑADO AL FINAL DE LA JORNADA) -->
         <div class="collapse collapse-plus bg-red-500/10 border border-red-500/30 mb-6 rounded-2xl no-print">
             <input type="checkbox" /> 
-            <div class="collapse-title text-xs font-black text-red-500 uppercase tracking-widest flex items-center gap-2">
-                🚨 ALERTAS DE STOCK CRÍTICO (SALDO 0)
+            <div class="collapse-title text-xs font-black text-red-500 uppercase tracking-widest flex items-center justify-between">
+                <span>🚨 ALERTAS DE STOCK CRÍTICO (SALDO 0)</span>
+                <!-- Distintivo de cantidad total de productos sin stock (Agotados) -->
+                <span class="badge badge-outline border-red-500/40 text-red-400 text-[9px] px-2 py-2.5 shrink-0 ml-2 uppercase font-black">{{ alertas_criticas|length }} Agotados</span>
             </div>
             <div class="collapse-content px-1 sm:px-4 pb-4">
                 
@@ -351,7 +358,7 @@
                 </div>
 
                 {% if not alertas_criticas %}
-                <p class="text-center text-[10px] text-zinc-600 uppercase font-bold py-6">No hay bebidas agotadas (saldo 0) en este turno</p>
+                <p class="text-center text-[10px] text-zinc-600 uppercase font-bold py-6">No hay deudas pendientes de privados de días anteriores</p>
                 {% endif %}
             </div>
         </div>
@@ -387,7 +394,7 @@
             </div>
 
             <div>
-                <h2 class="text-sm font-bold uppercase border-b-2 border-black pb-2 mb-3 text-black">🥃 BOTELLAS BARRA (LICORES - CLIENTES)</h2>
+                <h2 class="text-sm font-bold uppercase border-b-2 border-black pb-2 mb-3 text-black">🥛 BOTELLAS BARRA (LICORES - CLIENTES)</h2>
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
                         <tr style="border-bottom: 2px solid black; font-size: 11px;">

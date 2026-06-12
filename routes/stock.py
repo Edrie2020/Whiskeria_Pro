@@ -17,14 +17,14 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 # ---------------------------------------------------------
-# 1. VER EL PANEL DE STOCK (DISEÑO PREMIUM HOMOLOGADO)
+# 1. VER EL PANEL DE STOCK
 # ---------------------------------------------------------
 @router.get("/stock", response_class=HTMLResponse)
 async def stock_page(
     request: Request, 
     fecha: str = None, 
     turno: str = None, 
-    ordenar_por: str = "alfabetico", # Opciones: alfabetico, menor_stock, mayor_stock
+    ordenar_por: str = "alfabetico", # Opciones: alfabetico, menor_stock, mayor_stock, ventas
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -64,6 +64,7 @@ async def stock_page(
         if inv_turno:
             inicio_stock = inv_turno.inicio
         else:
+            # Búsqueda del último estado del producto filtrando estrictamente por el mismo nombre de turno
             ultimo_registro = db.query(models.InventarioTurno).filter(
                 models.InventarioTurno.producto_id == p.id,
                 models.InventarioTurno.turno == turno_f
@@ -164,9 +165,15 @@ async def stock_page(
     elif ordenar_por == "mayor_stock":
         inv_productos.sort(key=lambda x: x["saldo"], reverse=True)
         inv_botellas.sort(key=lambda x: x["saldo"], reverse=True)
+    elif ordenar_por == "ventas":
+        inv_productos.sort(key=lambda x: x["salida"], reverse=True)
+        inv_botellas.sort(key=lambda x: x["salida"], reverse=True)
     else: # Alfabético
         inv_productos.sort(key=lambda x: x["nombre"])
         inv_botellas.sort(key=lambda x: x["nombre"])
+
+    # Alertas críticas ordenadas alfabéticamente por defecto
+    alertas_criticas.sort(key=lambda x: x["nombre"])
 
     audit_db = db.query(models.StockMovimiento).filter(
         models.StockMovimiento.fecha == fecha_f,
