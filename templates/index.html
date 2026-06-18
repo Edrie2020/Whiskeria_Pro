@@ -1482,8 +1482,13 @@ function calcularMixtoInd() {
 
 function confirmarVentaMixtaInd() {
     const form = document.getElementById('form_registro_venta');
+    // Limpia elementos antiguos del mismo nombre para evitar colisión de parámetros en FastAPI
+    form.querySelectorAll('input[name="metodo_pago"]').forEach(el => el.remove());
+    
     const inputMetodo = document.createElement("input");
-    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "MIXTO";
+    inputMetodo.type = "hidden"; 
+    inputMetodo.name = "metodo_pago"; 
+    inputMetodo.value = "MIXTO";
     form.appendChild(inputMetodo);
     form.submit();
 }
@@ -1518,8 +1523,13 @@ function calcularMixtoMesa() {
 
 function confirmarVentaMixtaMesa() {
     const form = document.getElementById('form_mesa');
+    // Limpia elementos antiguos del mismo nombre para evitar colisión de parámetros en FastAPI
+    form.querySelectorAll('input[name="metodo_pago"]').forEach(el => el.remove());
+    
     const inputMetodo = document.createElement("input");
-    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "MIXTO";
+    inputMetodo.type = "hidden"; 
+    inputMetodo.name = "metodo_pago"; 
+    inputMetodo.value = "MIXTO";
     form.appendChild(inputMetodo);
     form.submit();
 }
@@ -1554,8 +1564,26 @@ function calcularMixtoCliente() {
 
 function confirmarVentaMixtaCliente() {
     const form = document.getElementById('form_venta_cliente');
+    // Limpia elementos antiguos del mismo nombre para evitar colisión de parámetros en FastAPI
+    form.querySelectorAll('input[name="metodo_pago"]').forEach(el => el.remove());
+    
     const inputMetodo = document.createElement("input");
-    inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "MIXTO";
+    inputMetodo.type = "hidden"; 
+    inputMetodo.name = "metodo_pago"; 
+    inputMetodo.value = "MIXTO";
+    form.appendChild(inputMetodo);
+    form.submit();
+}
+
+function confirmarVentaMixtaMulti() {
+    const form = document.getElementById('form_venta_multi_cliente');
+    // Limpia elementos antiguos del mismo nombre para evitar colisión de parámetros en FastAPI
+    form.querySelectorAll('input[name="metodo_pago"]').forEach(el => el.remove());
+    
+    const inputMetodo = document.createElement("input");
+    inputMetodo.type = "hidden"; 
+    inputMetodo.name = "metodo_pago"; 
+    inputMetodo.value = "MIXTO";
     form.appendChild(inputMetodo);
     form.submit();
 }
@@ -1594,6 +1622,7 @@ function confirmarVentaMulti() {
     inputMetodo.type = "hidden"; inputMetodo.name = "metodo_pago"; inputMetodo.value = "MIXTO";
     form.appendChild(inputMetodo);
     form.submit();
+    confirmarVentaMixtaMulti();
 }
 </script>
 

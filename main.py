@@ -62,8 +62,12 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
     if existe:
         return
 
-    # Cargamos únicamente los productos que pertenecen al catálogo de este turno específico
-    productos = db.query(models.Producto).filter(models.Producto.turno == turno_nuevo).all()
+    # Cargamos únicamente los productos que pertenecen al catálogo de este turno específico y no estén borrados
+    productos = db.query(models.Producto).filter(
+        models.Producto.turno == turno_nuevo,
+        models.Producto.borrado == False
+    ).all()
+    
     for p in productos:
         ultimo_registro = db.query(models.InventarioTurno).filter(
             models.InventarioTurno.producto_id == p.id,
@@ -81,7 +85,10 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
             
             botellas_debitadas_por_cortos = 0
             if p.tipo == "BOTELLA" and p.capacidad_cortos:
-                corto_vinculado = db.query(models.Producto).filter(models.Producto.parent_botella_id == p.id).first()
+                corto_vinculado = db.query(models.Producto).filter(
+                    models.Producto.parent_botella_id == p.id,
+                    models.Producto.borrado == False
+                ).first()
                 if corto_vinculado:
                     cortos_consumidos = db.query(func.count(models.Venta.id)).filter(
                         models.Venta.producto_id == corto_vinculado.id,
@@ -137,6 +144,11 @@ def ejecutar_migraciones_sqlite_produccion():
             db.execute(text("ALTER TABLE productos ADD COLUMN turno VARCHAR DEFAULT 'Turno 1'"))
             db.commit()
             print("✅ MIGRACIÓN: Columna 'turno' inyectada en 'productos'.")
+
+        if "borrado" not in columnas_prod:
+            db.execute(text("ALTER TABLE productos ADD COLUMN borrado BOOLEAN DEFAULT 0"))
+            db.commit()
+            print("✅ MIGRACIÓN: Columna 'borrado' inyectada en 'productos'.")
             
         try:
             db.execute(text("DROP INDEX IF EXISTS ix_productos_nombre"))
@@ -277,13 +289,16 @@ async def home(request: Request, db: Session = Depends(get_db)):
     if porcentaje > 100: 
         porcentaje = 100
 
+    # Solamente mostrar productos activos en el cooler y venta que no estén borrados
     productos_cooler_filtrados = db.query(models.Producto).filter(
         models.Producto.tipo == "PRODUCTO",
-        models.Producto.turno == conf.turno_activo
+        models.Producto.turno == conf.turno_activo,
+        models.Producto.borrado == False
     ).all()
 
     productos_todos_filtrados = db.query(models.Producto).filter(
-        models.Producto.turno == conf.turno_activo
+        models.Producto.turno == conf.turno_activo,
+        models.Producto.borrado == False
     ).all()
 
     return templates.TemplateResponse(
@@ -788,7 +803,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                     "link_wa": link_wa_p
                 })
 
-    # Filtrar estrictamente para que solo aparezcan fichas de días anteriores en el modal de pendientes
+    # Filtrar para que solo aparezcan fichas de días anteriores en el modal de pendientes
     pendientes_global = [p for p in pendientes_global_completo if p["fecha"] != fecha_param or p["turno"] != turno_filter]
 
     # =========================================================================
@@ -1044,7 +1059,6 @@ async def cobrar_deuda(
     metodo_pago_final: str = Form(...), 
     db: Session = Depends(get_db)
 ):
-    from services.auth_service import obtener_usuario_sesion
     username, user_role = obtener_usuario_sesion(request)
 
     if not username or user_role not in ["admin1", "administrador", "cajera"]:

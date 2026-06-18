@@ -1,4 +1,4 @@
-# routes/ventas.py
+# START OF FILE routes/ventas.py
 from fastapi import APIRouter, Form, Depends, Request
 from typing import Optional, List
 from fastapi.responses import RedirectResponse
@@ -10,15 +10,23 @@ from services.ventas_service import calcular_venta_detallada
 from services.time_service import obtener_ahora_local
 from database import get_db
 from services.auth_service import obtener_usuario_sesion
-from models import calcular_fecha_operativa_defecto  # Importación clave para reportes
+from models import calcular_fecha_operativa_defecto  
 
 router = APIRouter()
 
+# Función de conversión segura para cobro mixto
+def parse_float_seguro(valor) -> float:
+    if not valor:
+        return 0.0
+    try:
+        if isinstance(valor, str):
+            valor = valor.replace(",", "").strip()
+        return float(valor)
+    except (ValueError, TypeError):
+        return 0.0
+
 # ---------------------------------------------------------
 # 1. REGISTRAR VENTA INDIVIDUAL
-# ---------------------------------------------------------
-# ---------------------------------------------------------
-# 1. REGISTRAR VENTA INDIVIDUAL (COMPLETA E INTEGRADA)
 # ---------------------------------------------------------
 @router.post("/registrar_venta")
 async def registrar_venta(
@@ -32,8 +40,8 @@ async def registrar_venta(
     monto_casa_manual: int = Form(0),
     monto_chica_manual: int = Form(0),
     cliente_nombre: Optional[str] = Form(None),
-    monto_efectivo: Optional[float] = Form(0.0), 
-    monto_tarjeta: Optional[float] = Form(0.0), 
+    monto_efectivo: Optional[str] = Form(None), # <-- Recibe como str para evitar error de FastAPI
+    monto_tarjeta: Optional[str] = Form(None),  # <-- Recibe como str para evitar error de FastAPI
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -45,9 +53,10 @@ async def registrar_venta(
 
     conf = obtener_config(db)
     
-    # SI LA VENTA INCLUYE UN PRIVADO, LO SEPARAMOS EN DOS REGISTROS INDEPENDIENTES
+    efectivo_val = parse_float_seguro(monto_efectivo)
+    tarjeta_val = parse_float_seguro(monto_tarjeta)
+    
     if extra_tipo == "PRIVADO":
-        # 1. Registrar el consumo de trago o salida manual si existiese (calculado sin el Privado)
         tot_trago, chica_trago, casa_trago = calcular_venta_detallada(
             tier_precio, None, monto_casa_manual, monto_chica_manual
         )
@@ -72,12 +81,11 @@ async def registrar_venta(
                 producto_id=producto_id,
                 fecha=obtener_ahora_local(),
                 fecha_operativa=calcular_fecha_operativa_defecto(),
-                monto_efectivo=monto_efectivo if metodo_pago == "MIXTO" else 0.0,
-                monto_tarjeta=monto_tarjeta if metodo_pago == "MIXTO" else 0.0
+                monto_efectivo=efectivo_val if metodo_pago == "MIXTO" else 0.0,
+                monto_tarjeta=tarjeta_val if metodo_pago == "MIXTO" else 0.0
             )
             db.add(nueva_venta_trago)
         
-        # 2. Registrar el PRIVADO de forma aislada
         nueva_venta_privado = models.Venta(
             dama_id=dama_id,
             servicio="PRIVADO",
@@ -97,7 +105,6 @@ async def registrar_venta(
         db.add(nueva_venta_privado)
         
     else:
-        # REGISTRO ESTÁNDAR COMPLETO (Para tragos individuales o VIP sin privados)
         total, pago_chica, pago_casa = calcular_venta_detallada(
             tier_precio, extra_tipo, monto_casa_manual, monto_chica_manual
         )
@@ -124,8 +131,8 @@ async def registrar_venta(
             producto_id=producto_id,
             fecha=obtener_ahora_local(),
             fecha_operativa=calcular_fecha_operativa_defecto(),
-            monto_efectivo=monto_efectivo if metodo_pago == "MIXTO" else 0.0,
-            monto_tarjeta=monto_tarjeta if metodo_pago == "MIXTO" else 0.0
+            monto_efectivo=efectivo_val if metodo_pago == "MIXTO" else 0.0,
+            monto_tarjeta=tarjeta_val if metodo_pago == "MIXTO" else 0.0
         )
         db.add(nueva_venta)
 
@@ -133,7 +140,7 @@ async def registrar_venta(
     return RedirectResponse(url="/", status_code=303)
 
 # ---------------------------------------------------------
-# 2. REGISTRAR RONDA DE MESA (COMPLETA E INTEGRADA)
+# 2. REGISTRAR RONDA DE MESA
 # ---------------------------------------------------------
 @router.post("/registrar_ronda_mesa")
 async def registrar_ronda_mesa(
@@ -146,8 +153,8 @@ async def registrar_ronda_mesa(
     tier_precio: Optional[int] = Form(None),           
     extra_tipo: Optional[str] = Form(None),
     producto_id: Optional[int] = Form(None),
-    monto_efectivo: Optional[float] = Form(0.0), 
-    monto_tarjeta: Optional[float] = Form(0.0), 
+    monto_efectivo: Optional[str] = Form(None), # <-- Recibe como str
+    monto_tarjeta: Optional[str] = Form(None),  # <-- Recibe como str
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -157,8 +164,10 @@ async def registrar_ronda_mesa(
     conf = obtener_config(db)
     ahora = obtener_ahora_local()
     f_operativa = calcular_fecha_operativa_defecto()
+    
+    efectivo_val = parse_float_seguro(monto_efectivo)
+    tarjeta_val = parse_float_seguro(monto_tarjeta)
 
-    # CASO A: RONDA DETALLADA POR FILAS
     if ronda_json:
         try:
             items = json.loads(ronda_json)
@@ -187,7 +196,7 @@ async def registrar_ronda_mesa(
                     "es_privado": False
                 })
 
-        factor_efectivo = (monto_efectivo / total_ronda) if metodo_pago == "MIXTO" and total_ronda > 0 else 0.0
+        factor_efectivo = (efectivo_val / total_ronda) if metodo_pago == "MIXTO" and total_ronda > 0 else 0.0
 
         for idx, item in enumerate(items):
             d_id = item["dama_id"]
@@ -200,7 +209,6 @@ async def registrar_ronda_mesa(
                 if prod: 
                     prod_nombre = prod.nombre
 
-            # Registrar Trago/VIP
             tot_t, chica_t, casa_t = calc["trago"]
             if tot_t > 0:
                 nombre_serv_t = f"MESA: {prod_nombre or 'TRAGO'} {item['tier_precio'] // 1000}K"
@@ -225,7 +233,6 @@ async def registrar_ronda_mesa(
                 )
                 db.add(nueva_v_t)
 
-            # Registrar PRIVADO por separado si existiese
             if calc["es_privado"]:
                 tot_p, chica_p, casa_p = calc["privado"]
                 nueva_v_p = models.Venta(
@@ -249,7 +256,6 @@ async def registrar_ronda_mesa(
         db.commit()
         return RedirectResponse(url="/", status_code=303)
 
-    # CASO B: RONDA MASIVA TRADICIONAL
     else:
         if not ids_chicas or tier_precio is None:
             return RedirectResponse(url="/", status_code=303)
@@ -259,10 +265,9 @@ async def registrar_ronda_mesa(
             unitario_total += 200000.0
         total_ronda_completo = len(ids_chicas) * unitario_total
         
-        factor_efectivo = (monto_efectivo / total_ronda_completo) if metodo_pago == "MIXTO" and total_ronda_completo > 0 else 0.0
+        factor_efectivo = (efectivo_val / total_ronda_completo) if metodo_pago == "MIXTO" and total_ronda_completo > 0 else 0.0
 
         for d_id in ids_chicas:
-            # 1. Registrar consumo base/trago (VIP o simple sin privado)
             tot_t, chica_t, casa_t = calcular_venta_detallada(tier_precio, None)
             if tot_t > 0:
                 prod_nombre = ""
@@ -290,7 +295,6 @@ async def registrar_ronda_mesa(
                 )
                 db.add(nueva_v_t)
 
-            # 2. Registrar PRIVADO por separado si existiese
             if extra_tipo == "PRIVADO":
                 nueva_v_p = models.Venta(
                     dama_id=d_id,
@@ -325,8 +329,8 @@ async def registrar_venta_cliente(
     metodo_pago: str = Form(...),
     cliente_nombre: Optional[str] = Form(None),
     producto_id: Optional[int] = Form(None),
-    monto_efectivo: Optional[float] = Form(0.0), # Recibimos Efectivo Mixto
-    monto_tarjeta: Optional[float] = Form(0.0), # Recibimos Tarjeta Mixto
+    monto_efectivo: Optional[str] = Form(None), # <-- Recibe como str
+    monto_tarjeta: Optional[str] = Form(None),  # <-- Recibe como str
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -337,6 +341,10 @@ async def registrar_venta_cliente(
         return RedirectResponse(url="/", status_code=303)
 
     conf = obtener_config(db)
+    
+    efectivo_val = parse_float_seguro(monto_efectivo)
+    tarjeta_val = parse_float_seguro(monto_tarjeta)
+    
     try:
         val_monto = float(monto)
     except:
@@ -355,8 +363,8 @@ async def registrar_venta_cliente(
         producto_id=producto_id,
         fecha=obtener_ahora_local(),
         fecha_operativa=calcular_fecha_operativa_defecto(),
-        monto_efectivo=monto_efectivo if metodo_pago == "MIXTO" else 0.0,
-        monto_tarjeta=monto_tarjeta if metodo_pago == "MIXTO" else 0.0
+        monto_efectivo=efectivo_val if metodo_pago == "MIXTO" else 0.0,
+        monto_tarjeta=tarjeta_val if metodo_pago == "MIXTO" else 0.0
     )
     db.add(nueva_venta)
     db.commit()
@@ -373,8 +381,8 @@ async def registrar_venta_multi_cliente(
     productos_json: str = Form(...),  
     metodo_pago: str = Form(...),
     cliente_nombre: Optional[str] = Form(None),
-    monto_efectivo: Optional[float] = Form(0.0), # Recibimos Efectivo Mixto
-    monto_tarjeta: Optional[float] = Form(0.0), # Recibimos Tarjeta Mixto
+    monto_efectivo: Optional[str] = Form(None), # <-- Recibe como str
+    monto_tarjeta: Optional[str] = Form(None),  # <-- Recibe como str
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -384,6 +392,9 @@ async def registrar_venta_multi_cliente(
     conf = obtener_config(db)
     ahora = obtener_ahora_local()
     f_operativa = calcular_fecha_operativa_defecto()
+    
+    efectivo_val = parse_float_seguro(monto_efectivo)
+    tarjeta_val = parse_float_seguro(monto_tarjeta)
 
     try:
         items = json.loads(productos_json)  
@@ -413,8 +424,8 @@ async def registrar_venta_multi_cliente(
         producto_id=id_principal,
         fecha=ahora,
         fecha_operativa=f_operativa,
-        monto_efectivo=monto_efectivo if metodo_pago == "MIXTO" else 0.0,
-        monto_tarjeta=monto_tarjeta if metodo_pago == "MIXTO" else 0.0
+        monto_efectivo=efectivo_val if metodo_pago == "MIXTO" else 0.0,
+        monto_tarjeta=tarjeta_val if metodo_pago == "MIXTO" else 0.0
     )
     db.add(venta_principal)
 
@@ -457,3 +468,4 @@ async def registrar_venta_multi_cliente(
 
     db.commit()
     return RedirectResponse(url="/", status_code=303)
+# END OF FILE routes/ventas.py

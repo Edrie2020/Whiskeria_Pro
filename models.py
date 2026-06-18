@@ -1,3 +1,4 @@
+# START OF FILE models.py
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey
 from database import Base
 from datetime import datetime, time, timedelta
@@ -22,7 +23,7 @@ class Dama(Base):
     foto_url = Column(String)
     es_bailarina = Column(Boolean, default=False)
     esta_activa = Column(Boolean, default=True)
-    borrada = Column(Boolean, default=False, index=True) # <-- NUEVO CAMPO DE SEGURIDAD
+    borrada = Column(Boolean, default=False, index=True) 
     dias_t1 = Column(Integer, default=0)
     dias_t2 = Column(Integer, default=0)
     ultima_asistencia = Column(DateTime, default=obtener_ahora_local)
@@ -44,7 +45,7 @@ class Venta(Base):
     liquidada = Column(Boolean, default=False) 
     producto_id = Column(Integer, ForeignKey("productos.id"), nullable=True)
     
-    # 💡 Nuevas columnas para control de cobro Mixto (Efectivo + Tarjeta)
+    # Columnas para cobro mixto
     monto_efectivo = Column(Float, default=0.0, nullable=True)
     monto_tarjeta = Column(Float, default=0.0, nullable=True)
 
@@ -85,7 +86,7 @@ class Mesero(Base):
 class Producto(Base):
     __tablename__ = "productos"
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, index=True) # 💡 Removido unique=True para evitar bloqueos
+    nombre = Column(String, index=True) 
     tipo = Column(String) 
     inicio = Column(Integer, default=0)
     reposicion = Column(Integer, default=0)
@@ -93,7 +94,8 @@ class Producto(Base):
     capacidad_cortos = Column(Integer, nullable=True) 
     es_corto = Column(Boolean, default=False)
     parent_botella_id = Column(Integer, ForeignKey("productos.id", ondelete="CASCADE"), nullable=True)
-    turno = Column(String, default="Turno 1", nullable=True) # 💡 Nueva columna para aislar el catálogo
+    turno = Column(String, default="Turno 1", nullable=True) 
+    borrado = Column(Boolean, default=False, index=True) # <-- Nuevo campo de seguridad para Soft Delete
 
 class StockMovimiento(Base):
     __tablename__ = "stock_movimientos"
@@ -140,3 +142,4 @@ class CajaTurno(Base):
     fecha = Column(String, index=True)      # "YYYY-MM-DD"
     turno = Column(String)                 # "Turno 1" o "Turno 2"
     monto_apertura = Column(Float, default=0.0)
+# END OF FILE models.py

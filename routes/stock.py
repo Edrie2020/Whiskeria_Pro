@@ -8,7 +8,6 @@ import models
 from datetime import date, datetime, time, timedelta
 from database import get_db
 
-# Importamos las herramientas de seguridad y tiempo local
 from services.time_service import obtener_ahora_local
 from services.auth_service import obtener_usuario_sesion
 from services.config_service import obtener_config
@@ -16,15 +15,12 @@ from services.config_service import obtener_config
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-# ---------------------------------------------------------
-# 1. VER EL PANEL DE STOCK
-# ---------------------------------------------------------
 @router.get("/stock", response_class=HTMLResponse)
 async def stock_page(
     request: Request, 
     fecha: str = None, 
     turno: str = None, 
-    ordenar_por: str = "alfabetico", # Opciones: alfabetico, menor_stock, mayor_stock, ventas
+    ordenar_por: str = "alfabetico", 
     db: Session = Depends(get_db)
 ):
     username, user_role = obtener_usuario_sesion(request)
@@ -44,10 +40,11 @@ async def stock_page(
     fecha_f = fecha if fecha else fecha_actual
     turno_f = turno if turno else turno_actual
 
-    # Obtenemos los licores y productos activos de este turno específico
+    # Traer únicamente productos del catálogo de este turno que NO estén borrados
     productos_db = db.query(models.Producto).filter(
         models.Producto.es_corto == False,
-        models.Producto.turno == turno_f
+        models.Producto.turno == turno_f,
+        models.Producto.borrado == False  # <-- Excluye los eliminados
     ).all()
 
     inv_productos = []
@@ -64,7 +61,6 @@ async def stock_page(
         if inv_turno:
             inicio_stock = inv_turno.inicio
         else:
-            # Búsqueda del último estado del producto filtrando estrictamente por el mismo nombre de turno
             ultimo_registro = db.query(models.InventarioTurno).filter(
                 models.InventarioTurno.producto_id == p.id,
                 models.InventarioTurno.turno == turno_f
@@ -78,7 +74,6 @@ async def stock_page(
             else:
                 inicio_stock = 0
         
-        # Movimientos y consumos en el turno activo
         salida_directa = db.query(func.count(models.Venta.id)).filter(
             models.Venta.producto_id == p.id,
             models.Venta.fecha_operativa == fecha_f,
@@ -107,7 +102,8 @@ async def stock_page(
             marca_base = p.nombre.split(" ")[0]
             corto_vinculado = db.query(models.Producto).filter(
                 models.Producto.nombre == f"CORTO {marca_base}",
-                models.Producto.turno == turno_f
+                models.Producto.turno == turno_f,
+                models.Producto.borrado == False  # <-- Excluye los eliminados
             ).first()
             
             if corto_vinculado:
@@ -149,7 +145,6 @@ async def stock_page(
             "tipo": p.tipo
         }
 
-        # REGLA DE NEGOCIO: Si el saldo es 0, va a Alertas Críticas y SALE de las listas originales
         if saldo == 0:
             alertas_criticas.append(datos)
         else:
@@ -158,7 +153,6 @@ async def stock_page(
             else: 
                 inv_botellas.append(datos)
 
-    # Lógica de Ordenamiento Dinámico por Python
     if ordenar_por == "menor_stock":
         inv_productos.sort(key=lambda x: x["saldo"])
         inv_botellas.sort(key=lambda x: x["saldo"])
@@ -168,11 +162,10 @@ async def stock_page(
     elif ordenar_por == "ventas":
         inv_productos.sort(key=lambda x: x["salida"], reverse=True)
         inv_botellas.sort(key=lambda x: x["salida"], reverse=True)
-    else: # Alfabético
+    else: 
         inv_productos.sort(key=lambda x: x["nombre"])
         inv_botellas.sort(key=lambda x: x["nombre"])
 
-    # Alertas críticas ordenadas alfabéticamente por defecto
     alertas_criticas.sort(key=lambda x: x["nombre"])
 
     audit_db = db.query(models.StockMovimiento).filter(
@@ -205,9 +198,6 @@ async def stock_page(
         "role": user_role  
     })
 
-# ---------------------------------------------------------
-# 2. ACCIONES DE STOCK (CON CREACIÓN AUTOMÁTICA DE CORTOS)
-# ---------------------------------------------------------
 from typing import Optional
 
 @router.post("/agregar_producto_stock")
@@ -226,7 +216,6 @@ async def agregar_producto(
 
     nombre_original_limpio = nombre.strip().upper()
     
-    # Construcción de nombre según volumen
     if tipo == "BOTELLA" and volumen:
         nombre_sistema = f"{nombre_original_limpio} {volumen}CC"
         mapeo = {"750": 10, "1000": 13, "1500": 20, "2000": 26}
@@ -243,33 +232,34 @@ async def agregar_producto(
         fecha_actual = ahora.strftime("%Y-%m-%d")
 
     try:
-        # 1. Verificar si el producto ya existe en el catálogo de este turno específico
+        # Verificar si el producto ya existe activo en este catálogo de turno específico
         existe_producto_global = db.query(models.Producto).filter(
             models.Producto.nombre == nombre_sistema,
-            models.Producto.turno == conf.turno_activo
+            models.Producto.turno == conf.turno_activo,
+            models.Producto.borrado == False  # <-- Solo comparar con activos
         ).first()
 
         if existe_producto_global:
             return RedirectResponse(url="/stock?error=producto_ya_existe_en_este_turno", status_code=303)
 
-        # Caso B: El producto es nuevo en este turno
         nuevo = models.Producto(
             nombre=nombre_sistema, 
             tipo=tipo, 
             inicio=inicio,
             capacidad_cortos=capacidad,
-            turno=conf.turno_activo  # Almacenamos el turno activo
+            turno=conf.turno_activo,
+            borrado=False
         )
         db.add(nuevo)
         db.flush() 
 
-        # Crear el corto si es botella y se solicita
         corto_db = None
         if tipo == "BOTELLA" and vende_cortos == "on":
             nombre_corto = f"CORTO {nombre_original_limpio}"
             corto_db = db.query(models.Producto).filter(
                 models.Producto.nombre == nombre_corto,
-                models.Producto.turno == conf.turno_activo
+                models.Producto.turno == conf.turno_activo,
+                models.Producto.borrado == False  # <-- Solo comparar con activos
             ).first()
             if not corto_db:
                 corto_db = models.Producto(
@@ -278,7 +268,8 @@ async def agregar_producto(
                     inicio=0,
                     es_corto=True,
                     parent_botella_id=nuevo.id,
-                    turno=conf.turno_activo  # Almacenamos el turno activo
+                    turno=conf.turno_activo,
+                    borrado=False
                 )
                 db.add(corto_db)
                 db.flush()
@@ -380,8 +371,17 @@ async def eliminar_prod(request: Request, id: int, fecha: str = Form(...), turno
     if fecha != fecha_real or turno != conf.turno_activo or conf.estado_club != "ABIERTO":
         return RedirectResponse(url=f"/stock?fecha={fecha_real}&turno={conf.turno_activo}", status_code=303)
 
+    # Soft Delete (borrado = True)
     p = db.query(models.Producto).filter(models.Producto.id == id).first()
     if p:
+        p.borrado = True  # <-- Borrado lógico de la botella
+        
+        # También borramos de forma lógica los cortos vinculados a esta botella
+        if p.tipo == "BOTELLA":
+            cortos_vinculados = db.query(models.Producto).filter(models.Producto.parent_botella_id == p.id).all()
+            for s in cortos_vinculados:
+                s.borrado = True
+
         ahora_hora = ahora.strftime("%H:%M")
         mov = models.StockMovimiento(
             producto_id=None, 
@@ -394,20 +394,22 @@ async def eliminar_prod(request: Request, id: int, fecha: str = Form(...), turno
             hora=ahora_hora
         )
         db.add(mov)
-        db.delete(p)
         db.commit()
     return RedirectResponse(url=f"/stock?fecha={fecha}&turno={turno}", status_code=303)
 
-# ---------------------------------------------------------
-# 🔒 3. API DE VERIFICACIÓN Y APERTURA DE RESPALDO (NUEVO)
-# ---------------------------------------------------------
 @router.get("/api/estado_corto/{corto_id}")
 async def estado_corto(corto_id: int, db: Session = Depends(get_db)):
-    corto = db.query(models.Producto).filter(models.Producto.id == corto_id).first()
+    corto = db.query(models.Producto).filter(
+        models.Producto.id == corto_id,
+        models.Producto.borrado == False  # <-- Solo comparar con activos
+    ).first()
     if not corto or not corto.parent_botella_id:
         return {"vacia": False, "respaldos": []}
     
-    padre = db.query(models.Producto).filter(models.Producto.id == corto.parent_botella_id).first()
+    padre = db.query(models.Producto).filter(
+        models.Producto.id == corto.parent_botella_id,
+        models.Producto.borrado == False  # <-- Solo comparar con activos
+    ).first()
     if not padre:
         return {"vacia": False, "respaldos": []}
         
@@ -445,14 +447,14 @@ async def estado_corto(corto_id: int, db: Session = Depends(get_db)):
         respaldos_db = db.query(models.Producto).filter(
             models.Producto.tipo == "BOTELLA",
             models.Producto.nombre.like(f"{marca_base}%"),
-            models.Producto.id != padre.id
+            models.Producto.id != padre.id,
+            models.Producto.borrado == False  # <-- Solo comparar con activos
         ).all()
         
         for r in respaldos_db:
             respaldos.append({"id": r.id, "nombre": r.nombre})
             
     return {"vacia": vacia, "parent_nombre": padre.nombre, "respaldos": respaldos}
-
 
 @router.post("/api/abrir_botella_respaldo")
 async def abrir_botella_respaldo(
@@ -465,8 +467,8 @@ async def abrir_botella_respaldo(
     if user_role not in ["admin1", "administrador", "cajera"]:
         return JSONResponse(status_code=403, content={"status": "error", "message": "No autorizado"})
         
-    corto = db.query(models.Producto).filter(models.Producto.id == corto_id).first()
-    nueva_botella = db.query(models.Producto).filter(models.Producto.id == nueva_botella_id).first()
+    corto = db.query(models.Producto).filter(models.Producto.id == corto_id, models.Producto.borrado == False).first()
+    nueva_botella = db.query(models.Producto).filter(models.Producto.id == nueva_botella_id, models.Producto.borrado == False).first()
     
     if corto and nueva_botella:
         corto.parent_botella_id = nueva_botella.id
