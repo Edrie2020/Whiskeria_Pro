@@ -144,10 +144,15 @@
                     <div class="card-item-stock bg-black/60 border border-white/5 p-4 rounded-[24px] flex justify-between items-center" data-nombre="{{ p.nombre }}">
                         <div>
                             <h4 class="font-black text-white text-lg uppercase leading-tight">{{ p.nombre }}</h4>
-                            <div class="flex gap-4 text-[10px] text-zinc-400 font-bold mt-1 uppercase">
+                            <div class="flex gap-4 text-[10px] text-zinc-400 font-bold mt-1 uppercase flex-wrap">
                                 <span>Ini: {{ p.inicio_stock }}</span>
                                 <span class="text-blue-400">Rep: +{{ p.reposicion }}</span>
                                 <span class="text-red-400">Sal: -{{ p.salida }}</span>
+                                {% if p.faltante > 0 %}
+                                <span class="text-orange-400 cursor-pointer underline font-black" onclick="verDetalleFaltantes('{{ p.id }}', '{{ p.nombre }}')">Falt: -{{ p.faltante }}</span>
+                                {% else %}
+                                <span class="text-zinc-600">Falt: 0</span>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
@@ -183,7 +188,15 @@
                                 <td class="text-zinc-400">{{ p.inicio_stock }}</td>
                                 <td class="text-blue-400">+{{ p.reposicion }}</td>
                                 <td class="text-red-400">{{ p.salida_visual }}</td>
-                                <td class="text-orange-400">{{ p.faltante }}</td>
+                                <td class="text-orange-400">
+                                    {% if p.faltante > 0 %}
+                                    <button type="button" onclick="verDetalleFaltantes('{{ p.id }}', '{{ p.nombre }}')" class="underline hover:text-orange-300 font-black text-sm active:scale-95 transition-transform">
+                                        {{ p.faltante }}
+                                    </button>
+                                    {% else %}
+                                    0
+                                    {% endif %}
+                                </td>
                                 <td class="text-base font-black text-pink-400">
                                     {{ p.saldo_visual }}
                                 </td>
@@ -222,10 +235,15 @@
                     <div class="card-item-stock bg-black/60 border border-white/5 p-4 rounded-[24px] flex justify-between items-center" data-nombre="{{ b.nombre }}">
                         <div>
                             <h4 class="font-black text-white text-lg uppercase leading-tight">{{ b.nombre }}</h4>
-                            <div class="flex gap-4 text-[10px] text-zinc-400 font-bold mt-1 uppercase">
+                            <div class="flex gap-4 text-[10px] text-zinc-400 font-bold mt-1 uppercase flex-wrap">
                                 <span>Ini: {{ b.inicio_stock }}</span>
                                 <span class="text-blue-400">Rep: +{{ b.reposicion }}</span>
                                 <span class="text-red-400">Sal: -{{ b.salida }}</span>
+                                {% if b.faltante > 0 %}
+                                <span class="text-orange-400 cursor-pointer underline font-black" onclick="verDetalleFaltantes('{{ b.id }}', '{{ b.nombre }}')">Falt: -{{ b.faltante }}</span>
+                                {% else %}
+                                <span class="text-zinc-600">Falt: 0</span>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
@@ -261,7 +279,15 @@
                                 <td class="text-zinc-400">{{ b.inicio_stock }}</td>
                                 <td class="text-blue-400">+{{ b.reposicion }}</td>
                                 <td class="text-red-400">{{ b.salida_visual }}</td>
-                                <td class="text-orange-400">{{ b.faltante }}</td>
+                                <td class="text-orange-400">
+                                    {% if b.faltante > 0 %}
+                                    <button type="button" onclick="verDetalleFaltantes('{{ b.id }}', '{{ b.nombre }}')" class="underline hover:text-orange-300 font-black text-sm active:scale-95 transition-transform">
+                                        {{ b.faltante }}
+                                    </button>
+                                    {% else %}
+                                    0
+                                    {% endif %}
+                                </td>
                                 <td class="text-base font-black text-purple-400">
                                     {{ b.saldo_visual }}
                                 </td>
@@ -358,7 +384,7 @@
                 </div>
 
                 {% if not alertas_criticas %}
-                <p class="text-center text-[10px] text-zinc-600 uppercase font-bold py-6">No hay deudas pendientes de privados de días anteriores</p>
+                <p class="text-center text-[10px] text-zinc-600 uppercase font-bold py-6">No hay alertas de stock en cero</p>
                 {% endif %}
             </div>
         </div>
@@ -430,7 +456,7 @@
                 <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl text-xs border-b border-white/5">
                     <div class="flex gap-2 items-center truncate">
                         <span class="text-zinc-600 font-mono text-[9px]">{{ log.hora }}</span>
-                        <span class="font-black {% if log.tipo == 'ELIMINADO' %} text-red-500 {% else %} text-white {% endif %} truncate max-w-[125px]">{{ log.nombre }}</span>
+                        <span class="font-black {% if 'ELIMINADO' in log.tipo %} text-red-500 {% else %} text-white {% endif %} truncate max-w-[125px]">{{ log.nombre }}</span>
                         <span class="badge badge-outline badge-xs text-[8px] font-bold">{{ log.tipo }}</span>
                     </div>
                     <div class="flex gap-2 items-center">
@@ -443,7 +469,7 @@
         </div>
     </div>
 
-    <!-- MODAL AJUSTE DE STOCK -->
+    <!-- MODAL AJUSTE DE STOCK CON PREGUNTA DE MOTIVO FALTANTE -->
     <dialog id="modal_movimiento" class="modal">
         <div class="modal-box bg-zinc-950 border-2 border-cyan-400 p-6 rounded-[24px]">
             <h3 id="modal_prod_nombre" class="font-black text-lg text-white uppercase text-center mb-6"></h3>
@@ -457,9 +483,16 @@
                     </div>
                     <div class="form-control">
                         <label class="label py-1"><span class="label-text font-black text-orange-400 text-xs">FALTANTE (-)</span></label>
-                        <input type="number" name="cantidad_falt" value="0" class="input input-bordered bg-black text-center font-black h-10 text-white rounded-xl">
+                        <input type="number" name="cantidad_falt" id="input_cantidad_falt" value="0" onkeyup="toggleMotivoFaltante()" onchange="toggleMotivoFaltante()" class="input input-bordered bg-black text-center font-black h-10 text-white rounded-xl">
                     </div>
                 </div>
+
+                <!-- Campo dinámico motivo del faltante -->
+                <div class="form-control col-span-2 hidden" id="seccion_motivo_faltante">
+                    <label class="label py-1"><span class="label-text font-black text-warning text-xs">MOTIVO DEL FALTANTE</span></label>
+                    <input type="text" name="motivo_faltante" id="input_motivo_faltante" placeholder="EJ: MERMA, CONSUMO INTERNO, ROTURA" class="input input-bordered bg-black text-center font-black h-10 text-white rounded-xl uppercase">
+                </div>
+
                 <div class="flex gap-2 mt-4">
                     <button type="button" onclick="document.getElementById('modal_movimiento').close()" class="btn btn-ghost flex-1 font-bold text-xs uppercase rounded-xl">Cancelar</button>
                     <button type="submit" class="btn btn-info flex-1 font-black text-xs uppercase rounded-xl text-black">GUARDAR</button>
@@ -468,11 +501,72 @@
         </div>
     </dialog>
 
+    <!-- MODAL DETALLE DE FALTANTES POR MOTIVOS -->
+    <dialog id="modal_detalle_faltantes" class="modal">
+        <div class="modal-box bg-zinc-950 border-2 border-orange-500 p-6 rounded-[24px] max-w-sm text-center">
+            <h3 class="font-black text-lg text-orange-400 uppercase italic mb-1">📋 DESGLOSE DE FALTANTES</h3>
+            <p id="det_faltante_nombre_prod" class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-6"></p>
+            
+            <div id="contenedor_lista_faltantes" class="space-y-2.5 max-h-48 overflow-y-auto mb-6 pr-1">
+                <!-- Se poblará vía AJAX -->
+            </div>
+            
+            <button type="button" onclick="document.getElementById('modal_detalle_faltantes').close()" class="btn btn-sm btn-ghost w-full font-black uppercase tracking-wider">CERRAR DETALLE</button>
+        </div>
+    </dialog>
+
     <script>
         function abrirModalMov(id, nombre) {
             document.getElementById('modal_prod_id').value = id;
             document.getElementById('modal_prod_nombre').innerText = nombre;
+            
+            // Reiniciar campos faltantes
+            document.getElementById('input_cantidad_falt').value = 0;
+            document.getElementById('input_motivo_faltante').value = "";
+            document.getElementById('seccion_motivo_faltante').classList.add('hidden');
+            document.getElementById('input_motivo_faltante').required = false;
+
             document.getElementById('modal_movimiento').showModal();
+        }
+
+        function toggleMotivoFaltante() {
+            const qty = parseInt(document.getElementById('input_cantidad_falt').value) || 0;
+            const seccion = document.getElementById('seccion_motivo_faltante');
+            const input = document.getElementById('input_motivo_faltante');
+            if (qty > 0) {
+                seccion.classList.remove('hidden');
+                input.required = true;
+            } else {
+                seccion.classList.add('hidden');
+                input.required = false;
+                input.value = "";
+            }
+        }
+
+        async function verDetalleFaltantes(productoId, productoNombre) {
+            document.getElementById('det_faltante_nombre_prod').innerText = productoNombre;
+            const container = document.getElementById('contenedor_lista_faltantes');
+            container.innerHTML = `<p class="text-[10px] font-bold text-zinc-600 uppercase py-4">Cargando desglose...</p>`;
+            
+            document.getElementById('modal_detalle_faltantes').showModal();
+            
+            try {
+                const res = await fetch(`/api/deficit_breakdown/${productoId}?fecha={{ fecha_filtro }}&turno={{ turno_filtro }}`);
+                const data = await res.json();
+                
+                if (data.breakdown && data.breakdown.length > 0) {
+                    container.innerHTML = data.breakdown.map(item => `
+                        <div class="flex justify-between items-center bg-black/60 p-3 text-xs rounded-xl border border-zinc-800">
+                            <span class="font-black text-zinc-400 uppercase tracking-tight text-left">${item.motivo}</span>
+                            <span class="badge badge-warning font-black text-xs py-2 px-2.5">${item.cantidad} UND</span>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `<p class="text-[10px] font-bold text-zinc-600 uppercase py-4">No se registraron motivos para este turno</p>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<p class="text-[10px] font-bold text-red-500 uppercase py-4">Error al cargar datos</p>`;
+            }
         }
 
         // Buscador Inteligente Adaptado para Tablas y Tarjetas Celular (General)

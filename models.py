@@ -108,6 +108,7 @@ class StockMovimiento(Base):
     fecha = Column(String)   
     turno = Column(String)   
     hora = Column(String)
+    motivo = Column(String, nullable=True) # <-- NUEVO CAMPO PARA DETALLE DE FALTANTES
 
 class Usuario(Base):
     __tablename__ = "usuarios"

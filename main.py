@@ -172,6 +172,15 @@ def ejecutar_migraciones_sqlite_produccion():
             db.commit()
             print("✅ MIGRACIÓN: Columna 'monto_tarjeta' inyectada en 'ventas'.")
 
+        # MIGRACIÓN DE LA TABLA STOCK_MOVIMIENTOS PARA MOTIVOS DE FALTANTES
+        cursor_sm = db.execute(text("PRAGMA table_info(stock_movimientos)"))
+        columnas_sm = [row[1] for row in cursor_sm.fetchall()]
+
+        if "motivo" not in columnas_sm:
+            db.execute(text("ALTER TABLE stock_movimientos ADD COLUMN motivo VARCHAR"))
+            db.commit()
+            print("✅ MIGRACIÓN: Columna 'motivo' inyectada en 'stock_movimientos'.")
+
     except Exception as e:
         print(f"⚠️ MIGRACIÓN (Error en migración automática): {str(e)}")
     finally:
@@ -803,7 +812,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                     "link_wa": link_wa_p
                 })
 
-    # Filtrar para que solo aparezcan fichas de días anteriores en el modal de pendientes
+    # Filtrar estrictamente para que solo aparezcan fichas de días anteriores en el modal de pendientes
     pendientes_global = [p for p in pendientes_global_completo if p["fecha"] != fecha_param or p["turno"] != turno_filter]
 
     # =========================================================================
@@ -1059,6 +1068,7 @@ async def cobrar_deuda(
     metodo_pago_final: str = Form(...), 
     db: Session = Depends(get_db)
 ):
+    from services.auth_service import obtener_usuario_sesion
     username, user_role = obtener_usuario_sesion(request)
 
     if not username or user_role not in ["admin1", "administrador", "cajera"]:

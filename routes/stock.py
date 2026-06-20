@@ -1,4 +1,4 @@
-# START OF FILE routes/stock.py
+# START OF FILE routes/stock.py (Modificado)
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -176,8 +176,9 @@ async def stock_page(
     auditoria = []
     for a in audit_db:
         nombre_p = a.nombre_respaldo if a.nombre_respaldo else (db.query(models.Producto.nombre).filter(models.Producto.id == a.producto_id).scalar() or "N/A")
+        det_tipo = f"{a.tipo_movimiento} ({a.motivo})" if a.motivo else a.tipo_movimiento
         auditoria.append({
-            "hora": a.hora, "nombre": nombre_p, "tipo": a.tipo_movimiento,
+            "hora": a.hora, "nombre": nombre_p, "tipo": det_tipo,
             "cantidad": a.cantidad, "usuario": a.usuario
         })
 
@@ -306,6 +307,7 @@ async def registrar_mov(
     producto_id: int = Form(...), 
     offset_repo: int = Form(0, alias="cantidad_repo"), 
     offset_falt: int = Form(0, alias="cantidad_falt"), 
+    motivo_faltante: Optional[str] = Form(None), # <-- CAPTURA DE MOTIVO DE MERMA/PERDIDA
     fecha: str = Form(...), 
     turno: str = Form(...), 
     db: Session = Depends(get_db)
@@ -340,6 +342,8 @@ async def registrar_mov(
         db.add(mov)
     
     if offset_falt > 0:
+        # Se guarda el motivo formateado en mayúsculas para un reporte prolijo
+        motivo_limpio = motivo_faltante.strip().upper() if motivo_faltante else "FALTANTE REGISTRADO"
         mov = models.StockMovimiento(
             producto_id=producto_id, 
             tipo_movimiento='FALTANTE', 
@@ -347,7 +351,8 @@ async def registrar_mov(
             usuario=username,
             fecha=fecha, 
             turno=turno, 
-            hora=hora
+            hora=hora,
+            motivo=motivo_limpio
         )
         db.add(mov)
     
@@ -491,4 +496,33 @@ async def abrir_botella_respaldo(
         return {"status": "success", "parent_nombre": nueva_botella.nombre}
         
     return JSONResponse(status_code=400, content={"status": "error", "message": "Productos inválidos"})
+
+# ---------------------------------------------------------
+# 🔒 4. API DE DESGLOSE DE FALTANTES POR MOTIVOS (NUEVO)
+# ---------------------------------------------------------
+@router.get("/api/deficit_breakdown/{producto_id}")
+async def get_deficit_breakdown(
+    producto_id: int, 
+    fecha: str, 
+    turno: str, 
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna la lista agrupada de mermas y pérdidas de este producto 
+    con sus cantidades y motivos detallados para el turno seleccionado.
+    """
+    movs = db.query(models.StockMovimiento).filter(
+        models.StockMovimiento.producto_id == producto_id,
+        models.StockMovimiento.tipo_movimiento == 'FALTANTE',
+        models.StockMovimiento.fecha == fecha,
+        models.StockMovimiento.turno == turno
+    ).all()
+    
+    agrupados = {}
+    for m in movs:
+        mot = m.motivo if m.motivo else "FALTANTE REGISTRADO"
+        agrupados[mot] = agrupados.get(mot, 0) + m.cantidad
+        
+    breakdown = [{"motivo": k, "cantidad": v} for k, v in agrupados.items()]
+    return {"breakdown": breakdown}
 # END OF FILE routes/stock.py
