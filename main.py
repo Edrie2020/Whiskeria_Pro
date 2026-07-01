@@ -26,6 +26,7 @@ from services.config_service import obtener_config
 # Importaciones de seguridad y tiempo local
 from services.auth_service import obtener_usuario_sesion
 from services.time_service import obtener_ahora_local
+from services.stock_service import propagar_recalculo_stock
 
 # =========================================================
 # 3. FUNCIONES DE AYUDA (Fecha Operativa, Sesión y Stock)
@@ -52,7 +53,8 @@ async def verificar_sesion(request: Request):
 
 def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str):
     """
-    Inicializa el inventario de forma estrictamente aislada por catálogo de turno.
+    Inicializa el inventario de forma estrictamente aislada por catálogo de turno,
+    arrastrando correctamente saldos enteros y fraccionales de cortos de botellas.
     """
     existe = db.query(models.InventarioTurno).filter(
         models.InventarioTurno.fecha == fecha_hoy,
@@ -77,45 +79,68 @@ def inicializar_stock_nuevo_turno(db: Session, fecha_hoy: str, turno_nuevo: str)
         if not ultimo_registro:
             stock_inicial = p.inicio if p.inicio else 0
         else:
-            salida_directa = db.query(func.count(models.Venta.id)).filter(
-                models.Venta.producto_id == p.id,
-                models.Venta.fecha_operativa == ultimo_registro.fecha,
-                models.Venta.turno == ultimo_registro.turno
-            ).scalar() or 0
-            
-            botellas_debitadas_por_cortos = 0
-            if p.tipo == "BOTELLA" and p.capacidad_cortos:
-                corto_vinculado = db.query(models.Producto).filter(
-                    models.Producto.parent_botella_id == p.id,
+            if p.es_corto:
+                # Si es un corto, su stock inicial es el remanente acumulado que no completó una botella en el turno anterior
+                parent_botella = db.query(models.Producto).filter(
+                    models.Producto.id == p.parent_botella_id,
                     models.Producto.borrado == False
                 ).first()
-                if corto_vinculado:
+                if parent_botella:
                     cortos_consumidos = db.query(func.count(models.Venta.id)).filter(
-                        models.Venta.producto_id == corto_vinculado.id,
+                        models.Venta.producto_id == p.id,
                         models.Venta.fecha_operativa == ultimo_registro.fecha,
                         models.Venta.turno == ultimo_registro.turno
                     ).scalar() or 0
-                    botellas_debitadas_por_cortos = cortos_consumidos // p.capacidad_cortos
-            
-            salida_total = salida_directa + botellas_debitadas_por_cortos
-            
-            repos = db.query(func.sum(models.StockMovimiento.cantidad)).filter(
-                models.StockMovimiento.producto_id == p.id,
-                models.StockMovimiento.tipo_movimiento == 'REPOSICION',
-                models.StockMovimiento.fecha == ultimo_registro.fecha,
-                models.StockMovimiento.turno == ultimo_registro.turno
-            ).scalar() or 0
+                    stock_inicial = (ultimo_registro.inicio + cortos_consumidos) % parent_botella.capacidad_cortos
+                else:
+                    stock_inicial = 0
+            else:
+                salida_directa = db.query(func.count(models.Venta.id)).filter(
+                    models.Venta.producto_id == p.id,
+                    models.Venta.fecha_operativa == ultimo_registro.fecha,
+                    models.Venta.turno == ultimo_registro.turno
+                ).scalar() or 0
+                
+                botellas_debitadas_por_cortos = 0
+                if p.tipo == "BOTELLA" and p.capacidad_cortos:
+                    corto_vinculado = db.query(models.Producto).filter(
+                        models.Producto.parent_botella_id == p.id,
+                        models.Producto.borrado == False
+                    ).first()
+                    if corto_vinculado:
+                        ultimo_reg_corto = db.query(models.InventarioTurno).filter(
+                            models.InventarioTurno.producto_id == corto_vinculado.id,
+                            models.InventarioTurno.turno == ultimo_registro.turno
+                        ).order_by(models.InventarioTurno.fecha.desc(), models.InventarioTurno.id.desc()).first()
+                        
+                        corto_inicio = ultimo_reg_corto.inicio if ultimo_reg_corto else 0
+                        
+                        cortos_consumidos = db.query(func.count(models.Venta.id)).filter(
+                            models.Venta.producto_id == corto_vinculado.id,
+                            models.Venta.fecha_operativa == ultimo_registro.fecha,
+                            models.Venta.turno == ultimo_registro.turno
+                        ).scalar() or 0
+                        botellas_debitadas_por_cortos = (corto_inicio + cortos_consumidos) // p.capacidad_cortos
+                
+                salida_total = salida_directa + botellas_debitadas_por_cortos
+                
+                repos = db.query(func.sum(models.StockMovimiento.cantidad)).filter(
+                    models.StockMovimiento.producto_id == p.id,
+                    models.StockMovimiento.tipo_movimiento == 'REPOSICION',
+                    models.StockMovimiento.fecha == ultimo_registro.fecha,
+                    models.StockMovimiento.turno == ultimo_registro.turno
+                ).scalar() or 0
 
-            falts = db.query(func.sum(models.StockMovimiento.cantidad)).filter(
-                models.StockMovimiento.producto_id == p.id,
-                models.StockMovimiento.tipo_movimiento.in_(['FALTANTE', 'APERTURA BOTELLA']),
-                models.StockMovimiento.fecha == ultimo_registro.fecha,
-                models.StockMovimiento.turno == ultimo_registro.turno
-            ).scalar() or 0
-            
-            saldo_final = (ultimo_registro.inicio + repos) - salida_total - falts
-            stock_inicial = max(0, saldo_final)
-            
+                falts = db.query(func.sum(models.StockMovimiento.cantidad)).filter(
+                    models.StockMovimiento.producto_id == p.id,
+                    models.StockMovimiento.tipo_movimiento.in_(['FALTANTE', 'APERTURA BOTELLA']),
+                    models.StockMovimiento.fecha == ultimo_registro.fecha,
+                    models.StockMovimiento.turno == ultimo_registro.turno
+                ).scalar() or 0
+                
+                saldo_final = (ultimo_registro.inicio + repos) - salida_total - falts
+                stock_inicial = max(0, saldo_final)
+                
         nuevo_inventario = models.InventarioTurno(
             producto_id=p.id,
             fecha=fecha_hoy,
@@ -1018,8 +1043,26 @@ async def eliminar_venta(request: Request, venta_id: int, motivo: str = Form(...
             turno=venta.turno
         )
         db.add(log)
+        
+        # Guardamos la referencia de producto para propagar el recalculo de inventario
+        prod_id = venta.producto_id
+        fecha_op = venta.fecha_operativa
+        turno_op = venta.turno
+        
         db.delete(venta)
         db.commit()
+        
+        # Propagamos el recalculo de stock en cascada para evitar descuadres en días posteriores
+        if prod_id:
+            propagar_recalculo_stock(db, prod_id, fecha_op, turno_op)
+            p = db.query(models.Producto).filter(models.Producto.id == prod_id).first()
+            if p and p.es_corto:
+                propagar_recalculo_stock(db, p.parent_botella_id, fecha_op, turno_op)
+            elif p and p.tipo == "BOTELLA":
+                corto = db.query(models.Producto).filter(models.Producto.parent_botella_id == p.id).first()
+                if corto:
+                    propagar_recalculo_stock(db, corto.id, fecha_op, turno_op)
+                    
     return RedirectResponse(url="/contabilidad", status_code=303)
 
 @app.post("/registrar_pago_dama/{dama_id}")

@@ -1795,6 +1795,46 @@ function confirmarVentaMulti() {
     // Corrección para evitar advertencias de CSS parsing en IDEs
     document.getElementById('thermometer_bar').style.width = '{{ porcentaje }}%';
 </script>
+<!-- PROTECCIÓN ANTI-DUPLICADOS (DOUBLE SUBMIT) -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const formulariosCriticos = [
+            'form_registro_venta',
+            'form_mesa',
+            'form_venta_cliente',
+            'form_venta_multi_cliente'
+        ];
+        
+        formulariosCriticos.forEach(id => {
+            const formulario = document.getElementById(id);
+            if (formulario) {
+                formulario.addEventListener('submit', function(e) {
+                    // Si ya se está enviando, prevenimos cualquier envío adicional
+                    if (formulario.dataset.procesandoEnvio === 'true') {
+                        e.preventDefault();
+                        return;
+                    }
+                    
+                    // Marcamos el formulario como ocupado
+                    formulario.dataset.procesandoEnvio = 'true';
+                    
+                    // Buscamos y deshabilitamos todos los botones de envío
+                    const botonesEnvio = formulario.querySelectorAll('button[type="submit"], input[type="submit"]');
+                    botonesEnvio.forEach(boton => {
+                        boton.disabled = true;
+                        boton.classList.add('opacity-50', 'cursor-not-allowed');
+                        
+                        // Añadimos indicador visual de carga sin romper el diseño
+                        const contenidoOriginal = boton.innerHTML;
+                        if (!contenidoOriginal.includes('⏳')) {
+                            boton.innerHTML = '⏳ ' + contenidoOriginal;
+                        }
+                    });
+                });
+            }
+        });
+    });
+</script>
 </body>
 </html>
 <!-- END OF FILE templates/index.html -->

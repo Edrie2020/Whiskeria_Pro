@@ -11,6 +11,7 @@ from database import get_db
 from services.time_service import obtener_ahora_local
 from services.auth_service import obtener_usuario_sesion
 from services.config_service import obtener_config
+from services.stock_service import propagar_recalculo_stock
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -103,21 +104,30 @@ async def stock_page(
             corto_vinculado = db.query(models.Producto).filter(
                 models.Producto.nombre == f"CORTO {marca_base}",
                 models.Producto.turno == turno_f,
-                models.Producto.borrado == False  # <-- Excluye los eliminados
+                models.Producto.borrado == False
             ).first()
             
             if corto_vinculado:
                 if corto_vinculado.parent_botella_id != p.id:
                     es_sellada = True
                 else:
+                    # Obtenemos el stock inicial de cortos de este turno específico
+                    inv_corto_turno = db.query(models.InventarioTurno).filter(
+                        models.InventarioTurno.producto_id == corto_vinculado.id,
+                        models.InventarioTurno.fecha == fecha_f,
+                        models.InventarioTurno.turno == turno_f
+                    ).first()
+                    
+                    corto_inicio = inv_corto_turno.inicio if inv_corto_turno else 0
+                    
                     cortos_consumidos = db.query(func.count(models.Venta.id)).filter(
                         models.Venta.producto_id == corto_vinculado.id,
                         models.Venta.fecha_operativa == fecha_f,
                         models.Venta.turno == turno_f
                     ).scalar() or 0
                     
-                    botellas_debitadas_por_cortos = cortos_consumidos // p.capacidad_cortos
-                    cortos_sueltos_restantes = cortos_consumidos % p.capacidad_cortos
+                    botellas_debitadas_por_cortos = (corto_inicio + cortos_consumidos) // p.capacidad_cortos
+                    cortos_sueltos_restantes = (corto_inicio + cortos_consumidos) % p.capacidad_cortos
 
         salida_total = salida_directa + botellas_debitadas_por_cortos
         saldo = (inicio_stock + repos) - salida_total - falts
@@ -126,7 +136,7 @@ async def stock_page(
         if es_sellada:
             saldo_visual = f"{saldo} (🔒 SELLADA)"
         elif cortos_sueltos_restantes > 0 and saldo > 0:
-            saldo_visual = f"{saldo} (Abierta: {cortos_sueltos_restantes} de {p.capacidad_cortos} cortos)"
+            saldo_visual = f"{saldo} (Abierta: {cortos_sueltos_restantes} servidos | {p.capacidad_cortos - cortos_sueltos_restantes} restantes)"
 
         salida_visual = f"{salida_directa}"
         if botellas_debitadas_por_cortos > 0:
@@ -307,7 +317,7 @@ async def registrar_mov(
     producto_id: int = Form(...), 
     offset_repo: int = Form(0, alias="cantidad_repo"), 
     offset_falt: int = Form(0, alias="cantidad_falt"), 
-    motivo_faltante: Optional[str] = Form(None), # <-- CAPTURA DE MOTIVO DE MERMA/PERDIDA
+    motivo_faltante: Optional[str] = Form(None), 
     fecha: str = Form(...), 
     turno: str = Form(...), 
     db: Session = Depends(get_db)
@@ -342,7 +352,6 @@ async def registrar_mov(
         db.add(mov)
     
     if offset_falt > 0:
-        # Se guarda el motivo formateado en mayúsculas para un reporte prolijo
         motivo_limpio = motivo_faltante.strip().upper() if motivo_faltante else "FALTANTE REGISTRADO"
         mov = models.StockMovimiento(
             producto_id=producto_id, 
@@ -357,6 +366,15 @@ async def registrar_mov(
         db.add(mov)
     
     db.commit()
+
+    # Recalculamos en cadena hacia los turnos posteriores para evitar descuadres en cascada
+    propagar_recalculo_stock(db, producto_id, fecha, turno)
+    p = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
+    if p and p.tipo == "BOTELLA":
+        corto = db.query(models.Producto).filter(models.Producto.parent_botella_id == p.id).first()
+        if corto:
+            propagar_recalculo_stock(db, corto.id, fecha, turno)
+
     return RedirectResponse(url=f"/stock?fecha={fecha}&turno={turno}", status_code=303)
 
 @router.post("/eliminar_producto/{id}")

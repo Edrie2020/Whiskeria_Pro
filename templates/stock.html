@@ -310,7 +310,7 @@
             </div>
         </div>
 
-        <!-- DESPLEGABLE 3: ALERTAS DE STOCK CERO 🚨 (REDISEÑADO AL FINAL DE LA JORNADA) -->
+        <!-- DESPLEGABLE 3: ALERTAS DE STOCK CERO 🚨 (REDISEÑADO CON MÉTRICAS COMPLETAS) -->
         <div class="collapse collapse-plus bg-red-500/10 border border-red-500/30 mb-6 rounded-2xl no-print">
             <input type="checkbox" /> 
             <div class="collapse-title text-xs font-black text-red-500 uppercase tracking-widest flex items-center justify-between">
@@ -327,37 +327,45 @@
                            class="input input-bordered input-sm w-full bg-black border-red-500/30 text-center font-bold uppercase focus:border-red-500 text-xs h-9 text-white rounded-xl">
                 </div>
 
-                <!-- Vista en Tarjetas para Celulares -->
+                <!-- Vista en Tarjetas para Celulares (Con métricas de entrada y salida) -->
                 <div class="grid grid-cols-1 sm:hidden gap-3">
                     {% for a in alertas_criticas %}
                     <div class="card-item-alerta bg-black/60 border border-red-500/20 p-4 rounded-[24px] flex justify-between items-center" data-nombre="{{ a.nombre }}">
                         <div>
                             <h4 class="font-black text-red-500 text-lg uppercase leading-tight">{{ a.nombre }}</h4>
-                            <span class="text-[8px] text-zinc-500 font-bold uppercase">{% if a.tipo == 'PRODUCTO' %}Cooler (Damas){% else %}Barra (Clientes){% endif %}</span>
+                            <span class="text-[8px] text-zinc-500 font-bold uppercase mb-1 block">{% if a.tipo == 'PRODUCTO' %}Cooler (Damas){% else %}Barra (Clientes){% endif %}</span>
+                            
+                            <!-- Desglose de movimientos del día para celulares -->
+                            <div class="flex gap-3 text-[9px] text-zinc-400 font-bold uppercase flex-wrap">
+                                <span>Ini: {{ a.inicio_stock }}</span>
+                                <span class="text-blue-400">Rep: +{{ a.reposicion }}</span>
+                                <span class="text-red-400">Sal: -{{ a.salida }}</span>
+                                <span class="text-orange-400">Falt: -{{ a.faltante }}</span>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 shrink-0">
                             <span class="badge badge-error font-black text-xs py-3 px-2">0</span>
                             {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
-                            <button onclick="abrirModalMov('{{ a.id }}', '{{ a.nombre }}')" class="btn btn-xs btn-info text-black font-black">REPOSICIÓN</button>
-                            <form action="/eliminar_producto/{{ a.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ a.nombre }} DEL SISTEMA?')">
-                                <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
-                                <button class="btn btn-xs btn-error btn-outline">ELIMINAR</button>
-                            </form>
+                            <button onclick="abrirModalMov('{{ a.id }}', '{{ a.nombre }}')" class="btn btn-xs btn-info text-black font-black">⚙️</button>
                             {% endif %}
                         </div>
                     </div>
                     {% endfor %}
                 </div>
 
-                <!-- Vista en Tabla para Notebooks -->
+                <!-- Vista en Tabla Completa para Computadores (Mismas columnas que Cooler y Barra) -->
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="table table-xs w-full text-center">
                         <thead>
                             <tr class="text-zinc-500 uppercase text-[9px] border-b border-white/5">
                                 <th class="text-left pl-1">Nombre</th>
                                 <th>Categoría</th>
+                                <th>Inicio</th>
+                                <th>Repo (+)</th>
+                                <th>Venta (-)</th>
+                                <th>Falt (-)</th>
                                 <th class="text-red-500 font-black">Saldo</th>
-                                <th class="text-right pr-1">Acción</th>
+                                <th class="text-right pr-1 no-print">Acción</th>
                             </tr>
                         </thead>
                         <tbody class="font-bold uppercase text-xs">
@@ -365,10 +373,24 @@
                             <tr class="border-b border-white/5 item-alerta" data-nombre="{{ a.nombre }}">
                                 <td class="text-left text-white pl-1">{{ a.nombre }}</td>
                                 <td class="text-zinc-400">{% if a.tipo == 'PRODUCTO' %}Cooler (Damas){% else %}Barra (Clientes){% endif %}</td>
-                                <td class="text-red-500 text-sm font-black">0</td>
-                                <td class="flex gap-1 justify-end pr-1 pt-1">
+                                <td class="text-zinc-400">{{ a.inicio_stock }}</td>
+                                <td class="text-blue-400">+{{ a.reposicion }}</td>
+                                <td class="text-red-400">{{ a.salida_visual }}</td>
+                                <td class="text-orange-400">
+                                    {% if a.faltante > 0 %}
+                                    <button type="button" onclick="verDetalleFaltantes('{{ a.id }}', '{{ a.nombre }}')" class="underline hover:text-orange-300 font-black text-sm active:scale-95 transition-transform">
+                                        {{ a.faltante }}
+                                    </button>
+                                    {% else %}
+                                    0
+                                    {% endif %}
+                                </td>
+                                <td class="text-base font-black text-red-500">
+                                    0
+                                </td>
+                                <td class="flex gap-1 justify-end pr-1 pt-1 no-print">
                                     {% if fecha_filtro == fecha_actual and turno_filtro == turno_actual and estado_club == 'ABIERTO' and role in ['admin1', 'administrador', 'cajera'] %}
-                                    <button onclick="abrirModalMov('{{ a.id }}', '{{ a.nombre }}')" class="btn btn-xs btn-info text-black font-black" title="Reponer">REPOSICIÓN</button>
+                                    <button onclick="abrirModalMov('{{ a.id }}', '{{ a.nombre }}')" class="btn btn-xs btn-circle btn-ghost" title="Ajustar Stock">⚙️</button>
                                     <form action="/eliminar_producto/{{ a.id }}" method="post" onsubmit="return confirm('¿ELIMINAR {{ a.nombre }} DEL SISTEMA?')">
                                         <input type="hidden" name="fecha" value="{{ fecha_filtro }}"><input type="hidden" name="turno" value="{{ turno_filtro }}">
                                         <button class="btn btn-xs btn-error btn-outline btn-square">✕</button>
