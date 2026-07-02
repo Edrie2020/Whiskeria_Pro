@@ -1795,7 +1795,7 @@ function confirmarVentaMulti() {
     // Corrección para evitar advertencias de CSS parsing en IDEs
     document.getElementById('thermometer_bar').style.width = '{{ porcentaje }}%';
 </script>
-<!-- PROTECCIÓN ANTI-DUPLICADOS (DOUBLE SUBMIT) -->
+<!-- CONTROL ANTIDUPLICADOS CORREGIDO - PERMITE EL ENVÍO DE DATOS DE BOTONES -->
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const formulariosCriticos = [
@@ -1815,21 +1815,25 @@ function confirmarVentaMulti() {
                         return;
                     }
                     
-                    // Marcamos el formulario como ocupado
                     formulario.dataset.procesandoEnvio = 'true';
                     
-                    // Buscamos y deshabilitamos todos los botones de envío
                     const botonesEnvio = formulario.querySelectorAll('button[type="submit"], input[type="submit"]');
+                    
+                    // 1. Aplicamos el cambio visual del cargando de inmediato
                     botonesEnvio.forEach(boton => {
-                        boton.disabled = true;
-                        boton.classList.add('opacity-50', 'cursor-not-allowed');
-                        
-                        // Añadimos indicador visual de carga sin romper el diseño
                         const contenidoOriginal = boton.innerHTML;
                         if (!contenidoOriginal.includes('⏳')) {
                             boton.innerHTML = '⏳ ' + contenidoOriginal;
                         }
                     });
+                    
+                    // 2. Retrasamos la desactivación física (1ms) para que el navegador sí envíe el "metodo_pago"
+                    setTimeout(() => {
+                        botonesEnvio.forEach(boton => {
+                            boton.disabled = true;
+                            boton.classList.add('opacity-50', 'cursor-not-allowed');
+                        });
+                    }, 1);
                 });
             }
         });
