@@ -1248,4 +1248,34 @@ async def subir_respaldo_secreto(clave: str, archivo: UploadFile = File(...)):
         return {"status": "success", "message": "Base de datos subida y actualizada con éxito."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al subir el archivo: {str(e)}")
+    
+   # =========================================================
+# API PARA CONSULTAR HISTORIAL DE BAILARINAS EN EL MODAL
+# =========================================================
+@app.get("/api/historial_bailarinas")
+async def api_historial_bailarinas(fecha: str, db: Session = Depends(get_db)):
+    # 1. Buscamos todas las asistencias de la fecha que nos pida el calendario
+    asistencias = db.query(models.Asistencia).filter(models.Asistencia.fecha == fecha).all()
+    
+    # 2. Armamos la lista con las bailarinas que estuvieron presentes ese día
+    resultado = []
+    for asis in asistencias:
+        dama = db.query(models.Dama).filter(models.Dama.id == asis.dama_id).first()
+        if dama and dama.es_bailarina:
+            resultado.append({
+                "nombre": dama.nombre_artistico,
+                "foto_url": dama.foto_url,
+                "presente": True,
+                "bailo": asis.bailando_hoy or (asis.bono_show > 0),
+                "monto_shows": asis.bono_show,
+                "turno": asis.turno
+            })
+            
+    # 3. Devolvemos la información ordenada al navegador
+    return {
+        "fecha": fecha,
+        "presentes_total": len(resultado),
+        "bailando_total": sum(1 for x in resultado if x["bailo"]),
+        "bailarinas": resultado
+    } 
 # END OF FILE main.py
