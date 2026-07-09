@@ -841,9 +841,8 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     pendientes_global = [p for p in pendientes_global_completo if p["fecha"] != fecha_param or p["turno"] != turno_filter]
 
     # =========================================================================
-    # 🔒 AGRUPACIÓN DE PRIVADOS POR DAMA (FECHAS Y TURNOS DETALLADOS)
+    # 🔒 AGRUPACIÓN DE SERVICIOS ADICIONALES POR DAMA (VIP 2 Y SALIDAS MANUALES)
     # =========================================================================
-    # El panel unificado de VIP 2 agrupa los servicios VIP 2, los PRIVADOS históricos y las Salidas Manuales de forma transparente
     privados_todos = db.query(models.Venta).filter(models.Venta.servicio.in_(["VIP 2", "PRIVADO", "SALIDA MANUAL"])).all()
     
     grupos_hoy = {}
@@ -865,37 +864,54 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     lista_privados_cuentas_hoy = []
     for (dama_id, f_op, tur), ventas_grupo in grupos_hoy.items():
         dama_nombre = damas_nombres_dict.get(dama_id, "S/D")
-        cant_priv = len(ventas_grupo)
+        
+        # Clasificar cantidades por tipo de servicio
+        cant_vip2 = sum(1 for v in ventas_grupo if v.servicio in ["VIP 2", "PRIVADO"])
+        cant_salidas = sum(1 for v in ventas_grupo if v.servicio == "SALIDA MANUAL")
+        
+        servicios_descr_lista = []
+        if cant_vip2 > 0:
+            servicios_descr_lista.append(f"{cant_vip2} VIP 2")
+        if cant_salidas > 0:
+            servicios_descr_lista.append(f"{cant_salidas} Salida{'s' if cant_salidas > 1 else ''}")
+        servicios_descr_str = " + ".join(servicios_descr_lista) if servicios_descr_lista else "Sin Servicios"
+        
+        # Etiqueta dinámica para el botón del desglose
+        tipo_desglose_label = "Servicios"
+        if cant_vip2 > 0 and cant_salidas == 0:
+            tipo_desglose_label = "VIP 2"
+        elif cant_salidas > 0 and cant_vip2 == 0:
+            tipo_desglose_label = "Salidas"
+
         total_comis = sum(v.comision_chica for v in ventas_grupo)
         group_liq = all(v.liquidada for v in ventas_grupo)
         ids_csv = ",".join(str(v.id) for v in ventas_grupo)
         
-        # Desglose detallado de cada consumo individual para el modal
         consumos_detallados = []
         msg_detalle_wa = ""
         for v in ventas_grupo:
             hora_f = v.fecha.strftime('%H:%M')
-            cli = v.cliente_nombre or "CLIENTE"
+            tipo_serv_limpio = "VIP 2" if v.servicio in ["VIP 2", "PRIVADO"] else "SALIDA"
+            
             consumos_detallados.append({
                 "id": v.id,
                 "hora": hora_f,
                 "garzon": v.mesero,
-                "cliente": cli,
                 "monto": v.monto,
                 "comision": v.comision_chica,
-                "liquidada": v.liquidada
+                "liquidada": v.liquidada,
+                "tipo_label": tipo_serv_limpio
             })
-            msg_detalle_wa += f"• {hora_f} - PRIVADO (+${v.comision_chica:,.0f}) [Garzón: {v.mesero}]\n"
+            msg_detalle_wa += f"• {hora_f} - {tipo_serv_limpio} (+${v.comision_chica:,.0f}) [Garzón: {v.mesero}]\n"
 
-        # ... (Cálculos de WhatsApp de Privados se conservan intactos)
         dama_obj = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
         wsp_limpio = "".join(c for c in dama_obj.whatsapp if c.isdigit()) if dama_obj and dama_obj.whatsapp else ""
         
         msg_wa = (
-            f"⭐ *DETALLE DE PRIVADOS - {dama_nombre}* ⭐\n"
+            f"⭐ *DETALLE DE SERVICIOS - {dama_nombre}* ⭐\n"
             f"📅 *Fecha:* {f_op} | 🕒 *Turno:* {tur}\n"
             f"-----------------------------------------\n"
-            f"💎 *SERVICIOS DE PRIVADOS:* \n{msg_detalle_wa}"
+            f"💎 *SERVICIOS:* \n{msg_detalle_wa}"
             f"-----------------------------------------\n"
             f"💵 *TOTAL POR COBRAR:* *${total_comis:,.0f}*\n"
             f"-----------------------------------------\n"
@@ -908,7 +924,8 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
             "nombre": dama_nombre,
             "fecha": f_op,
             "turno": tur,
-            "cantidad": cant_priv,
+            "cantidad_str": servicios_descr_str,
+            "tipo_desglose_label": tipo_desglose_label,
             "total_commission": total_comis,
             "liquidada": group_liq,
             "ids_ventas": ids_csv,
@@ -919,7 +936,23 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     lista_privados_pendientes = []
     for (dama_id, f_op, tur), ventas_grupo in grupos_pendientes.items():
         dama_nombre = damas_nombres_dict.get(dama_id, "S/D")
-        cant_priv = len(ventas_grupo)
+        
+        cant_vip2 = sum(1 for v in ventas_grupo if v.servicio in ["VIP 2", "PRIVADO"])
+        cant_salidas = sum(1 for v in ventas_grupo if v.servicio == "SALIDA MANUAL")
+        
+        servicios_descr_lista = []
+        if cant_vip2 > 0:
+            servicios_descr_lista.append(f"{cant_vip2} VIP 2")
+        if cant_salidas > 0:
+            servicios_descr_lista.append(f"{cant_salidas} Salida{'s' if cant_salidas > 1 else ''}")
+        servicios_descr_str = " + ".join(servicios_descr_lista) if servicios_descr_lista else "Sin Servicios"
+        
+        tipo_desglose_label = "Servicios"
+        if cant_vip2 > 0 and cant_salidas == 0:
+            tipo_desglose_label = "VIP 2"
+        elif cant_salidas > 0 and cant_vip2 == 0:
+            tipo_desglose_label = "Salida"
+
         total_comis = sum(v.comision_chica for v in ventas_grupo)
         group_liq = all(v.liquidada for v in ventas_grupo)
         ids_csv = ",".join(str(v.id) for v in ventas_grupo)
@@ -928,26 +961,27 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         msg_detalle_wa = ""
         for v in ventas_grupo:
             hora_f = v.fecha.strftime('%H:%M')
-            cli = v.cliente_nombre or "CLIENTE"
+            tipo_serv_limpio = "VIP 2" if v.servicio in ["VIP 2", "PRIVADO"] else "SALIDA"
+            
             consumos_detallados.append({
                 "id": v.id,
                 "hora": hora_f,
                 "garzon": v.mesero,
-                "cliente": cli,
                 "monto": v.monto,
                 "comision": v.comision_chica,
-                "liquidada": v.liquidada
+                "liquidada": v.liquidada,
+                "tipo_label": tipo_serv_limpio
             })
-            msg_detalle_wa += f"• {hora_f} - PRIVADO (+${v.comision_chica:,.0f}) [Garzón: {v.mesero}]\n"
+            msg_detalle_wa += f"• {hora_f} - {tipo_serv_limpio} (+${v.comision_chica:,.0f}) [Garzón: {v.mesero}]\n"
 
         dama_obj = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
         wsp_limpio = "".join(c for c in dama_obj.whatsapp if c.isdigit()) if dama_obj and dama_obj.whatsapp else ""
         
         msg_wa = (
-            f"⭐ *DETALLE DE PRIVADOS HISTÓRICOS - {dama_nombre}* ⭐\n"
+            f"⭐ *DETALLE DE SERVICIOS ANTERIORES - {dama_nombre}* ⭐\n"
             f"📅 *Fecha:* {f_op} | 🕒 *Turno:* {tur}\n"
             f"-----------------------------------------\n"
-            f"💎 *SERVICIOS DE PRIVADOS:* \n{msg_detalle_wa}"
+            f"💎 *SERVICIOS:* \n{msg_detalle_wa}"
             f"-----------------------------------------\n"
             f"💵 *TOTAL POR COBRAR:* *${total_comis:,.0f}*\n"
             f"-----------------------------------------\n"
@@ -960,7 +994,8 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
             "nombre": dama_nombre,
             "fecha": f_op,
             "turno": tur,
-            "cantidad": cant_priv,
+            "cantidad_str": servicios_descr_str,
+            "tipo_desglose_label": tipo_desglose_label,
             "total_commission": total_comis,
             "liquidada": group_liq,
             "ids_ventas": ids_csv,
@@ -968,41 +1003,15 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
             "link_wa": link_wa
         })
         
-    total_unpaid_privados_hoy = sum(v.comision_chica for v in privados_todos if v.fecha_operativa == fecha_param and v.turno == turno_filter and not v.liquidada)
+    # CORRECCIÓN DE LA SUMA TOTAL DEL TURNO (Monto total del modal, pagados + pendientes)
+    total_unpaid_privados_hoy = sum(
+        v.comision_chica for v in privados_todos 
+        if v.fecha_operativa == fecha_param and v.turno == turno_filter
+    )
     total_unpaid_privados_historial = sum(v.comision_chica for v in privados_todos if (v.fecha_operativa != fecha_param or v.turno != turno_filter) and not v.liquidada)
 
-    # Privados del día actual agrupados para el listado del modal
-    lista_privados_dia = []
-    for (dama_id, f_op, tur), ventas_grupo in grupos_hoy.items():
-        dama_nombre = damas_nombres_dict.get(dama_id, "S/D")
-        cant_priv = len(ventas_grupo)
-        total_comis = sum(v.comision_chica for v in ventas_grupo)
-        group_liq = all(v.liquidada for v in ventas_grupo)
-        ids_csv = ",".join(str(v.id) for v in ventas_grupo)
-        
-        consumos_detallados = []
-        for v in ventas_grupo:
-            consumos_detallados.append({
-                "id": v.id,
-                "hora": v.fecha.strftime('%H:%M'),
-                "garzon": v.mesero,
-                "cliente": v.cliente_nombre or "CLIENTE",
-                "monto": v.monto,
-                "comision": v.comision_chica,
-                "liquidada": v.liquidada
-            })
-        
-        lista_privados_dia.append({
-            "dama_id": dama_id,
-            "nombre": dama_nombre,
-            "fecha": f_op,
-            "turno": tur,
-            "cantidad": cant_priv,
-            "total_commission": total_comis,
-            "liquidada": group_liq,
-            "ids_ventas": ids_csv,
-            "consumos": consumos_detallados
-        })
+    # Lista limpia para el modal
+    lista_privados_dia = lista_privados_cuentas_hoy
 
     return templates.TemplateResponse(
         request=request,

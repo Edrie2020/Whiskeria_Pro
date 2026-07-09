@@ -1898,16 +1898,17 @@ function confirmarVentaMulti() {
 
         <!-- BARRA DE CONTROL: METRICAS, BUSCADOR Y CALENDARIO -->
         <div class="p-5 bg-black/40 border-b border-white/5 space-y-4">
-            <!-- Métrica única simplificada de presencia en el Club -->
+            <!-- Métrica Única de Bailarinas Asistentes -->
             <div class="bg-purple-950/20 p-3.5 rounded-xl border border-purple-500/20 text-center">
-                <span class="text-[8px] font-black text-purple-400 uppercase block tracking-wider mb-0.5">Bailarinas Presentes en Salón</span>
+                <span class="text-[9px] font-black text-purple-400 uppercase block tracking-wider mb-0.5">Bailarinas Asistentes</span>
                 <span id="badge_bailarinas_presentes" class="text-sm font-black text-white">
-                    {{ presentes_b|length }} Chicas en Salón
+                    {{ presentes_b|length }} Bailarinas
                 </span>
             </div>
             
             <!-- Controles: Buscador y Calendario en una grilla de 2 columnas -->
             <div class="grid grid-cols-2 gap-2">
+                
                 <input type="text" id="buscadorBailarinas" onkeyup="filtrarBailarinasModal()" 
                        placeholder="🔍 BUSCAR NOMBRE..." 
                        class="input input-bordered w-full bg-black border-zinc-700 font-bold uppercase text-center focus:border-purple-500 text-[10px] h-10 rounded-xl text-white">
