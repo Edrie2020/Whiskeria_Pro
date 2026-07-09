@@ -35,10 +35,10 @@ from services.stock_service import propagar_recalculo_stock
 def obtener_fecha_operativa() -> datetime:
     """
     Retorna la fecha operativa real del local. 
-    Si son entre las 00:00 AM y las 06:00 AM, contablemente todavía es el día anterior.
+    Si es antes de las 16:30 (4:30 PM), contablemente todavía pertenece a la jornada anterior.
     """
     ahora = obtener_ahora_local()
-    if ahora.time() < time(6, 0):  # Si es de madrugada (antes de las 6:00 AM)
+    if ahora.time() < time(16, 30):  # Ajuste de horario límite para el Turno 1
         return ahora - timedelta(days=1)
     return ahora
 
@@ -288,8 +288,7 @@ async def home(request: Request, db: Session = Depends(get_db)):
                 "bailando_hoy": asis.bailando_hoy if asis else False
             })
     
-    bailando_hoy = []
-    en_espera = []
+    presentes_b = []
     ausentes_b = []
 
     if conf.turno_activo == "Turno 1":
@@ -311,12 +310,14 @@ async def home(request: Request, db: Session = Depends(get_db)):
                 "bailando": asis_hoy.bailando_hoy if asis_hoy else False
             }
             
-            if not info["presente"]:
-                ausentes_b.append(info)
-            elif info["bailando"] or info["monto_shows"] > 0:
-                bailando_hoy.append(info)
+            # Clasificación de bailarinas presentes y ausentes
+            if info["presente"]:
+                presentes_b.append(info)
             else:
-                en_espera.append(info)
+                ausentes_b.append(info)
+
+        # Ordenar la lista consolidada de presentes de MAYOR pago a MENOR pago
+        presentes_b.sort(key=lambda x: x["monto_shows"], reverse=True)
 
     meta_fija = 4000000.0
     porcentaje = (total_ventas / meta_fija) * 100 if meta_fija > 0 else 0
@@ -348,9 +349,8 @@ async def home(request: Request, db: Session = Depends(get_db)):
             "porcentaje": porcentaje,
             "total_deudas": total_deudas,
             "damas": damas_pantalla,
-            "bailando_hoy": bailando_hoy,   
-            "en_espera": en_espera,         
-            "ausentes_b": ausentes_b,       
+            "presentes_b": presentes_b,     # Lista unificada de bailarinas presentes
+            "ausentes_b": ausentes_b,       # Lista de bailarinas ausentes
             "dict_bailando": {a.dama_id: a.bailando_hoy for a in asistencias},
             "garzones": db.query(models.Mesero).all(),
             "productos_cooler": productos_cooler_filtrados,  
@@ -472,9 +472,9 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         dama = db.query(models.Dama).filter(models.Dama.id == asis.dama_id).first()
         if not dama: continue
         
-        # Filtramos ventas excluyendo "PRIVADO" para cumplir la instrucción de "se paga aparte"
-        ventas_pagadas = [v for v in ventas_hoy if v.dama_id == dama.id and v.liquidada and v.servicio != "PRIVADO"]
-        ventas_pendientes = [v for v in ventas_hoy if v.dama_id == dama.id and not v.liquidada and v.servicio != "PRIVADO"]
+        # Excluye del pago estándar de copas las transacciones de VIP 2, PRIVADO (histórico) y Salidas Manuales
+        ventas_pagadas = [v for v in ventas_hoy if v.dama_id == dama.id and v.liquidada and v.servicio not in ["VIP 2", "PRIVADO", "SALIDA MANUAL"]]
+        ventas_pendientes = [v for v in ventas_hoy if v.dama_id == dama.id and not v.liquidada and v.servicio not in ["VIP 2", "PRIVADO", "SALIDA MANUAL"]]
 
         # Bonos de Asistencia y Residencia
         monto_bono_base = asis.bono_asistencia or 0.0
@@ -484,8 +484,8 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
 
         whatsapp_limpio = "".join(c for c in dama.whatsapp if c.isdigit()) if dama.whatsapp else ""
 
-        # Contar cuántos Privados de hoy tiene la dama para adjuntarle la nota informativa
-        privados_hoy_dama = [v for v in ventas_hoy if v.dama_id == dama.id and v.servicio == "PRIVADO"]
+        # Contar cuántos VIP 2 de hoy tiene la dama para adjuntarle la nota informativa
+        privados_hoy_dama = [v for v in ventas_hoy if v.dama_id == dama.id and v.servicio in ["VIP 2", "PRIVADO"]]
         total_privados_hoy_dama_comis = sum(v.comision_chica for v in privados_hoy_dama)
         cant_privados_hoy_dama = len(privados_hoy_dama)
 
@@ -493,10 +493,10 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
         if cant_privados_hoy_dama > 0:
             note_privados_txt = (
                 f"\n-----------------------------------------\n"
-                f"💎 *PRIVADOS DEL TURNO (SE PAGAN APARTE):*\n"
-                f"• Cantidad: {cant_privados_hoy_dama} Privados\n"
+                f"💎 *VIP 2 DEL TURNO (SE PAGAN APARTE):*\n"
+                f"• Cantidad: {cant_privados_hoy_dama} Servicios VIP 2\n"
                 f"• Comisión por cobrar: *${total_privados_hoy_dama_comis:,.0f}*\n"
-                f"_(Se liquidan por separado en el control de privados)_"
+                f"_(Se liquidan por separado en el control de VIP 2)_"
             )
 
         # CASO A: Si ya se pagó la Ficha 1
@@ -689,7 +689,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
 
     ventas_pendientes_raw = db.query(models.Venta).filter(
         models.Venta.liquidada == False,
-        models.Venta.servicio != "PRIVADO"
+        models.Venta.servicio.notin_(["VIP 2", "PRIVADO", "SALIDA MANUAL"])
     ).all()
 
     ventas_agrupadas = {}
@@ -759,10 +759,10 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 if not tragos_detalle_p:
                     tragos_detalle_p = "• Sin consumos.\n"
 
-                # Adjuntar también a las fichas pendientes del historial la nota informativa de privados de ese día
+                # Adjuntar también a las fichas pendientes del historial la nota informativa de VIP 2 de ese día
                 priv_hist_dama = db.query(models.Venta).filter(
                     models.Venta.dama_id == dama_p.id,
-                    models.Venta.servicio == "PRIVADO",
+                    models.Venta.servicio.in_(["VIP 2", "PRIVADO", "SALIDA MANUAL"]),
                     models.Venta.fecha_operativa == asis_p.fecha,
                     models.Venta.turno == asis_p.turno
                 ).all()
@@ -773,10 +773,10 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 if cant_priv_hist > 0:
                     note_hist_txt = (
                         f"\n-----------------------------------------\n"
-                        f"💎 *PRIVADOS DEL TURNO (SE PAGAN APARTE):*\n"
-                        f"• Cantidad: {cant_priv_hist} Privados\n"
+                        f"💎 *VIP 2 DEL TURNO (SE PAGAN APARTE):*\n"
+                        f"• Cantidad: {cant_priv_hist} Servicios VIP 2\n"
                         f"• Comisión por cobrar: *${total_priv_hist_comis:,.0f}*\n"
-                        f"_(Se liquidan por separado en el control de privados)_"
+                        f"_(Se liquidan por separado en el control de VIP 2)_"
                     )
 
                 if asis_p.liquidada:
@@ -843,7 +843,8 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     # =========================================================================
     # 🔒 AGRUPACIÓN DE PRIVADOS POR DAMA (FECHAS Y TURNOS DETALLADOS)
     # =========================================================================
-    privados_todos = db.query(models.Venta).filter(models.Venta.servicio == "PRIVADO").all()
+    # El panel unificado de VIP 2 agrupa los servicios VIP 2, los PRIVADOS históricos y las Salidas Manuales de forma transparente
+    privados_todos = db.query(models.Venta).filter(models.Venta.servicio.in_(["VIP 2", "PRIVADO", "SALIDA MANUAL"])).all()
     
     grupos_hoy = {}
     grupos_pendientes = {}
@@ -886,7 +887,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
             })
             msg_detalle_wa += f"• {hora_f} - PRIVADO (+${v.comision_chica:,.0f}) [Garzón: {v.mesero}]\n"
 
-        # Mensaje de WhatsApp personalizado para los Privados del turno activo
+        # ... (Cálculos de WhatsApp de Privados se conservan intactos)
         dama_obj = db.query(models.Dama).filter(models.Dama.id == dama_id).first()
         wsp_limpio = "".join(c for c in dama_obj.whatsapp if c.isdigit()) if dama_obj and dama_obj.whatsapp else ""
         
@@ -1071,12 +1072,12 @@ async def registrar_pago_dama(request: Request, dama_id: int, fecha: str = Form(
     if not username or user_role not in ["admin1", "administrador", "cajera"]:
         raise HTTPException(status_code=403, detail="No autorizado.")
     
-    # Liquidar ventas de ese turno usando la columna fecha_operativa exacta (excluye privados de la liquidación de ficha)
+    # Liquidar ventas de ese turno usando la columna fecha_operativa exacta (excluye VIP 2/Privados/Salidas de la liquidación de ficha)
     ventas_pendientes = db.query(models.Venta).filter(
         models.Venta.dama_id == dama_id,
         models.Venta.fecha_operativa == fecha,
         models.Venta.turno == turno,
-        models.Venta.servicio != "PRIVADO",
+        models.Venta.servicio.notin_(["VIP 2", "PRIVADO", "SALIDA MANUAL"]),
         models.Venta.liquidada == False
     ).all()
     
@@ -1158,11 +1159,12 @@ async def registrar_pago_show(
     asis = db.query(models.Asistencia).filter(models.Asistencia.id == asistencia_id).first()
     
     if asis:
+        # Regla de negocio: Si se desasigna de pista (se fija monto en 0), no recibe pago y bailando_hoy = False
         asis.bono_show = monto_total
         asis.bailando_hoy = (monto_total > 0)
         
         dama = db.query(models.Dama).filter(models.Dama.id == asis.dama_id).first()
-        accion_txt = f"ACTUALIZÓ SHOWS {dama.nombre_artistico}: ${monto_total:,.0f}" if monto_total > 0 else f"QUITÓ DE PISTA A {dama.nombre_artistico}"
+        accion_txt = f"ACTUALIZÓ SHOWS {dama.nombre_artistico}: ${monto_total:,.0f}" if monto_total > 0 else f"QUITÓ DE PISTA A {dama.nombre_artistico} (PAGO FIJADO EN $0)"
         
         db.add(models.LogAuditoria(
             usuario=username, 
@@ -1199,7 +1201,7 @@ async def registrar_pago_privado(request: Request, venta_id: int, db: Session = 
         venta.liquidada = True
         log = models.LogAuditoria(
             usuario=username,
-            accion=f"PAGÓ PRIVADO INDIVIDUAL - Venta ID: {venta.id} (${venta.comision_chica:,.0f})",
+            accion=f"PAGÓ VIP 2 INDIVIDUAL - Venta ID: {venta.id} (${venta.comision_chica:,.0f})",
             turno=venta.turno
         )
         db.add(log)
@@ -1224,7 +1226,7 @@ async def registrar_pago_privado_grupo(
         
         db.add(models.LogAuditoria(
             usuario=username,
-            accion=f"PAGÓ GRUPO DE PRIVADOS - Cantidad: {len(ventas_grupo)} servicios",
+            accion=f"PAGÓ GRUPO DE VIP 2 - Cantidad: {len(ventas_grupo)} servicios",
             turno=ventas_grupo[0].turno if ventas_grupo else None
         ))
         db.commit()
@@ -1249,7 +1251,7 @@ async def subir_respaldo_secreto(clave: str, archivo: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al subir el archivo: {str(e)}")
     
-   # =========================================================
+# =========================================================
 # API PARA CONSULTAR HISTORIAL DE BAILARINAS EN EL MODAL
 # =========================================================
 @app.get("/api/historial_bailarinas")
@@ -1270,6 +1272,9 @@ async def api_historial_bailarinas(fecha: str, db: Session = Depends(get_db)):
                 "monto_shows": asis.bono_show,
                 "turno": asis.turno
             })
+            
+    # Ordenar historial de mayor pago a menor pago
+    resultado.sort(key=lambda x: x["monto_shows"], reverse=True)
             
     # 3. Devolvemos la información ordenada al navegador
     return {

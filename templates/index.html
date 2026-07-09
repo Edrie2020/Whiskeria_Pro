@@ -80,10 +80,12 @@
                     <span class="text-[9px] font-black uppercase text-green-500">Asistencias</span>
                 </a>
                 {% if turno == 'Turno 1' %}
-                <button onclick="document.getElementById('modal_bailarinas_pro').showModal()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
+                <!-- Se actualiza onclick para limpiar filtros al entrar al modal de bailarinas -->
+                <button onclick="abrirModalBailarinas()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
                     <div class="icon-circle glow-purple text-4xl">💃</div>
                     <span class="text-[9px] font-black uppercase text-purple-500">Bailarinas</span>
                 </button>
+
                 {% endif %}
                 <a href="/contabilidad" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
                     <div class="icon-circle glow-yellow text-4xl">📈</div>
@@ -200,7 +202,8 @@
                     <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Adicionales (Opcional):</span>
                     <div class="grid grid-cols-2 gap-2">
                         <button type="button" id="btn_ind_extra_vip" onclick="toggleExtraInd('VIP')" class="btn btn-xs btn-outline btn-secondary font-black">✨ + VIP (50K)</button>
-                        <button type="button" id="btn_ind_extra_priv" onclick="toggleExtraInd('PRIVADO')" class="btn btn-xs btn-outline btn-accent font-black">🔒 + PRIVADO (200K)</button>
+                        <!-- Se renombra el botón visual y el parámetro de envío a VIP 2 -->
+<button type="button" id="btn_ind_extra_priv" onclick="toggleExtraInd('VIP 2')" class="btn btn-xs btn-outline btn-accent font-black">🔒 + VIP 2 (200K)</button>
                     </div>
                 </div>
 
@@ -934,8 +937,8 @@ function toggleExtraInd(tipo) {
     
     document.getElementById('btn_ind_extra_vip').classList.toggle('btn-secondary', ventaIndActual.extra === 'VIP');
     document.getElementById('btn_ind_extra_vip').classList.toggle('btn-outline', ventaIndActual.extra !== 'VIP');
-    document.getElementById('btn_ind_extra_priv').classList.toggle('btn-accent', ventaIndActual.extra === 'PRIVADO');
-    document.getElementById('btn_ind_extra_priv').classList.toggle('btn-outline', ventaIndActual.extra !== 'PRIVADO');
+    document.getElementById('btn_ind_extra_priv').classList.toggle('btn-accent', ventaIndActual.extra === 'VIP 2');
+    document.getElementById('btn_ind_extra_priv').classList.toggle('btn-outline', ventaIndActual.extra !== 'VIP 2');
 }
 
 function procesarSiguientePasoInd() {
@@ -961,9 +964,9 @@ function procesarSiguientePasoInd() {
     if (extra === 'VIP') {
         total += 50000;
         textoResumen += (textoResumen ? " + " : "") + "VIP";
-    } else if (extra === 'PRIVADO') {
+    } else if (extra === 'VIP 2' || extra === 'PRIVADO') {
         total += 200000;
-        textoResumen += (textoResumen ? " + " : "") + "PRIVADO";
+        textoResumen += (textoResumen ? " + " : "") + "VIP 2";
     }
 
     if (casaManual > 0 || chicaManual > 0) {
@@ -1350,12 +1353,12 @@ function generarFilasMesaDetalle() {
                     </select>
                 </td>
                 <td>
-                    <select class="select select-bordered select-xs w-full bg-black text-white font-bold item-extra-select" onchange="actualizarPreciosMesa()">
-                        <option value="">NINGUNO</option>
-                        <option value="VIP">VIP (+50K)</option>
-                        <option value="PRIVADO">PRIVADO (+200K)</option>
-                    </select>
-                </td>
+                            <select class="select select-bordered select-xs w-full bg-black text-white font-bold item-extra-select" onchange="actualizarPreciosMesa()">
+                                <option value="">NINGUNO</option>
+                                <option value="VIP">VIP (+50K)</option>
+                                <option value="VIP 2">VIP 2 (+200K)</option>
+                            </select>
+                        </td>
                 <td class="text-right text-purple-400 font-black text-xs pr-2 item-subtotal-text">$25.000</td>
             </tr>
         `;
@@ -1380,10 +1383,10 @@ function actualizarPreciosMesa() {
             const tierVal = parseInt(tierSelect.value) || 0;
             const extraVal = extraSelect.value;
 
-            let subtotal = tierVal;
+            
+let subtotal = tierVal;
             if (extraVal === 'VIP') subtotal += 50000;
-            if (extraVal === 'PRIVADO') subtotal += 200000;
-
+            if (extraVal === 'VIP 2' || extraVal === 'PRIVADO') subtotal += 200000;
             subtotalText.innerText = "$" + subtotal.toLocaleString('es-CL');
             totalRonda += subtotal;
         }
@@ -1437,7 +1440,7 @@ function avanzarAPagoMesa() {
 
         let subtotal = tierVal;
         if (extraVal === 'VIP') subtotal += 50000;
-        if (extraVal === 'PRIVADO') subtotal += 200000;
+        if (extraVal === 'VIP 2' || extraVal === 'PRIVADO') subtotal += 200000;
 
         totalRonda += subtotal;
 
@@ -1735,7 +1738,7 @@ function confirmarVentaMulti() {
                                 <span class="font-black text-white uppercase text-xs italic">{{ b.nombre }}</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <form onsubmit="event.preventDefault(); const monto = parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL'); if(confirm('¿Está seguro de subir a la pista a {{ b.nombre }} cobrando un show de $' + monto + '?')) { ejecutarAccionBailarina(event, this); }" action="/registrar_pago_show" method="post" class="flex items-center gap-2">
+                                <form onsubmit="event.preventDefault(); { const valorBonoPista = parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL'); if(confirm('¿Está seguro de subir a la pista a {{ b.nombre }} cobrando un show de $' + valorBonoPista + '?')) { ejecutarAccionBailarina(event, this); } }" action="/registrar_pago_show" method="post" class="flex items-center gap-2">
                                     <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
                                     <div class="flex gap-1">
                                         <input type="number" name="monto_total" value="{{ b.monto_shows|int }}" class="input input-bordered input-xs w-20 bg-black text-center font-black text-purple-400">
@@ -1878,142 +1881,116 @@ function confirmarVentaMulti() {
         });
     });
 </script>
-<!-- MODAL DE BAILARINAS PROFESIONAL (DISEÑO UNIFICADO) -->
+
+<!-- MODAL DE BAILARINAS PROFESIONAL (DISEÑO UNIFICADO Y CONSOLIDADO) -->
 <dialog id="modal_bailarinas_pro" class="modal">
-    <div id="modal_bailarinas_inner_box" class="modal-box bg-zinc-950 border-2 border-purple-500 max-w-md p-0 overflow-hidden flex flex-col rounded-[35px]">
+    <!-- Se agrega md:max-w-xl y lg:max-w-2xl para ensanchar el modal en tablets y computadores -->
+    <div id="modal_bailarinas_inner_box" class="modal-box bg-zinc-950 border-2 border-purple-500 max-w-md md:max-w-xl lg:max-w-2xl p-0 overflow-hidden flex flex-col rounded-[35px]">
         
-        <!-- HEADER UNIFICADO (Mismo orden y estética que Garzones) -->
+        <!-- HEADER UNIFICADO (Botón ← SALÓN alineado a la izquierda) -->
         <div class="sticky top-0 z-50 bg-zinc-950 border-b border-purple-500/30 p-5 flex items-center gap-4">
             <button class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 h-8 shrink-0 text-[10px] sm:text-xs uppercase tracking-wider" 
                     onclick="document.getElementById('modal_bailarinas_pro').close()">
                 ← SALÓN
             </button>
-            <h3 class="text-sm sm:text-lg font-black text-purple-500 uppercase italic truncate leading-none">Control de Pista</h3>
+            <h3 class="text-sm sm:text-lg font-black text-purple-500 uppercase italic truncate leading-none">Bailarinas del Club</h3>
         </div>
 
-        <!-- BARRA DE MÉTRICAS Y BUSCADOR -->
+        <!-- BARRA DE CONTROL: METRICAS, BUSCADOR Y CALENDARIO -->
         <div class="p-5 bg-black/40 border-b border-white/5 space-y-4">
-            <!-- Estadísticas en tiempo real -->
-            <div class="grid grid-cols-2 gap-3 text-center">
-                <div class="bg-purple-950/20 p-2.5 rounded-xl border border-purple-500/10">
-                    <span class="text-[8px] font-black text-zinc-500 uppercase block tracking-wider mb-0.5">Presentes Hoy 👥</span>
-                    <span class="text-xs font-black text-white">
-                        {{ (en_espera|length) + (bailando_hoy|length) }} / {{ (en_espera|length) + (bailando_hoy|length) + (ausentes_b|length) }} Chicas
-                    </span>
-                </div>
-                <div class="bg-purple-500/10 p-2.5 rounded-xl border border-purple-500/20">
-                    <span class="text-[8px] font-black text-purple-400 uppercase block tracking-wider mb-0.5">En Pista 💃</span>
-                    <span class="text-xs font-black text-purple-400">{{ bailando_hoy|length }} Bailando</span>
-                </div>
+            <!-- Métrica única simplificada de presencia en el Club -->
+            <div class="bg-purple-950/20 p-3.5 rounded-xl border border-purple-500/20 text-center">
+                <span class="text-[8px] font-black text-purple-400 uppercase block tracking-wider mb-0.5">Bailarinas Presentes en Salón</span>
+                <span id="badge_bailarinas_presentes" class="text-sm font-black text-white">
+                    {{ presentes_b|length }} Chicas en Salón
+                </span>
             </div>
             
-            <!-- Buscador -->
-            <div class="relative">
+            <!-- Controles: Buscador y Calendario en una grilla de 2 columnas -->
+            <div class="grid grid-cols-2 gap-2">
                 <input type="text" id="buscadorBailarinas" onkeyup="filtrarBailarinasModal()" 
-                       placeholder="🔍 BUSCAR BAILARINA POR NOMBRE..." 
-                       class="input input-bordered w-full bg-black border-zinc-700 font-bold uppercase text-center focus:border-purple-500 text-xs h-10 rounded-xl text-white">
+                       placeholder="🔍 BUSCAR NOMBRE..." 
+                       class="input input-bordered w-full bg-black border-zinc-700 font-bold uppercase text-center focus:border-purple-500 text-[10px] h-10 rounded-xl text-white">
+                
+                <input type="date" id="fechaPistaHistorial" onchange="consultarHistorialBailarinas()" 
+                       class="input input-bordered w-full bg-black border-zinc-700 font-bold text-center focus:border-purple-500 text-[10px] h-10 rounded-xl text-white">
             </div>
         </div>
 
-        <!-- CONTENIDO CON SCROLL -->
-        <div class="p-6 space-y-8 max-h-[50vh] overflow-y-auto custom-scrollbar">
+        <!-- AREA DE CONTENIDO CON SCROLL -->
+        <div class="p-6 pb-12 space-y-6 max-h-[50vh] overflow-y-auto custom-scrollbar">
             
-            <!-- SECCIÓN EN PISTA -->
-            {% if bailando_hoy %}
-            <div class="seccion-bailarinas-pista">
-                <h4 class="text-[10px] font-black text-purple-400 uppercase tracking-[4px] mb-4 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-purple-500 animate-ping"></span> 💃 EN PISTA
-                </h4>
-                <div class="grid grid-cols-1 gap-3">
-                    {% for b in bailando_hoy %}
-                    <div class="card-bailarina bg-purple-500/10 p-4 rounded-[30px] border border-purple-500/40 flex items-center justify-between shadow-lg" 
-                         data-nombre="{{ b.nombre | upper }}">
-                        <div class="flex items-center gap-3">
-                            <img src="{{ b.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-purple-500">
-                            <span class="font-black text-white uppercase text-xs italic">{{ b.nombre }}</span>
-                        </div>
-                        
-                        <div class="flex items-center gap-2">
-                            <form onsubmit="event.preventDefault(); if(confirm('¿Está seguro de subir a la pista a {{ b.nombre }} cobrando un show de $' + parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL') + '?')) { ejecutarAccionBailarina(event, this); }" action="/registrar_pago_show" method="post" class="flex items-center gap-3">
-                                <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
-                                <div class="flex gap-1">
-                                    <input type="number" name="monto_total" value="{{ b.monto_shows|int }}" 
-                                           class="input input-bordered input-xs w-20 bg-black text-center font-black text-purple-400">
-                                    <button type="submit" class="btn btn-xs btn-secondary font-black">✔</button>
-                                </div>
-                            </form>
-
-                            <form onsubmit="ejecutarAccionBailarina(event, this)" action="/registrar_pago_show" method="post">
-                                <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
-                                <input type="hidden" name="monto_total" value="0">
-                                <button type="submit" class="btn btn-circle btn-xs btn-error btn-outline" title="Quitar de pista">✕</button>
-                            </form>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- SECCIÓN DISPONIBLES -->
-            <div>
-                <h4 class="text-[10px] font-black text-green-500 uppercase tracking-[4px] mb-4 italic">● DISPONIBLES</h4>
-                <div class="grid grid-cols-1 gap-3">
-                    {% for b in en_espera %}
-                    <div class="card-bailarina bg-zinc-900/80 p-4 rounded-[35px] border border-green-500/20 flex items-center justify-between shadow-lg" 
-                         data-nombre="{{ b.nombre | upper }}">
-                        <div class="flex items-center gap-3">
-                            <img src="{{ b.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-green-500">
-                            <span class="font-black text-white uppercase text-xs italic">{{ b.nombre }}</span>
-                        </div>
-                        
-                        <form onsubmit="ejecutarAccionBailarina(event, this)" action="/registrar_pago_show" method="post" class="flex items-center gap-3">
-                            <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
+            <!-- VISTA A: TIEMPO REAL (Se muestra por defecto cuando el calendario está vacío) -->
+            <div id="pista_vista_en_vivo" class="space-y-6">
+                
+                <!-- LISTADO UNIFICADO DE TODAS LAS PRESENTES EN EL SALÓN -->
+                <div>
+                    <h4 class="text-[10px] font-black text-purple-400 uppercase tracking-[4px] mb-4 italic">● PRESENTES EN EL CLUB (ORDENADAS POR PAGO)</h4>
+                    
+                    <!-- Se muestra en 2 columnas de forma automática en notebooks -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% for b in presentes_b %}
+                        <div class="card-bailarina bg-zinc-900/80 p-4 rounded-[35px] border {% if b.monto_shows > 0 %} border-purple-500/30 bg-purple-950/5 {% else %} border-zinc-800 {% endif %} flex flex-col justify-between gap-4 shadow-lg" 
+                             data-nombre="{{ b.nombre | upper }}">
                             
-                            <div class="flex items-center gap-2 normal-state">
-                                <div class="flex flex-col items-center">
-                                    <span class="text-[8px] text-zinc-500 mb-0.5 uppercase font-bold">Monto Show</span>
-                                    <input name="monto_total" type="number" value="30000" required {% if role not in ['admin1', 'administrador', 'cajera'] %} disabled {% endif %}
-                                           class="input input-bordered input-xs w-20 bg-black text-center text-green-400 font-black">
+                            <div class="flex items-center gap-3">
+                                <img src="{{ b.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 {% if b.monto_shows > 0 %} border-purple-500 {% else %} border-zinc-700 {% endif %}">
+                                <div>
+                                    <span class="font-black text-white uppercase text-xs italic block">{{ b.nombre }}</span>
+                                    {% if b.monto_shows > 0 %}
+                                        <span class="text-[8px] font-black text-purple-400 uppercase tracking-wider block">💵 Pago Recibido: ${{ "{:,.0f}".format(b.monto_shows).replace(",", ".") }}</span>
+                                    {% else %}
+                                        <span class="text-[8px] font-bold text-zinc-500 uppercase block">💵 Sin pago asignado</span>
+                                    {% endif %}
                                 </div>
-                                {% if role in ['admin1', 'administrador', 'cajera'] %}
-                                <button type="button" onclick="mostrarConfirmacionTarjeta(this)" class="btn btn-xs btn-success font-black uppercase text-[8px] px-3 rounded-full h-7 mt-3">
-                                    SUBIR
-                                </button>
-                                {% else %}
-                                <span class="text-[8px] font-bold text-zinc-600 uppercase mt-3">🔒 LECTURA</span>
-                                {% endif %}
                             </div>
+                            
+                            <!-- Formulario de actualización rápida de shows/pagos -->
+                            <form onsubmit="event.preventDefault(); { const valorBonoBailarina = parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL'); if(confirm('¿Confirmar pago de show por $' + valorBonoBailarina + ' para {{ b.nombre }}?')) { ejecutarAccionBailarina(event, this); } }" action="/registrar_pago_show" method="post" class="flex items-center justify-between border-t border-white/5 pt-3 w-full">
+                                <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
+                                
+                                <div class="flex items-center gap-2 w-full justify-between">
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-[8px] text-zinc-500 uppercase font-bold">Monto Pago</span>
+                                        <input name="monto_total" type="number" value="{% if b.monto_shows > 0 %}{{ b.monto_shows|int }}{% else %}30000{% endif %}" required class="input input-bordered input-xs w-20 bg-black text-center text-green-400 font-black">
+                                    </div>
+                                    <div class="flex gap-1 mt-3">
+                                        <button type="submit" class="btn btn-xs btn-success font-black text-[9px] uppercase px-3 rounded-xl">ASIGNAR</button>
+                                        {% if b.monto_shows > 0 %}
+                                        <!-- Botón Quitar para fijar en $0 y remover pago -->
+                                        <button type="button" onclick="if(confirm('¿Quitar el pago a {{ b.nombre }}?')) { const form = this.closest('form'); form.querySelector('input[name=\'monto_total\']').value = 0; form.dispatchEvent(new Event('submit')); }" class="btn btn-xs btn-error btn-outline btn-square text-[9px]">✕</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN AUSENTES -->
+                <div>
+                    <h4 class="text-[10px] font-black text-zinc-700 uppercase tracking-[4px] mb-4 italic">○ AUSENTES / NO HAN LLEGADO</h4>
+                    <div class="flex flex-wrap gap-2 opacity-40">
+                        {% for b in ausentes_b %}
+                        <div class="card-bailarina flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-white/5" data-nombre="{{ b.nombre | upper }}">
+                            <img src="{{ b.foto_url }}" class="w-8 h-8 rounded-full grayscale object-cover">
+                            <span class="text-[9px] font-bold uppercase text-zinc-500">{{ b.nombre }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
 
-                            <div class="hidden flex flex-col items-end gap-1 confirm-state">
-                                <span class="text-[8px] font-black text-yellow-500 uppercase block tracking-wider confirm-text">¿Subir?</span>
-                                <div class="flex gap-1">
-                                    <button type="button" onclick="cancelarConfirmacionTarjeta(this)" class="btn btn-xs btn-outline btn-error font-black px-1.5 rounded-lg">✕</button>
-                                    <button type="submit" class="btn btn-xs btn-success font-black px-3 rounded-lg">✔ SÍ</button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    {% endfor %}
-                </div>
+            <!-- VISTA B: HISTORIAL (Se llena dinámicamente con JS al elegir una fecha) -->
+            <div id="pista_vista_historial" class="hidden space-y-3">
+                <!-- Tarjetas cargadas vía AJAX -->
             </div>
-            
-            <!-- SECCIÓN AUSENTES -->
-            <div>
-                <h4 class="text-[10px] font-black text-zinc-700 uppercase tracking-[4px] mb-4 italic">○ NO HAN LLEGADO</h4>
-                <div class="flex flex-wrap gap-2 opacity-40">
-                    {% for b in ausentes_b %}
-                    <div class="card-bailarina flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-white/5" 
-                         data-nombre="{{ b.nombre | upper }}">
-                        <img src="{{ b.foto_url }}" class="w-8 h-8 rounded-full grayscale object-cover">
-                        <span class="text-[9px] font-bold uppercase text-zinc-500">{{ b.nombre }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
+
         </div>
     </div>
 </dialog>
+
 
 <!-- Lógica JS para filtrado inmediato de Bailarinas -->
 <script>
@@ -2036,6 +2013,38 @@ function confirmarVentaMulti() {
         });
     }
 </script>
+
+<script>
+    function abrirModalBailarinas() {
+        // 1. Limpiamos los inputs del buscador y calendario
+        const inputBuscador = document.getElementById('buscadorBailarinas');
+        const inputCalendario = document.getElementById('fechaPistaHistorial');
+        if (inputBuscador) inputBuscador.value = '';
+        if (inputCalendario) inputCalendario.value = '';
+
+        // 2. Restauramos las vistas originales
+        const vistaEnVivo = document.getElementById('pista_vista_en_vivo');
+        const vistaHistorial = document.getElementById('pista_vista_historial');
+        if (vistaEnVivo) vistaEnVivo.classList.remove('hidden');
+        if (vistaHistorial) {
+            vistaHistorial.classList.add('hidden');
+            vistaHistorial.innerHTML = '';
+        }
+
+        // 3. Restauramos la etiqueta de métrica única
+        const badgePresentes = document.getElementById('badge_bailarinas_presentes');
+        if (badgePresentes) {
+            badgePresentes.innerText = "{{ presentes_b|length }} Chicas en Salón";
+        }
+
+        // 4. Mostramos el diálogo modal
+        document.getElementById('modal_bailarinas_pro').showModal();
+
+        // 5. Corremos el filtrador para asegurar que todo sea visible
+        filtrarBailarinasModal();
+    }
+</script>
+
 
 <!-- SISTEMA DE CONTROL DE HISTORIAL DE PISTA DINÁMICO -->
 <script>
@@ -2080,14 +2089,8 @@ function confirmarVentaMulti() {
     }
 </script>
 
-<!-- LÓGICA DE FILTRADO Y RECONCILIACIÓN EN CALENDARIO -->
+<!-- LÓGICA DE FILTRADO Y CONSULTA DE HISTORIAL (SÓLO LECTURA) -->
     <script>
-        function fecha_actual_js_format() {
-            // Obtener hoy en formato local YYYY-MM-DD
-            const d = new Date();
-            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        }
-
         async function filtrarBailarinasModal() {
             const query = document.getElementById('buscadorBailarinas').value.trim().toUpperCase();
             const cards = document.querySelectorAll('.card-bailarina');
@@ -2105,31 +2108,24 @@ function confirmarVentaMulti() {
             const fechaSeleccionada = document.getElementById('fechaPistaHistorial').value;
             const vistaEnVivo = document.getElementById('pista_vista_en_vivo');
             const vistaHistorial = document.getElementById('pista_vista_historial');
-            
             const badgePresentes = document.getElementById('badge_bailarinas_presentes');
-            const badgePista = document.getElementById('badge_bailarinas_pista');
             
-            // Si el calendario se limpia, volvemos a mostrar la vista en vivo de hoy
+            // Si el calendario se limpia, volvemos a la vista normal de hoy
             if (!fechaSeleccionada) {
                 vistaEnVivo.classList.remove('hidden');
                 vistaHistorial.classList.add('hidden');
-                
-                // Restauramos los badges con los datos originales que envió el servidor para hoy
-                badgePresentes.innerText = "{{ (en_espera|length) + (bailando_hoy|length) }} / {{ (en_espera|length) + (bailando_hoy|length) + (ausentes_b|length) }} Chicas";
-                badgePista.innerText = "{{ bailando_hoy|length }} Bailando";
+                badgePresentes.innerText = "{{ presentes_b|length }} Chicas en Salón";
                 return;
             }
             
-            // Si eligió una fecha anterior, consultamos la base de datos vía AJAX
+            // Consultamos la API del servidor para traer el pasado
             try {
                 const response = await fetch(`/api/historial_bailarinas?fecha=${fechaSeleccionada}`);
                 const data = await response.json();
                 
-                // Actualizamos las cabeceras con los totales de ese día consultado
-                badgePresentes.innerText = `${data.presentes_total} Presentes`;
-                badgePista.innerText = `${data.bailando_total} Bailaron`;
+                // Actualizamos la métrica unificada de asistencia para esa fecha
+                badgePresentes.innerText = `${data.presentes_total} Chicas en Salón`;
                 
-                // Ocultamos el panel activo de hoy y mostramos el panel de historial
                 vistaEnVivo.classList.add('hidden');
                 vistaHistorial.classList.remove('hidden');
                 
@@ -2142,35 +2138,36 @@ function confirmarVentaMulti() {
                     return;
                 }
                 
-                // Renderizamos las tarjetas de las bailarinas que estuvieron presentes en el salón ese día
-                let htmlCards = '';
+                // Renderizamos las tarjetas históricas ordenadas de mayor a menor pago
+                let htmlCards = '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">';
                 data.bailarinas.forEach(b => {
                     htmlCards += `
-                        <div class="card-bailarina bg-zinc-900 border ${b.bailo ? 'border-purple-500/40' : 'border-zinc-800'} p-4 rounded-[30px] flex items-center justify-between shadow-lg" data-nombre="${b.nombre}">
+                        <div class="card-bailarina bg-zinc-900 border ${b.monto_shows > 0 ? 'border-purple-500/30 bg-purple-950/5' : 'border-zinc-800'} p-4 rounded-[30px] flex items-center justify-between shadow-lg" data-nombre="${b.nombre}">
                             <div class="flex items-center gap-3">
-                                <img src="${b.foto_url}" class="w-11 h-11 rounded-full object-cover border-2 ${b.bailo ? 'border-purple-500' : 'border-zinc-700'}">
+                                <img src="${b.foto_url}" class="w-11 h-11 rounded-full object-cover border-2 ${b.monto_shows > 0 ? 'border-purple-500' : 'border-zinc-700'}">
                                 <div>
                                     <span class="font-black text-white uppercase text-xs italic block">${b.nombre}</span>
                                     <span class="text-[8px] font-bold text-zinc-500 uppercase">${b.turno}</span>
                                 </div>
                             </div>
                             <div class="text-right shrink-0">
-                                <span class="text-[9px] font-black uppercase ${b.bailo ? 'text-purple-400' : 'text-zinc-600'} block">
-                                    ${b.bailo ? '💃 BAILÓ' : '❌ NO BAILÓ'}
+                                <span class="text-[8px] font-black uppercase text-zinc-400 block">
+                                    ${b.monto_shows > 0 ? '💵 Recibió Pago de:' : '💵 Sin Pago Registrado'}
                                 </span>
-                                <span class="text-xs font-black ${b.bailo ? 'text-purple-400' : 'text-zinc-400'} block mt-0.5">
+                                <span class="text-xs font-black ${b.monto_shows > 0 ? 'text-green-400' : 'text-zinc-500'} block mt-0.5">
                                     $${Number(b.monto_shows).toLocaleString('es-CL')}
                                 </span>
                             </div>
                         </div>
                     `;
                 });
+                htmlCards += '</div>';
                 
                 vistaHistorial.innerHTML = htmlCards;
                 
             } catch (err) {
                 console.error("Error al traer historial:", err);
-                vistaHistorial.innerHTML = `<p class="text-red-500 text-xs font-black py-6 text-center">Error al consultar datos en el servidor.</p>`;
+                vistaHistorial.innerHTML = `<p class="text-red-500 text-xs font-black py-6 text-center">Error al consultar datos.</p>`;
             }
         }
     </script>
