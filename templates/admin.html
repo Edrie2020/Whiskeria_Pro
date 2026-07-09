@@ -35,15 +35,15 @@
         }
     </style>
 </head>
-<body class="bg-[#020202] text-white p-4 font-sans">
+<body class="bg-[#020202] text-white p-4 sm:p-6 font-sans">
 
-    <div class="max-w-6xl mx-auto">
-        <!-- HEADER -->
-                <div class="flex items-center gap-4 mb-6 border-b border-zinc-800 pb-4 px-2">
+    <div class="max-w-6xl mx-auto px-2 sm:px-4">
+        <!-- HEADER UNIFICADO (Mismo tamaño y alineación que asistencia) -->
+        <div class="flex items-center gap-4 mb-6 border-b border-zinc-800 pb-4 px-1">
             <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 h-8 shrink-0 text-[10px] sm:text-xs uppercase tracking-wider">
                 ← SALÓN
             </a>
-            <h1 class="text-base sm:text-2xl font-black text-pink-500 uppercase italic tracking-tight truncate leading-none">
+            <h1 class="text-xl sm:text-3xl font-black text-pink-500 uppercase italic tracking-tighter truncate leading-none">
                 Gestión de Damas
             </h1>
         </div>
@@ -75,10 +75,32 @@
                    aria-label="Activas" checked />
             <div role="tabpanel" class="tab-content bg-zinc-900/20 border-zinc-800 p-4 md:p-6 rounded-box">
 
-                <!-- Grilla responsiva adaptada para móviles para evitar el descuadre de tarjetas -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-4">
+                <!-- BARRA DE CONTROL: BÚSQUEDA Y ORDENAMIENTO -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 bg-zinc-900/40 p-4 rounded-[28px] border border-pink-500/10 shadow-xl mt-2">
+                    <!-- Buscador -->
+                    <div class="sm:col-span-2 relative">
+                        <input type="text" id="buscadorDamas" onkeyup="filtrarYOrdenarDamas()" 
+                               placeholder="🔍 BUSCAR DAMA POR NOMBRE..." 
+                               class="input input-bordered w-full bg-black border-zinc-700 font-bold uppercase text-center focus:border-pink-500 text-xs h-10 rounded-xl text-white">
+                    </div>
+                    <!-- Ordenador -->
+                    <div>
+                        <select id="ordenarDamasSelect" onchange="filtrarYOrdenarDamas()" 
+                                class="select select-bordered w-full bg-black border-zinc-700 font-black text-xs uppercase h-10 min-h-0 text-center rounded-xl focus:border-pink-500 text-white">
+                            <option value="alfabetico">🔤 Orden Alfabético (A-Z)</option>
+                            <option value="mayor_asistencia">📈 Mayor Asistencia (T1+T2)</option>
+                            <option value="bailarinas">💃 Bailarinas Primero</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Se inyecta la ID y la clase card-dama con metadatos para procesamiento fluido -->
+                <div id="grid_damas_activas" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-4 justify-items-center w-full">
                     {% for dama in activas %}
-                    <div class="bg-zinc-900/80 border border-zinc-800 p-4 rounded-[35px] flex flex-col items-center justify-between relative shadow-2xl h-full min-h-[260px] max-w-[240px] mx-auto w-full">
+                    <div class="card-dama bg-zinc-900/80 border border-zinc-800 p-4 rounded-[35px] flex flex-col items-center justify-between relative shadow-2xl h-full min-h-[260px] max-w-[240px] mx-auto w-full"
+                         data-name="{{ dama.nombre_artistico | upper }}"
+                         data-asis-total="{{ dama.dias_t1 + dama.dias_t2 }}"
+                         data-bailarina="{% if dama.es_bailarina %}true{% else %}false{% endif %}">
                         
                         {% if role in ['admin1', 'administrador', 'cajera'] %}
                         <form action="/eliminar_dama/{{ dama.id }}" method="post" class="absolute top-4 right-4 z-10">
@@ -246,6 +268,68 @@
             
             mostrarDetalles(real, rut, wsp, artista, es_baile, foto);
         }
+    </script>
+    <!-- SISTEMA DE CONTROL DE BÚSQUEDA Y ORDENAMIENTO DE DAMAS -->
+    <script>
+        function filtrarYOrdenarDamas() {
+            const buscador = document.getElementById('buscadorDamas');
+            const selector = document.getElementById('ordenarDamasSelect');
+            const grid = document.getElementById('grid_damas_activas');
+            
+            if (!buscador || !selector || !grid) return;
+            
+            const query = buscador.value.trim().toUpperCase();
+            const criterio = selector.value;
+            
+            // Convertimos la colección de tarjetas en un Array de JavaScript
+            const tarjetas = Array.from(grid.getElementsByClassName('card-dama'));
+            
+            // 1. Procesamos Filtro de Búsqueda
+            tarjetas.forEach(tarjeta => {
+                const nombreArtistico = tarjeta.getAttribute('data-name') || '';
+                if (nombreArtistico.includes(query)) {
+                    tarjeta.style.display = ""; // Muestra
+                } else {
+                    tarjeta.style.display = "none"; // Oculta
+                }
+            });
+            
+            // 2. Procesamos Criterio de Ordenamiento
+            tarjetas.sort((a, b) => {
+                if (criterio === 'alfabetico') {
+                    const nombreA = a.getAttribute('data-name') || '';
+                    const nombreB = b.getAttribute('data-name') || '';
+                    return nombreA.localeCompare(nombreB);
+                } 
+                else if (criterio === 'mayor_asistencia') {
+                    const asisA = parseInt(a.getAttribute('data-asis-total')) || 0;
+                    const asisB = parseInt(b.getAttribute('data-asis-total')) || 0;
+                    return asisB - asisA; // Mayor a menor
+                } 
+                else if (criterio === 'bailarinas') {
+                    const esBailarinaA = a.getAttribute('data-bailarina') === 'true' ? 1 : 0;
+                    const esBailarinaB = b.getAttribute('data-bailarina') === 'true' ? 1 : 0;
+                    
+                    // Prioriza bailarinas (1) sobre el resto (0)
+                    if (esBailarinaA !== esBailarinaB) {
+                        return esBailarinaB - esBailarinaA;
+                    }
+                    // Si ambas son bailarinas (o ninguna), desempata alfabéticamente
+                    const nombreA = a.getAttribute('data-name') || '';
+                    const nombreB = b.getAttribute('data-name') || '';
+                    return nombreA.localeCompare(nombreB);
+                }
+                return 0;
+            });
+            
+            // Reinsertamos las tarjetas reordenadas al DOM
+            tarjetas.forEach(tarjeta => grid.appendChild(tarjeta));
+        }
+        
+        // Ejecución inicial por defecto al cargar el archivo
+        document.addEventListener("DOMContentLoaded", function() {
+            filtrarYOrdenarDamas();
+        });
     </script>
 </body>
 </html>
