@@ -1676,40 +1676,67 @@ function confirmarVentaMulti() {
     </div>
 </dialog>
 
-<!-- MODAL DE BAILARINAS PROFESIONAL -->
+<!-- MODAL DE BAILARINAS PROFESIONAL (DISEÑO UNIFICADO) -->
 <dialog id="modal_bailarinas_pro" class="modal">
-    <div id="modal_bailarinas_inner_box" class="modal-box bg-zinc-950 border-2 border-purple-500 max-w-4xl p-0 overflow-hidden flex flex-col">
-        <div class="sticky top-0 z-50 bg-zinc-950 border-b border-purple-500/30 p-6 flex justify-between items-center">
-            <div>
-                <h3 class="font-black text-2xl text-purple-500 uppercase italic tracking-tighter">Control de Pista</h3>
-                <p class="text-[9px] font-bold text-zinc-500 uppercase">Gestión en tiempo real</p>
-            </div>
-            <button class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider" 
+    <div id="modal_bailarinas_inner_box" class="modal-box bg-zinc-950 border-2 border-purple-500 max-w-md p-0 overflow-hidden flex flex-col rounded-[35px]">
+        
+        <!-- HEADER UNIFICADO (Mismo orden y estética que Garzones) -->
+        <div class="sticky top-0 z-50 bg-zinc-950 border-b border-purple-500/30 p-5 flex items-center gap-4">
+            <button class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 h-8 shrink-0 text-[10px] sm:text-xs uppercase tracking-wider" 
                     onclick="document.getElementById('modal_bailarinas_pro').close()">
                 ← SALÓN
             </button>
+            <h3 class="text-sm sm:text-lg font-black text-purple-500 uppercase italic truncate leading-none">Control de Pista</h3>
         </div>
 
-        <div class="p-6 space-y-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <!-- BARRA DE MÉTRICAS Y BUSCADOR -->
+        <div class="p-5 bg-black/40 border-b border-white/5 space-y-4">
+            <!-- Estadísticas en tiempo real -->
+            <div class="grid grid-cols-2 gap-3 text-center">
+                <div class="bg-purple-950/20 p-2.5 rounded-xl border border-purple-500/10">
+                    <span class="text-[8px] font-black text-zinc-500 uppercase block tracking-wider mb-0.5">Presentes Hoy 👥</span>
+                    <span class="text-xs font-black text-white">
+                        {{ (en_espera|length) + (bailando_hoy|length) }} / {{ (en_espera|length) + (bailando_hoy|length) + (ausentes_b|length) }} Chicas
+                    </span>
+                </div>
+                <div class="bg-purple-500/10 p-2.5 rounded-xl border border-purple-500/20">
+                    <span class="text-[8px] font-black text-purple-400 uppercase block tracking-wider mb-0.5">En Pista 💃</span>
+                    <span class="text-xs font-black text-purple-400">{{ bailando_hoy|length }} Bailando</span>
+                </div>
+            </div>
+            
+            <!-- Buscador -->
+            <div class="relative">
+                <input type="text" id="buscadorBailarinas" onkeyup="filtrarBailarinasModal()" 
+                       placeholder="🔍 BUSCAR BAILARINA POR NOMBRE..." 
+                       class="input input-bordered w-full bg-black border-zinc-700 font-bold uppercase text-center focus:border-purple-500 text-xs h-10 rounded-xl text-white">
+            </div>
+        </div>
+
+        <!-- CONTENIDO CON SCROLL -->
+        <div class="p-6 space-y-8 max-h-[50vh] overflow-y-auto custom-scrollbar">
+            
+            <!-- SECCIÓN EN PISTA -->
             {% if bailando_hoy %}
-            <div>
+            <div class="seccion-bailarinas-pista">
                 <h4 class="text-[10px] font-black text-purple-400 uppercase tracking-[4px] mb-4 flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-purple-500 animate-ping"></span> 💃 EN PISTA
                 </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-3">
                     {% for b in bailando_hoy %}
-                    <div class="bg-purple-500/10 p-4 rounded-[30px] border border-purple-500/40 flex items-center justify-between shadow-lg">
-                        <div class="flex items-center gap-4">
-                            <img src="{{ b.foto_url }}" class="w-14 h-14 rounded-full object-cover border-2 border-purple-500">
-                            <span class="font-black text-white uppercase text-sm italic">{{ b.nombre }}</span>
+                    <div class="card-bailarina bg-purple-500/10 p-4 rounded-[30px] border border-purple-500/40 flex items-center justify-between shadow-lg" 
+                         data-nombre="{{ b.nombre | upper }}">
+                        <div class="flex items-center gap-3">
+                            <img src="{{ b.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-purple-500">
+                            <span class="font-black text-white uppercase text-xs italic">{{ b.nombre }}</span>
                         </div>
                         
-                        <div class="flex items-center gap-3">
-                            <form onsubmit="event.preventDefault(); const monto = parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL'); if(confirm('¿Está seguro de subir a la pista a {{ b.nombre }} cobrando un show de $' + monto + '?')) { ejecutarAccionBailarina(event, this); }" action="/registrar_pago_show" method="post" class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <form onsubmit="event.preventDefault(); if(confirm('¿Está seguro de subir a la pista a {{ b.nombre }} cobrando un show de $' + parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL') + '?')) { ejecutarAccionBailarina(event, this); }" action="/registrar_pago_show" method="post" class="flex items-center gap-2">
                                 <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
                                 <div class="flex gap-1">
                                     <input type="number" name="monto_total" value="{{ b.monto_shows|int }}" 
-                                           class="input input-bordered input-xs w-24 bg-black text-center font-black text-purple-400">
+                                           class="input input-bordered input-xs w-20 bg-black text-center font-black text-purple-400">
                                     <button type="submit" class="btn btn-xs btn-secondary font-black">✔</button>
                                 </div>
                             </form>
@@ -1726,39 +1753,41 @@ function confirmarVentaMulti() {
             </div>
             {% endif %}
 
+            <!-- SECCIÓN DISPONIBLES -->
             <div>
                 <h4 class="text-[10px] font-black text-green-500 uppercase tracking-[4px] mb-4 italic">● DISPONIBLES</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-3">
                     {% for b in en_espera %}
-                    <div class="bg-zinc-900/80 p-4 rounded-[35px] border border-green-500/20 flex items-center justify-between shadow-lg">
-                        <div class="flex items-center gap-4">
-                            <img src="{{ b.foto_url }}" class="w-14 h-14 rounded-full object-cover border-2 border-green-500 shadow-md">
-                            <span class="font-black text-white uppercase text-sm italic">{{ b.nombre }}</span>
+                    <div class="card-bailarina bg-zinc-900/80 p-4 rounded-[35px] border border-green-500/20 flex items-center justify-between shadow-lg" 
+                         data-nombre="{{ b.nombre | upper }}">
+                        <div class="flex items-center gap-3">
+                            <img src="{{ b.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-green-500">
+                            <span class="font-black text-white uppercase text-xs italic">{{ b.nombre }}</span>
                         </div>
                         
                         <form onsubmit="ejecutarAccionBailarina(event, this)" action="/registrar_pago_show" method="post" class="flex items-center gap-3">
                             <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
                             
-                            <div class="flex items-center gap-3 normal-state">
+                            <div class="flex items-center gap-2 normal-state">
                                 <div class="flex flex-col items-center">
-                                    <span class="text-[8px] text-zinc-500 mb-1 uppercase font-bold">Monto Show</span>
+                                    <span class="text-[8px] text-zinc-500 mb-0.5 uppercase font-bold">Monto Show</span>
                                     <input name="monto_total" type="number" value="30000" required {% if role not in ['admin1', 'administrador', 'cajera'] %} disabled {% endif %}
                                            class="input input-bordered input-xs w-20 bg-black text-center text-green-400 font-black">
                                 </div>
                                 {% if role in ['admin1', 'administrador', 'cajera'] %}
-                                <button type="button" onclick="mostrarConfirmacionTarjeta(this)" class="btn btn-xs btn-success font-black uppercase text-[9px] px-4 rounded-full h-8 mt-4">
+                                <button type="button" onclick="mostrarConfirmacionTarjeta(this)" class="btn btn-xs btn-success font-black uppercase text-[8px] px-3 rounded-full h-7 mt-3">
                                     SUBIR
                                 </button>
                                 {% else %}
-                                <span class="text-[9px] font-bold text-zinc-600 uppercase mt-4">🔒 LECTURA</span>
+                                <span class="text-[8px] font-bold text-zinc-600 uppercase mt-3">🔒 LECTURA</span>
                                 {% endif %}
                             </div>
 
                             <div class="hidden flex flex-col items-end gap-1 confirm-state">
-                                <span class="text-[9px] font-black text-yellow-500 uppercase block tracking-wider confirm-text">¿Confirmas subir?</span>
+                                <span class="text-[8px] font-black text-yellow-500 uppercase block tracking-wider confirm-text">¿Subir?</span>
                                 <div class="flex gap-1">
-                                    <button type="button" onclick="cancelarConfirmacionTarjeta(this)" class="btn btn-xs btn-outline btn-error font-black px-2 rounded-lg">✕</button>
-                                    <button type="submit" class="btn btn-xs btn-success font-black px-4 rounded-lg">✔ SÍ</button>
+                                    <button type="button" onclick="cancelarConfirmacionTarjeta(this)" class="btn btn-xs btn-outline btn-error font-black px-1.5 rounded-lg">✕</button>
+                                    <button type="submit" class="btn btn-xs btn-success font-black px-3 rounded-lg">✔ SÍ</button>
                                 </div>
                             </div>
                         </form>
@@ -1767,11 +1796,13 @@ function confirmarVentaMulti() {
                 </div>
             </div>
             
+            <!-- SECCIÓN AUSENTES -->
             <div>
                 <h4 class="text-[10px] font-black text-zinc-700 uppercase tracking-[4px] mb-4 italic">○ NO HAN LLEGADO</h4>
-                <div class="flex flex-wrap gap-3 opacity-40">
+                <div class="flex flex-wrap gap-2 opacity-40">
                     {% for b in ausentes_b %}
-                    <div class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">
+                    <div class="card-bailarina flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-white/5" 
+                         data-nombre="{{ b.nombre | upper }}">
                         <img src="{{ b.foto_url }}" class="w-8 h-8 rounded-full grayscale object-cover">
                         <span class="text-[9px] font-bold uppercase text-zinc-500">{{ b.nombre }}</span>
                     </div>
@@ -1847,6 +1878,164 @@ function confirmarVentaMulti() {
             }
         });
     });
+</script>
+<!-- MODAL DE BAILARINAS PROFESIONAL (DISEÑO UNIFICADO) -->
+<dialog id="modal_bailarinas_pro" class="modal">
+    <div id="modal_bailarinas_inner_box" class="modal-box bg-zinc-950 border-2 border-purple-500 max-w-md p-0 overflow-hidden flex flex-col rounded-[35px]">
+        
+        <!-- HEADER UNIFICADO (Mismo orden y estética que Garzones) -->
+        <div class="sticky top-0 z-50 bg-zinc-950 border-b border-purple-500/30 p-5 flex items-center gap-4">
+            <button class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 h-8 shrink-0 text-[10px] sm:text-xs uppercase tracking-wider" 
+                    onclick="document.getElementById('modal_bailarinas_pro').close()">
+                ← SALÓN
+            </button>
+            <h3 class="text-sm sm:text-lg font-black text-purple-500 uppercase italic truncate leading-none">Control de Pista</h3>
+        </div>
+
+        <!-- BARRA DE MÉTRICAS Y BUSCADOR -->
+        <div class="p-5 bg-black/40 border-b border-white/5 space-y-4">
+            <!-- Estadísticas en tiempo real -->
+            <div class="grid grid-cols-2 gap-3 text-center">
+                <div class="bg-purple-950/20 p-2.5 rounded-xl border border-purple-500/10">
+                    <span class="text-[8px] font-black text-zinc-500 uppercase block tracking-wider mb-0.5">Presentes Hoy 👥</span>
+                    <span class="text-xs font-black text-white">
+                        {{ (en_espera|length) + (bailando_hoy|length) }} / {{ (en_espera|length) + (bailando_hoy|length) + (ausentes_b|length) }} Chicas
+                    </span>
+                </div>
+                <div class="bg-purple-500/10 p-2.5 rounded-xl border border-purple-500/20">
+                    <span class="text-[8px] font-black text-purple-400 uppercase block tracking-wider mb-0.5">En Pista 💃</span>
+                    <span class="text-xs font-black text-purple-400">{{ bailando_hoy|length }} Bailando</span>
+                </div>
+            </div>
+            
+            <!-- Buscador -->
+            <div class="relative">
+                <input type="text" id="buscadorBailarinas" onkeyup="filtrarBailarinasModal()" 
+                       placeholder="🔍 BUSCAR BAILARINA POR NOMBRE..." 
+                       class="input input-bordered w-full bg-black border-zinc-700 font-bold uppercase text-center focus:border-purple-500 text-xs h-10 rounded-xl text-white">
+            </div>
+        </div>
+
+        <!-- CONTENIDO CON SCROLL -->
+        <div class="p-6 space-y-8 max-h-[50vh] overflow-y-auto custom-scrollbar">
+            
+            <!-- SECCIÓN EN PISTA -->
+            {% if bailando_hoy %}
+            <div class="seccion-bailarinas-pista">
+                <h4 class="text-[10px] font-black text-purple-400 uppercase tracking-[4px] mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-purple-500 animate-ping"></span> 💃 EN PISTA
+                </h4>
+                <div class="grid grid-cols-1 gap-3">
+                    {% for b in bailando_hoy %}
+                    <div class="card-bailarina bg-purple-500/10 p-4 rounded-[30px] border border-purple-500/40 flex items-center justify-between shadow-lg" 
+                         data-nombre="{{ b.nombre | upper }}">
+                        <div class="flex items-center gap-3">
+                            <img src="{{ b.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-purple-500">
+                            <span class="font-black text-white uppercase text-xs italic">{{ b.nombre }}</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <form onsubmit="event.preventDefault(); if(confirm('¿Está seguro de subir a la pista a {{ b.nombre }} cobrando un show de $' + parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL') + '?')) { ejecutarAccionBailarina(event, this); }" action="/registrar_pago_show" method="post" class="flex items-center gap-3">
+                                <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
+                                <div class="flex gap-1">
+                                    <input type="number" name="monto_total" value="{{ b.monto_shows|int }}" 
+                                           class="input input-bordered input-xs w-20 bg-black text-center font-black text-purple-400">
+                                    <button type="submit" class="btn btn-xs btn-secondary font-black">✔</button>
+                                </div>
+                            </form>
+
+                            <form onsubmit="ejecutarAccionBailarina(event, this)" action="/registrar_pago_show" method="post">
+                                <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
+                                <input type="hidden" name="monto_total" value="0">
+                                <button type="submit" class="btn btn-circle btn-xs btn-error btn-outline" title="Quitar de pista">✕</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- SECCIÓN DISPONIBLES -->
+            <div>
+                <h4 class="text-[10px] font-black text-green-500 uppercase tracking-[4px] mb-4 italic">● DISPONIBLES</h4>
+                <div class="grid grid-cols-1 gap-3">
+                    {% for b in en_espera %}
+                    <div class="card-bailarina bg-zinc-900/80 p-4 rounded-[35px] border border-green-500/20 flex items-center justify-between shadow-lg" 
+                         data-nombre="{{ b.nombre | upper }}">
+                        <div class="flex items-center gap-3">
+                            <img src="{{ b.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-green-500">
+                            <span class="font-black text-white uppercase text-xs italic">{{ b.nombre }}</span>
+                        </div>
+                        
+                        <form onsubmit="ejecutarAccionBailarina(event, this)" action="/registrar_pago_show" method="post" class="flex items-center gap-3">
+                            <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
+                            
+                            <div class="flex items-center gap-2 normal-state">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[8px] text-zinc-500 mb-0.5 uppercase font-bold">Monto Show</span>
+                                    <input name="monto_total" type="number" value="30000" required {% if role not in ['admin1', 'administrador', 'cajera'] %} disabled {% endif %}
+                                           class="input input-bordered input-xs w-20 bg-black text-center text-green-400 font-black">
+                                </div>
+                                {% if role in ['admin1', 'administrador', 'cajera'] %}
+                                <button type="button" onclick="mostrarConfirmacionTarjeta(this)" class="btn btn-xs btn-success font-black uppercase text-[8px] px-3 rounded-full h-7 mt-3">
+                                    SUBIR
+                                </button>
+                                {% else %}
+                                <span class="text-[8px] font-bold text-zinc-600 uppercase mt-3">🔒 LECTURA</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="hidden flex flex-col items-end gap-1 confirm-state">
+                                <span class="text-[8px] font-black text-yellow-500 uppercase block tracking-wider confirm-text">¿Subir?</span>
+                                <div class="flex gap-1">
+                                    <button type="button" onclick="cancelarConfirmacionTarjeta(this)" class="btn btn-xs btn-outline btn-error font-black px-1.5 rounded-lg">✕</button>
+                                    <button type="submit" class="btn btn-xs btn-success font-black px-3 rounded-lg">✔ SÍ</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- SECCIÓN AUSENTES -->
+            <div>
+                <h4 class="text-[10px] font-black text-zinc-700 uppercase tracking-[4px] mb-4 italic">○ NO HAN LLEGADO</h4>
+                <div class="flex flex-wrap gap-2 opacity-40">
+                    {% for b in ausentes_b %}
+                    <div class="card-bailarina flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-white/5" 
+                         data-nombre="{{ b.nombre | upper }}">
+                        <img src="{{ b.foto_url }}" class="w-8 h-8 rounded-full grayscale object-cover">
+                        <span class="text-[9px] font-bold uppercase text-zinc-500">{{ b.nombre }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</dialog>
+
+<!-- Lógica JS para filtrado inmediato de Bailarinas -->
+<script>
+    function filtrarBailarinasModal() {
+        const query = document.getElementById('buscadorBailarinas').value.trim().toUpperCase();
+        const cards = document.querySelectorAll('.card-bailarina');
+        
+        cards.forEach(card => {
+            const nombre = card.getAttribute('data-nombre') || '';
+            if (nombre.includes(query)) {
+                // Si es un badge flex, conservamos su display, si es un bloque normal restauramos su valor por defecto
+                if (card.classList.contains('rounded-full')) {
+                    card.style.setProperty('display', 'flex', 'important');
+                } else {
+                    card.style.display = "";
+                }
+            } else {
+                card.style.setProperty('display', 'none', 'important');
+            }
+        });
+    }
 </script>
 </body>
 </html>
