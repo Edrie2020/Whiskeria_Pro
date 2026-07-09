@@ -493,13 +493,13 @@
 
 
 
-    <!-- MODAL 2: HISTÓRICO - VIP 2 DIAS ANTERIORES -->
+    <!-- MODAL 2: HISTÓRICO - SERVICIOS ADICIONALES ANTERIORES -->
     <dialog id="modal_global_privados" class="modal">
         <div class="modal-box max-w-xl bg-zinc-950 border-2 border-purple-500 p-6 rounded-[35px]">
             <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-3">
                 <div>
-                    <h3 class="text-lg font-black text-purple-400 uppercase italic">Control de VIP 2 Anteriores</h3>
-                    <p class="text-[9px] text-zinc-500 uppercase font-bold">Historial de VIP 2 de Días Anteriores</p>
+                    <h3 class="text-lg font-black text-purple-400 uppercase italic">Control de Adicionales Anteriores</h3>
+                    <p class="text-[9px] text-zinc-500 uppercase font-bold">Historial de VIP 2 y Salidas Pendientes</p>
                 </div>
                 <div class="badge badge-warning badge-sm p-3 font-black text-xs">Total Pendiente: ${{ "{:,.0f}".format(total_privados_pendientes).replace(",", ".") }}</div>
             </div>
@@ -511,7 +511,7 @@
                        class="input input-bordered input-sm w-full bg-black border-purple-500/40 text-center font-bold uppercase focus:border-purple-500 text-xs h-9">
             </div>
             
-            <!-- PRIVADOS VIP 2 HISTÓRICOS PENDIENTES AGRUPADOS -->
+            <!-- CONTENEDOR HISTÓRICOS PENDIENTES -->
             <div class="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
                 {% for p in privados_pendientes %}
                 <div class="card-privado-anterior bg-red-950/10 p-4 rounded-xl border border-red-500/20 flex flex-col gap-2" data-dama-nombre="{{ p.nombre }}">
@@ -519,7 +519,7 @@
                         <div class="truncate max-w-[200px]">
                             <p class="text-[8px] text-zinc-500 font-bold uppercase">{{ p.fecha }} | {{ p.turno }}</p>
                             <p class="font-black text-white uppercase truncate text-sm">Dama: {{ p.nombre }}</p>
-                            <p class="text-[9px] text-red-300 font-bold truncate">Servicios: {{ p.cantidad }} VIP 2</p>
+                            <p class="text-[9px] text-red-300 font-bold truncate">Servicios: {{ p.cantidad_str }}</p>
                         </div>
                         <div class="text-right shrink-0 flex items-center gap-3">
                             <p class="text-sm font-black text-red-400">${{ "{:,.0f}".format(p.total_commission).replace(",", ".") }}</p>
@@ -529,7 +529,7 @@
                         </div>
                     </div>
 
-                    <!-- Botón Enviar WhatsApp de Privados Históricos -->
+                    <!-- Botón Enviar WhatsApp de Servicios Históricos -->
                     <div class="flex justify-start">
                         <a href="{{ p.link_wa }}" target="_blank" class="btn btn-xs btn-success gap-1 text-[9px] h-6 min-h-0 px-2 rounded-full">
                             ENVIAR DETALLE WHATSAPP
@@ -539,7 +539,7 @@
                     <!-- Desglose de Consumos Expandible Histórico -->
                     <details class="group bg-black/40 border border-white/5 rounded-xl overflow-hidden mt-1">
                         <summary class="flex justify-between items-center p-2.5 cursor-pointer select-none font-bold text-[9px] text-zinc-400 uppercase">
-                            <span>🔍 Ver desglose de privados</span>
+                            <span>🔍 Ver desglose de {{ p.tipo_desglose_label }}</span>
                             <span class="transition-transform group-open:rotate-180 text-[8px]">▼</span>
                         </summary>
                         <div class="p-2 border-t border-white/5 bg-black/60">
@@ -547,8 +547,8 @@
                                 <thead>
                                     <tr class="text-zinc-500 uppercase text-[8px] border-b border-white/5">
                                         <th class="text-left">Hora</th>
+                                        <th>Servicio</th>
                                         <th>Garzón</th>
-                                        <th>Cliente</th>
                                         <th class="text-right">Comisión</th>
                                     </tr>
                                 </thead>
@@ -556,8 +556,8 @@
                                     {% for c in p.consumos %}
                                     <tr class="border-b border-white/5 text-[10px]">
                                         <td class="text-left font-mono">{{ c.hora }}</td>
+                                        <td class="font-black text-purple-400">{{ c.tipo_label }}</td>
                                         <td>{{ c.garzon }}</td>
-                                        <td class="truncate max-w-[80px]">{{ c.cliente }}</td>
                                         <td class="text-right text-pink-500 font-black">${{ "{:,.0f}".format(c.comision).replace(",", ".") }}</td>
                                     </tr>
                                     {% endfor %}
@@ -568,7 +568,7 @@
                 </div>
                 {% endfor %}
                 {% if not privados_pendientes %}
-                <p class="text-center text-[10px] text-zinc-600 uppercase font-bold py-6">No hay deudas pendientes de privados de días anteriores</p>
+                <p class="text-center text-[10px] text-zinc-600 uppercase font-bold py-6">No hay deudas de adicionales anteriores</p>
                 {% endif %}
             </div>
             
@@ -777,6 +777,96 @@
             <button type="button" onclick="document.getElementById('modal_servicio_completo').close()" class="btn btn-xs btn-outline btn-warning rounded-full mt-4 uppercase">
                 Volver
             </button>
+        </div>
+    </dialog>
+    <!-- MODAL 1: CONTROL DE SERVICIOS ADICIONALES ACTIVO -->
+    <dialog id="modal_global_privados_hoy" class="modal">
+        <div class="modal-box max-w-xl bg-zinc-950 border-2 border-purple-500 p-6 rounded-[35px]">
+            <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-3">
+                <div>
+                    <h3 class="text-lg font-black text-purple-400 uppercase italic">Servicios Adicionales</h3>
+                    <p class="text-[9px] text-zinc-500 uppercase font-bold">Listado de VIP 2 y Salidas de la jornada</p>
+                </div>
+                <div class="badge badge-secondary badge-sm p-3 font-black text-xs">Total Turno: ${{ "{:,.0f}".format(total_privados_hoy).replace(",", ".") }}</div>
+            </div>
+
+            <!-- Buscador Dinámico de Damas del Turno -->
+            <div class="mb-4">
+                <input type="text" id="buscadorPrivadosHoy" onkeyup="filtrarPrivadosHoy()" 
+                       placeholder="🔍 ESCRIBE EL NOMBRE DE LA DAMA PARA BUSCAR..." 
+                       class="input input-bordered input-sm w-full bg-black border-purple-500/40 text-center font-bold uppercase focus:border-purple-500 text-xs h-9">
+            </div>
+            
+            <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+                {% for p in privados_dia %}
+                <div class="card-privado-hoy bg-pink-950/10 p-4 rounded-xl border border-pink-500/20 flex flex-col gap-2" data-dama-nombre="{{ p.nombre }}">
+                    <div class="flex justify-between items-center text-xs">
+                        <div>
+                            <p class="text-[8px] text-zinc-500 font-bold uppercase">{{ p.fecha }} | {{ p.turno }}</p>
+                            <p class="font-black text-white uppercase text-sm">Dama: {{ p.nombre }}</p>
+                            <p class="text-[9px] text-pink-400 font-bold">Servicios: {{ p.cantidad_str }}</p>
+                        </div>
+                        <div class="text-right shrink-0 flex items-center gap-3">
+                            <div>
+                                <p class="text-sm font-black text-pink-500">${{ "{:,.0f}".format(p.total_commission).replace(",", ".") }}</p>
+                                {% if p.liquidada %}
+                                <span class="text-[8px] text-green-400 font-bold block">✔ PAGADA</span>
+                                {% else %}
+                                <span class="text-[8px] text-yellow-500 font-bold block">PENDIENTE</span>
+                                {% endif %}
+                            </div>
+                            {% if not p.liquidada and role in ['admin1', 'administrador', 'cajera'] %}
+                            <input type="checkbox" onchange="confirmarPagoPrivadoGrupo(this)" data-ids="{{p.ids_ventas}}" data-nombre="{{p.nombre}}" data-monto="{{p.total_commission}}" class="checkbox checkbox-success checkbox-xs border-2">
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Botón Enviar WhatsApp -->
+                    <div class="flex justify-start">
+                        <a href="{{ p.link_wa }}" target="_blank" class="btn btn-xs btn-success gap-1 text-[9px] h-6 min-h-0 px-2 rounded-full">
+                            ENVIAR DETALLE WHATSAPP
+                        </a>
+                    </div>
+
+                    <!-- Desglose de Consumos Expandible -->
+                    <details class="group bg-black/40 border border-white/5 rounded-xl overflow-hidden mt-1">
+                        <summary class="flex justify-between items-center p-2.5 cursor-pointer select-none font-bold text-[9px] text-zinc-400 uppercase">
+                            <span>🔍 Ver desglose de {{ p.tipo_desglose_label }}</span>
+                            <span class="transition-transform group-open:rotate-180 text-[8px]">▼</span>
+                        </summary>
+                        <div class="p-2 border-t border-white/5 bg-black/60">
+                            <table class="table table-xs w-full text-center">
+                                <thead>
+                                    <tr class="text-zinc-500 uppercase text-[8px] border-b border-white/5">
+                                        <th class="text-left">Hora</th>
+                                        <th>Servicio</th>
+                                        <th>Garzón</th>
+                                        <th class="text-right">Comisión</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in p.consumos %}
+                                    <tr class="border-b border-white/5 text-[10px]">
+                                        <td class="text-left font-mono">{{ c.hora }}</td>
+                                        <td class="font-black text-purple-400">{{ c.tipo_label }}</td>
+                                        <td>{{ c.garzon }}</td>
+                                        <td class="text-right text-pink-500 font-black">${{ "{:,.0f}".format(c.comision).replace(",", ".") }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                </div>
+                {% endfor %}
+                {% if not privados_dia %}
+                <p class="text-center text-[10px] text-zinc-600 uppercase font-bold py-6">No hay servicios adicionales registrados para hoy</p>
+                {% endif %}
+            </div>
+            
+            <div class="modal-action mt-6 border-t border-white/5 pt-3">
+                <form method="dialog"><button class="btn btn-sm btn-ghost">CERRAR</button></form>
+            </div>
         </div>
     </dialog>
 </body>

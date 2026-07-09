@@ -1695,18 +1695,12 @@ function confirmarVentaMulti() {
 
         <!-- BARRA DE CONTROL: MÉTRICAS, BUSCADOR Y CALENDARIO -->
         <div class="p-5 bg-black/40 border-b border-white/5 space-y-4">
-            <!-- Estadísticas Dinámicas (Se actualizan según la fecha elegida) -->
-            <div class="grid grid-cols-2 gap-3 text-center">
-                <div class="bg-purple-950/20 p-2.5 rounded-xl border border-purple-500/10">
-                    <span class="text-[8px] font-black text-zinc-500 uppercase block tracking-wider mb-0.5">Bailarinas Presentes 👥</span>
-                    <span id="badge_bailarinas_presentes" class="text-xs font-black text-white">
-                        {{ (en_espera|length) + (bailando_hoy|length) }} / {{ (en_espera|length) + (bailando_hoy|length) + (ausentes_b|length) }} Chicas
-                    </span>
-                </div>
-                <div class="bg-purple-500/10 p-2.5 rounded-xl border border-purple-500/20">
-                    <span class="text-[8px] font-black text-purple-400 uppercase block tracking-wider mb-0.5">Bailaron en Pista 💃</span>
-                    <span id="badge_bailarinas_pista" class="text-xs font-black text-purple-400">{{ bailando_hoy|length }} Bailando</span>
-                </div>
+            <!-- Métrica Única de Bailarinas Asistentes -->
+            <div class="bg-purple-950/20 p-3.5 rounded-xl border border-purple-500/20 text-center">
+                <span class="text-[10px] font-black text-purple-400 uppercase block tracking-wider mb-0.5">Bailarinas Asistentes</span>
+                <span id="badge_bailarinas_presentes" class="text-sm font-black text-white">
+                    {{ presentes_b|length }} Bailarinas
+                </span>
             </div>
             
             <!-- Controles: Buscador y Calendario en una grilla de 2 columnas -->
@@ -1908,7 +1902,7 @@ function confirmarVentaMulti() {
             
             <!-- Controles: Buscador y Calendario en una grilla de 2 columnas -->
             <div class="grid grid-cols-2 gap-2">
-                
+
                 <input type="text" id="buscadorBailarinas" onkeyup="filtrarBailarinasModal()" 
                        placeholder="🔍 BUSCAR NOMBRE..." 
                        class="input input-bordered w-full bg-black border-zinc-700 font-bold uppercase text-center focus:border-purple-500 text-[10px] h-10 rounded-xl text-white">
@@ -2111,21 +2105,18 @@ function confirmarVentaMulti() {
             const vistaHistorial = document.getElementById('pista_vista_historial');
             const badgePresentes = document.getElementById('badge_bailarinas_presentes');
             
-            // Si el calendario se limpia, volvemos a la vista normal de hoy
             if (!fechaSeleccionada) {
                 vistaEnVivo.classList.remove('hidden');
                 vistaHistorial.classList.add('hidden');
-                badgePresentes.innerText = "{{ presentes_b|length }} Chicas en Salón";
+                badgePresentes.innerText = "{{ presentes_b|length }} Bailarinas";
                 return;
             }
             
-            // Consultamos la API del servidor para traer el pasado
             try {
                 const response = await fetch(`/api/historial_bailarinas?fecha=${fechaSeleccionada}`);
                 const data = await response.json();
                 
-                // Actualizamos la métrica unificada de asistencia para esa fecha
-                badgePresentes.innerText = `${data.presentes_total} Chicas en Salón`;
+                badgePresentes.innerText = `${data.presentes_total} Bailarinas`;
                 
                 vistaEnVivo.classList.add('hidden');
                 vistaHistorial.classList.remove('hidden');
@@ -2139,13 +2130,13 @@ function confirmarVentaMulti() {
                     return;
                 }
                 
-                // Renderizamos las tarjetas históricas ordenadas de mayor a menor pago
                 let htmlCards = '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">';
                 data.bailarinas.forEach(b => {
+                    const recibioPago = b.monto_shows > 0;
                     htmlCards += `
-                        <div class="card-bailarina bg-zinc-900 border ${b.monto_shows > 0 ? 'border-purple-500/30 bg-purple-950/5' : 'border-zinc-800'} p-4 rounded-[30px] flex items-center justify-between shadow-lg" data-nombre="${b.nombre}">
+                        <div class="card-bailarina bg-zinc-900 border ${recibioPago ? 'border-purple-500/30 bg-purple-950/5' : 'border-zinc-800'} p-4 rounded-[30px] flex items-center justify-between shadow-lg" data-nombre="${b.nombre}">
                             <div class="flex items-center gap-3">
-                                <img src="${b.foto_url}" class="w-11 h-11 rounded-full object-cover border-2 ${b.monto_shows > 0 ? 'border-purple-500' : 'border-zinc-700'}">
+                                <img src="${b.foto_url}" class="w-11 h-11 rounded-full object-cover border-2 ${recibioPago ? 'border-purple-500' : 'border-zinc-700'}">
                                 <div>
                                     <span class="font-black text-white uppercase text-xs italic block">${b.nombre}</span>
                                     <span class="text-[8px] font-bold text-zinc-500 uppercase">${b.turno}</span>
@@ -2153,10 +2144,10 @@ function confirmarVentaMulti() {
                             </div>
                             <div class="text-right shrink-0">
                                 <span class="text-[8px] font-black uppercase text-zinc-400 block">
-                                    ${b.monto_shows > 0 ? '💵 Recibió Pago de:' : '💵 Sin Pago Registrado'}
+                                    ${recibioPago ? '💵 Recibió Pago de:' : '💃 Presente en Salón'}
                                 </span>
-                                <span class="text-xs font-black ${b.monto_shows > 0 ? 'text-green-400' : 'text-zinc-500'} block mt-0.5">
-                                    $${Number(b.monto_shows).toLocaleString('es-CL')}
+                                <span class="text-xs font-black ${recibioPago ? 'text-green-400' : 'text-zinc-500'} block mt-0.5">
+                                    ${recibioPago ? '$' + Number(b.monto_shows).toLocaleString('es-CL') : 'Sin Pago'}
                                 </span>
                             </div>
                         </div>
