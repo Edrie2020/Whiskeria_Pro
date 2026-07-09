@@ -379,26 +379,35 @@
     </div>
 </dialog>
 
-    <!-- OTROS MODALES -->
+    <!-- MODAL GARZONES 
     <dialog id="modal_garzones" class="modal">
-        <div class="modal-box bg-zinc-900 border-2 border-cyan-500">
-            <h3 class="font-black text-2xl text-cyan-400 uppercase text-center mb-6">Garzones de Turno</h3>
-            <div id="lista_garzones_js" class="flex flex-wrap gap-2 mb-6">
-                {% for g in garzones %}
-                <div id="garzon-badge-{{ g.id }}" class="badge badge-lg bg-black border-zinc-700 text-white font-black py-4 gap-2 uppercase">
-                    {{ g.nombre }} <button onclick="borrarGarzonJS('{{ g.id }}')" class="text-red-500 ml-1">✕</button>
-                </div>
-                {% endfor %}
-            </div>
-            <form id="form_garzon_ajax" class="flex gap-2">
-                <input id="nombre_garzon_input" name="nombre" type="text" placeholder="Nombre..." class="input input-bordered flex-1 bg-black uppercase font-bold" required>
-                <button type="submit" class="btn btn-info font-black">Añadir</button>
-            </form>
-            <div class="modal-action">
+        <div class="modal-box bg-zinc-950 border-2 border-cyan-500 p-0 overflow-hidden flex flex-col rounded-[35px] max-w-md">
+            
+            <!-- HEADER UNIFICADO INTERNO -->
+            <div class="sticky top-0 z-50 bg-zinc-950 border-b border-cyan-500/30 p-5 flex items-center gap-4">
                 <form method="dialog">
-                    <button class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider" onclick="window.location.reload()">
+                    <button class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 h-8 shrink-0 text-[10px] sm:text-xs uppercase tracking-wider" onclick="window.location.reload()">
                         ← SALÓN
                     </button>
+                </form>
+                <h3 class="text-sm sm:text-lg font-black text-cyan-400 uppercase italic truncate leading-none">Garzones de Turno</h3>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Listado con scroll controlado -->
+                <div id="lista_garzones_js" class="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
+                    {% for g in garzones %}
+                    <div id="garzon-badge-{{ g.id }}" class="badge badge-md bg-black border-zinc-700 text-white font-black py-3.5 gap-1.5 uppercase rounded-xl">
+                        {{ g.nombre }} 
+                        <button onclick="borrarGarzonJS('{{ g.id }}')" class="text-red-500 hover:text-red-400 font-bold ml-1 text-xs">✕</button>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Formulario Añadir con Margen y Ajustes de Pantalla -->
+                <form id="form_garzon_ajax" class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/5">
+                    <input id="nombre_garzon_input" name="nombre" type="text" placeholder="ESCRIBIR NOMBRE..." class="input input-bordered bg-black uppercase font-bold text-center sm:text-left flex-1 rounded-2xl h-11 text-xs text-white" required>
+                    <button type="submit" class="btn btn-info font-black h-11 min-h-0 rounded-2xl uppercase text-xs tracking-wider shadow-lg shadow-cyan-500/10">Añadir</button>
                 </form>
             </div>
         </div>

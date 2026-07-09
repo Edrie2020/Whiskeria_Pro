@@ -33,9 +33,16 @@
         </div>
         {% endif %}
 
-        <!-- HEADER RESPONSIVE -->
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b border-white/5 pb-4 no-print">
-            <h1 class="text-2xl font-black text-cyan-400 uppercase italic">Almacén Inteligente</h1>
+        <!-- HEADER UNIFICADO -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b border-white/5 pb-4 px-2 no-print">
+            <div class="flex items-center gap-4 w-full sm:w-auto">
+                <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 h-8 shrink-0 text-[10px] sm:text-xs uppercase tracking-wider">
+                    ← SALÓN
+                </a>
+                <h1 class="text-base sm:text-2xl font-black text-cyan-400 uppercase italic truncate leading-none">
+                    Almacén Inteligente
+                </h1>
+            </div>
             
             <div class="flex flex-wrap gap-2 w-full sm:w-auto justify-center">
                 <form action="/stock" method="get" class="flex gap-1 bg-zinc-900 p-1.5 rounded-xl border border-white/5">
@@ -51,10 +58,6 @@
                 <button type="button" onclick="window.print()" class="btn btn-xs btn-secondary font-black h-8 rounded-full px-4 text-[10px] uppercase tracking-wider">
                     📥 Descargar PDF
                 </button>
-
-                <a href="/" class="btn btn-xs sm:btn-sm btn-outline btn-warning rounded-full font-black px-4 sm:px-6 h-8 min-h-0 text-[10px] sm:text-xs uppercase tracking-wider">
-                    ← SALÓN
-                </a>
             </div>
         </div>
 
