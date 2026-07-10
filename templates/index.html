@@ -1918,52 +1918,86 @@ function confirmarVentaMulti() {
             <!-- VISTA A: TIEMPO REAL (Se muestra por defecto cuando el calendario está vacío) -->
             <div id="pista_vista_en_vivo" class="space-y-6">
                 
-                <!-- LISTADO UNIFICADO DE TODAS LAS PRESENTES EN EL SALÓN -->
+                <!-- 1. SECCIÓN: EN PISTA (BAILAN HOY) -->
                 <div>
-                    <h4 class="text-[10px] font-black text-purple-400 uppercase tracking-[4px] mb-4 italic">● PRESENTES EN EL CLUB (ORDENADAS POR PAGO)</h4>
-                    
-                    <!-- Se muestra en 2 columnas de forma automática en notebooks -->
+                    <h4 class="text-[10px] font-black text-purple-400 uppercase tracking-[4px] mb-4 flex items-center gap-2 italic">
+                        <span class="w-2 h-2 rounded-full bg-purple-500 animate-ping"></span> ● EN PISTA (BAILAN HOY)
+                    </h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% set count_pista = namespace(value=0) %}
                         {% for b in presentes_b %}
-                        <div class="card-bailarina bg-zinc-900/80 p-4 rounded-[35px] border {% if b.monto_shows > 0 %} border-purple-500/30 bg-purple-950/5 {% else %} border-zinc-800 {% endif %} flex flex-col justify-between gap-4 shadow-lg" 
-                             data-nombre="{{ b.nombre | upper }}">
-                            
-                            <div class="flex items-center gap-3">
-                                <img src="{{ b.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 {% if b.monto_shows > 0 %} border-purple-500 {% else %} border-zinc-700 {% endif %}">
-                                <div>
-                                    <span class="font-black text-white uppercase text-xs italic block">{{ b.nombre }}</span>
-                                    {% if b.monto_shows > 0 %}
-                                        <span class="text-[8px] font-black text-purple-400 uppercase tracking-wider block">💵 Pago Recibido: ${{ "{:,.0f}".format(b.monto_shows).replace(",", ".") }}</span>
-                                    {% else %}
-                                        <span class="text-[8px] font-bold text-zinc-500 uppercase block">💵 Sin pago asignado</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <!-- Formulario de actualización rápida de shows/pagos -->
-                            <form onsubmit="event.preventDefault(); { const valorBonoBailarina = parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL'); if(confirm('¿Confirmar pago de show por $' + valorBonoBailarina + ' para {{ b.nombre }}?')) { ejecutarAccionBailarina(event, this); } }" action="/registrar_pago_show" method="post" class="flex items-center justify-between border-t border-white/5 pt-3 w-full">
-                                <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
-                                
-                                <div class="flex items-center gap-2 w-full justify-between">
-                                    <div class="flex flex-col items-center">
-                                        <span class="text-[8px] text-zinc-500 uppercase font-bold">Monto Pago</span>
-                                        <input name="monto_total" type="number" value="{% if b.monto_shows > 0 %}{{ b.monto_shows|int }}{% else %}30000{% endif %}" required class="input input-bordered input-xs w-20 bg-black text-center text-green-400 font-black">
+                            {% if b.monto_shows > 0 or b.bailando %}
+                                {% set count_pista.value = count_pista.value + 1 %}
+                                <div class="card-bailarina bg-purple-500/10 p-4 rounded-[30px] border border-purple-500/40 flex items-center justify-between shadow-lg" data-nombre="{{ b.nombre | upper }}">
+                                    <div class="flex items-center gap-3">
+                                        <img src="{{ b.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-purple-500">
+                                        <div>
+                                            <span class="font-black text-white uppercase text-xs italic block">{{ b.nombre }}</span>
+                                            <span class="text-[8px] font-black text-purple-400 uppercase block">💵 Show: ${{ "{:,.0f}".format(b.monto_shows).replace(",", ".") }}</span>
+                                        </div>
                                     </div>
-                                    <div class="flex gap-1 mt-3">
-                                        <button type="submit" class="btn btn-xs btn-success font-black text-[9px] uppercase px-3 rounded-xl">ASIGNAR</button>
-                                        {% if b.monto_shows > 0 %}
-                                        <!-- Botón Quitar para fijar en $0 y remover pago -->
-                                        <button type="button" onclick="if(confirm('¿Quitar el pago a {{ b.nombre }}?')) { const form = this.closest('form'); form.querySelector('input[name=\'monto_total\']').value = 0; form.dispatchEvent(new Event('submit')); }" class="btn btn-xs btn-error btn-outline btn-square text-[9px]">✕</button>
-                                        {% endif %}
+                                    <div class="flex items-center gap-2">
+                                        <!-- Formulario para modificar valor -->
+                                        <form onsubmit="event.preventDefault(); { const valorShow = parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL'); if(confirm('¿Confirmar cambio de valor show a $' + valorShow + ' para {{ b.nombre }}?')) { ejecutarAccionBailarina(event, this); } }" action="/registrar_pago_show" method="post" class="flex items-center gap-2">
+                                            <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
+                                            <div class="flex gap-1">
+                                                <input type="number" name="monto_total" value="{{ b.monto_shows|int }}" class="input input-bordered input-xs w-20 bg-black text-center font-black text-purple-400">
+                                                <button type="submit" class="btn btn-xs btn-secondary font-black">✔</button>
+                                            </div>
+                                        </form>
+                                        <!-- Formulario para remover de pista -->
+                                        <form onsubmit="event.preventDefault(); if(confirm('¿Quitar a {{ b.nombre }} de la pista?')) { ejecutarAccionBailarina(event, this); }" action="/registrar_pago_show" method="post">
+                                            <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
+                                            <input type="hidden" name="monto_total" value="0">
+                                            <button type="submit" class="btn btn-circle btn-xs btn-error btn-outline">✕</button>
+                                        </form>
                                     </div>
                                 </div>
-                            </form>
-                        </div>
+                            {% endif %}
                         {% endfor %}
+                        {% if count_pista.value == 0 %}
+                            <p class="text-[10px] text-zinc-600 uppercase font-black py-2 pl-2">No hay bailarinas en pista actualmente</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 2. SECCIÓN: DISPONIBLES (PRESENTES EN SALÓN) -->
+                <div>
+                    <h4 class="text-[10px] font-black text-green-400 uppercase tracking-[4px] mb-4 italic">● DISPONIBLES (PRESENTES EN SALÓN)</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% set count_disponibles = namespace(value=0) %}
+                        {% for b in presentes_b %}
+                            {% if b.monto_shows == 0 and not b.bailando %}
+                                {% set count_disponibles.value = count_disponibles.value + 1 %}
+                                <div class="card-bailarina bg-zinc-900/80 p-4 rounded-[35px] border border-green-500/20 flex items-center justify-between shadow-lg" data-nombre="{{ b.nombre | upper }}">
+                                    <div class="flex items-center gap-3">
+                                        <img src="{{ b.foto_url }}" class="w-12 h-12 rounded-full object-cover border-2 border-green-500">
+                                        <div>
+                                            <span class="font-black text-white uppercase text-xs italic block">{{ b.nombre }}</span>
+                                            <span class="text-[8px] font-bold text-zinc-500 uppercase block">Presente en salón</span>
+                                        </div>
+                                    </div>
+                                    <!-- Formulario para subir a pista (Valor por defecto 30.000 editable) -->
+                                    <form onsubmit="event.preventDefault(); { const valorShow = parseInt(this.querySelector('input[name=\'monto_total\']').value).toLocaleString('es-CL'); if(confirm('¿Subir a la pista a {{ b.nombre }} cobrando un show de $' + valorShow + '?')) { ejecutarAccionBailarina(event, this); } }" action="/registrar_pago_show" method="post" class="flex items-center gap-2">
+                                        <input type="hidden" name="asistencia_id" value="{{ b.asistencia_id }}">
+                                        <div class="flex items-center gap-1.5 normal-state">
+                                            <div class="flex flex-col items-center">
+                                                <span class="text-[8px] text-zinc-500 mb-0.5 uppercase font-bold">Monto Show</span>
+                                                <input name="monto_total" type="number" value="30000" step="5000" required class="input input-bordered input-xs w-20 bg-black text-center text-green-400 font-black">
+                                            </div>
+                                            <button type="submit" class="btn btn-xs btn-success font-black uppercase text-[8px] px-3 rounded-full h-7 mt-3">SUBIR</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        {% if count_disponibles.value == 0 %}
+                            <p class="text-[10px] text-zinc-600 uppercase font-black py-2 pl-2">No hay bailarinas disponibles en salón</p>
+                        {% endif %}
                     </div>
                 </div>
                 
-                <!-- SECCIÓN AUSENTES -->
+                <!-- 3. SECCIÓN: AUSENTES -->
                 <div>
                     <h4 class="text-[10px] font-black text-zinc-700 uppercase tracking-[4px] mb-4 italic">○ AUSENTES / NO HAN LLEGADO</h4>
                     <div class="flex flex-wrap gap-2 opacity-40">
