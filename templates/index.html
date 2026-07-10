@@ -1926,7 +1926,7 @@ function confirmarVentaMulti() {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {% set count_pista = namespace(value=0) %}
                         {% for b in presentes_b %}
-                            {% if b.monto_shows > 0 or b.bailando %}
+                            {% if b.monto_shows|int > 0 or b.bailando %}
                                 {% set count_pista.value = count_pista.value + 1 %}
                                 <div class="card-bailarina bg-purple-500/10 p-4 rounded-[30px] border border-purple-500/40 flex items-center justify-between shadow-lg" data-nombre="{{ b.nombre | upper }}">
                                     <div class="flex items-center gap-3">
@@ -1967,7 +1967,7 @@ function confirmarVentaMulti() {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {% set count_disponibles = namespace(value=0) %}
                         {% for b in presentes_b %}
-                            {% if b.monto_shows == 0 and not b.bailando %}
+                            {% if b.monto_shows|int == 0 and not b.bailando %}
                                 {% set count_disponibles.value = count_disponibles.value + 1 %}
                                 <div class="card-bailarina bg-zinc-900/80 p-4 rounded-[35px] border border-green-500/20 flex items-center justify-between shadow-lg" data-nombre="{{ b.nombre | upper }}">
                                     <div class="flex items-center gap-3">

@@ -291,9 +291,8 @@ async def home(request: Request, db: Session = Depends(get_db)):
     presentes_b = []
     ausentes_b = []
 
-    # Se elimina la restricción de Turno 1 para que funcione siempre en cualquier turno
-    todas_b = db.query(models.Dama).filter(
-        models.Dama.es_bailarina == True, 
+    if conf.turno_activo == "Turno 1":
+        todas_b = db.query(models.Dama).filter(
         models.Dama.esta_activa == True,
         models.Dama.borrada == False
     ).all()
@@ -310,14 +309,14 @@ async def home(request: Request, db: Session = Depends(get_db)):
             "bailando": asis_hoy.bailando_hoy if asis_hoy else False
         }
         
-        # Clasificación de bailarinas presentes y ausentes
+        # Clasificación de presentes y ausentes para el control de pista
         if info["presente"]:
             presentes_b.append(info)
         else:
             ausentes_b.append(info)
 
-    # Ordenar la lista de presentes de MAYOR pago a MENOR pago
-    presentes_b.sort(key=lambda x: x["monto_shows"], reverse=True)
+        # Ordenar la lista consolidada de presentes de MAYOR pago a MENOR pago
+        presentes_b.sort(key=lambda x: x["monto_shows"], reverse=True)
 
     meta_fija = 4000000.0
     porcentaje = (total_ventas / meta_fija) * 100 if meta_fija > 0 else 0
@@ -557,8 +556,8 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                     f"➕ *BONOS / ADICIONALES:*\n"
                     f"• Bono de Asistencia: +$0 (Ya pagado en Ficha 1)\n"
                 )
-                if dama.es_bailarina:
-                    msg_f2 += f"• Ganancia de Bailes: +$0 (Ya pagado en Ficha 1)\n"
+                if dama.es_bailarina or asis.bono_show > 0:
+                    msg_f1 += f"• Ganancia de Bailes: +${asis.bono_show:,.0f}\n"
                 msg_f2 += (
                     f"--------------------------------\n"
                     f"➖ *DESCUENTOS:*\n"
@@ -601,7 +600,7 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
                 f"➕ *BONOS / ADICIONALES:*\n"
                 f"• Bono de Asistencia: +${monto_bono_base:,.0f}\n"
             )
-            if dama.es_bailarina:
+            if dama.es_bailarina or asis.bono_show > 0:
                 msg_f1_pend += f"• Ganancia de Bailes: +${asis.bono_show:,.0f}\n"
             msg_f1_pend += (
                 f"--------------------------------\n"
