@@ -291,33 +291,33 @@ async def home(request: Request, db: Session = Depends(get_db)):
     presentes_b = []
     ausentes_b = []
 
-    if conf.turno_activo == "Turno 1":
-        todas_b = db.query(models.Dama).filter(
-            models.Dama.es_bailarina == True, 
-            models.Dama.esta_activa == True,
-            models.Dama.borrada == False
-        ).all()
+    # Se elimina la restricción de Turno 1 para que funcione siempre en cualquier turno
+    todas_b = db.query(models.Dama).filter(
+        models.Dama.es_bailarina == True, 
+        models.Dama.esta_activa == True,
+        models.Dama.borrada == False
+    ).all()
 
-        for b in todas_b:
-            asis_hoy = dict_asistencias.get(b.id)
-            info = {
-                "id": b.id,
-                "nombre": b.nombre_artistico,
-                "foto_url": b.foto_url,
-                "presente": b.id in ids_presentes, 
-                "asistencia_id": asis_hoy.id if asis_hoy else None,
-                "monto_shows": asis_hoy.bono_show if asis_hoy else 0,
-                "bailando": asis_hoy.bailando_hoy if asis_hoy else False
-            }
-            
-            # Clasificación de bailarinas presentes y ausentes
-            if info["presente"]:
-                presentes_b.append(info)
-            else:
-                ausentes_b.append(info)
+    for b in todas_b:
+        asis_hoy = dict_asistencias.get(b.id)
+        info = {
+            "id": b.id,
+            "nombre": b.nombre_artistico,
+            "foto_url": b.foto_url,
+            "presente": b.id in ids_presentes, 
+            "asistencia_id": asis_hoy.id if asis_hoy else None,
+            "monto_shows": asis_hoy.bono_show if asis_hoy else 0,
+            "bailando": asis_hoy.bailando_hoy if asis_hoy else False
+        }
+        
+        # Clasificación de bailarinas presentes y ausentes
+        if info["presente"]:
+            presentes_b.append(info)
+        else:
+            ausentes_b.append(info)
 
-        # Ordenar la lista consolidada de presentes de MAYOR pago a MENOR pago
-        presentes_b.sort(key=lambda x: x["monto_shows"], reverse=True)
+    # Ordenar la lista de presentes de MAYOR pago a MENOR pago
+    presentes_b.sort(key=lambda x: x["monto_shows"], reverse=True)
 
     meta_fija = 4000000.0
     porcentaje = (total_ventas / meta_fija) * 100 if meta_fija > 0 else 0

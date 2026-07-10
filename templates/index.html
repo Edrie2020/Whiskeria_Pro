@@ -80,7 +80,7 @@
                     <span class="text-[9px] font-black uppercase text-green-500">Asistencias</span>
                 </a>
                 {% if turno == 'Turno 1' %}
-                <!-- Se actualiza onclick para limpiar filtros al entrar al modal de bailarinas -->
+                <!-- Botón de bailarinas habilitado para todos los turnos y estados del club -->
                 <button onclick="abrirModalBailarinas()" class="flex flex-col items-center gap-1.5 {% if role not in ['admin1', 'administrador', 'cajera', 'jefe_guillermo', 'encargado'] %} locked {% endif %}">
                     <div class="icon-circle glow-purple text-4xl">💃</div>
                     <span class="text-[9px] font-black uppercase text-purple-500">Bailarinas</span>
