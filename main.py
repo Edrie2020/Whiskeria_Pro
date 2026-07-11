@@ -288,35 +288,48 @@ async def home(request: Request, db: Session = Depends(get_db)):
                 "bailando_hoy": asis.bailando_hoy if asis else False
             })
     
-    presentes_b = []
-    ausentes_b = []
-
-    if conf.turno_activo == "Turno 1":
-        todas_b = db.query(models.Dama).filter(
+    # -----------------------------------------------------------------
+    # CONTROL DE BAILARINAS (FILTRADO EXCLUSIVO Y CONSOLIDACIÓN DE LISTAS)
+    # -----------------------------------------------------------------
+    todas_b = db.query(models.Dama).filter(
         models.Dama.esta_activa == True,
-        models.Dama.borrada == False
+        models.Dama.borrada == False,
+        models.Dama.es_bailarina == True
     ).all()
+
+    pista_b = []
+    disponibles_b = []
+    ausentes_b = []
 
     for b in todas_b:
         asis_hoy = dict_asistencias.get(b.id)
+        presente = b.id in ids_presentes
+        
         info = {
             "id": b.id,
             "nombre": b.nombre_artistico,
             "foto_url": b.foto_url,
-            "presente": b.id in ids_presentes, 
+            "presente": presente, 
             "asistencia_id": asis_hoy.id if asis_hoy else None,
-            "monto_shows": asis_hoy.bono_show if asis_hoy else 0,
+            "monto_shows": asis_hoy.bono_show if asis_hoy else 0.0,
             "bailando": asis_hoy.bailando_hoy if asis_hoy else False
         }
         
-        # Clasificación de presentes y ausentes para el control de pista
-        if info["presente"]:
-            presentes_b.append(info)
+        if presente:
+            # Si tiene un show asignado o está marcada en pista, va a "pista"
+            if info["monto_shows"] > 0 or info["bailando"]:
+                pista_b.append(info)
+            else:
+                disponibles_b.append(info)
         else:
             ausentes_b.append(info)
 
-        # Ordenar la lista consolidada de presentes de MAYOR pago a MENOR pago
-        presentes_b.sort(key=lambda x: x["monto_shows"], reverse=True)
+    pista_b.sort(key=lambda x: x["monto_shows"], reverse=True)
+    disponibles_b.sort(key=lambda x: x["nombre"])
+    ausentes_b.sort(key=lambda x: x["nombre"])
+
+    presentes_b = pista_b + disponibles_b
+    total_bailarinas_presentes = len(presentes_b)
 
     meta_fija = 4000000.0
     porcentaje = (total_ventas / meta_fija) * 100 if meta_fija > 0 else 0
@@ -348,15 +361,17 @@ async def home(request: Request, db: Session = Depends(get_db)):
             "porcentaje": porcentaje,
             "total_deudas": total_deudas,
             "damas": damas_pantalla,
-            "presentes_b": presentes_b,     # Lista unificada de bailarinas presentes
-            "ausentes_b": ausentes_b,       # Lista de bailarinas ausentes
+            "presentes_b": presentes_b,     
+            "ausentes_b": ausentes_b,       
+            "disponibles_b": disponibles_b, 
+            "pista_b": pista_b,             
+            "total_bailarinas_presentes": total_bailarinas_presentes,
             "dict_bailando": {a.dama_id: a.bailando_hoy for a in asistencias},
             "garzones": db.query(models.Mesero).all(),
             "productos_cooler": productos_cooler_filtrados,  
             "productos_todos": productos_todos_filtrados      
         }
     )
-
 # ---------------------------------------------------------
 # GESTIÓN DE TURNO (ABRIR/CERRAR) - UNIFICADO Y SEGURO
 # ---------------------------------------------------------
