@@ -498,19 +498,19 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
 
         whatsapp_limpio = "".join(c for c in dama.whatsapp if c.isdigit()) if dama.whatsapp else ""
 
-        # Contar cuántos VIP 2 de hoy tiene la dama para adjuntarle la nota informativa
-        privados_hoy_dama = [v for v in ventas_hoy if v.dama_id == dama.id and v.servicio in ["VIP 2", "PRIVADO"]]
-        total_privados_hoy_dama_comis = sum(v.comision_chica for v in privados_hoy_dama)
-        cant_privados_hoy_dama = len(privados_hoy_dama)
+        # Contar cuántos Servicios Adicionales (VIP 2 + Salidas) tiene la dama hoy para la nota informativa
+        adicionales_hoy_dama = [v for v in ventas_hoy if v.dama_id == dama.id and v.servicio in ["VIP 2", "PRIVADO", "SALIDA MANUAL"]]
+        total_adicionales_hoy_dama_comis = sum(v.comision_chica for v in adicionales_hoy_dama)
+        cant_adicionales_hoy_dama = len(adicionales_hoy_dama)
 
         note_privados_txt = ""
-        if cant_privados_hoy_dama > 0:
+        if cant_adicionales_hoy_dama > 0:
             note_privados_txt = (
                 f"\n-----------------------------------------\n"
-                f"💎 *VIP 2 DEL TURNO (SE PAGAN APARTE):*\n"
-                f"• Cantidad: {cant_privados_hoy_dama} Servicios VIP 2\n"
-                f"• Comisión por cobrar: *${total_privados_hoy_dama_comis:,.0f}*\n"
-                f"_(Se liquidan por separado en el control de VIP 2)_"
+                f"💎 *SERVICIOS ADICIONALES (SE PAGAN APARTE):*\n"
+                f"• Cantidad: {cant_adicionales_hoy_dama} servicios\n"
+                f"• Comisión por cobrar: *${total_adicionales_hoy_dama_comis:,.0f}*\n"
+                f"_(Se liquidan por separado en el control de servicios adicionales)_"
             )
 
         # CASO A: Si ya se pagó la Ficha 1
@@ -677,10 +677,10 @@ async def contabilidad_page(request: Request, db: Session = Depends(get_db)):
     # Suma de payouts de las fichas de turno
     total_fichas_damas = sum(d["total_pagar"] for d in detalle_damas)
     
-    # Suma de todas las comisiones de Privados LIQUIDADOS hoy (100k por cada uno)
+    # Suma de todas las comisiones de Servicios Adicionales (VIP 2, PRIVADO, SALIDA MANUAL) LIQUIDADOS hoy
     total_privados_liquidados_hoy = sum(
         v.comision_chica for v in ventas_hoy 
-        if v.servicio == "PRIVADO" and v.liquidada
+        if v.servicio in ["VIP 2", "PRIVADO", "SALIDA MANUAL"] and v.liquidada
     )
     
     resumen["pagos_damas"] = total_fichas_damas + total_privados_liquidados_hoy
@@ -1095,7 +1095,7 @@ async def registrar_pago_dama(request: Request, dama_id: int, fecha: str = Form(
     if not username or user_role not in ["admin1", "administrador", "cajera"]:
         raise HTTPException(status_code=403, detail="No autorizado.")
     
-    # Liquidar ventas de ese turno usando la columna fecha_operativa exacta (excluye VIP 2/Privados/Salidas de la liquidación de ficha)
+   # Excluye estrictamente VIP 2, PRIVADO (histórico) y SALIDA MANUAL de la liquidación de copas
     ventas_pendientes = db.query(models.Venta).filter(
         models.Venta.dama_id == dama_id,
         models.Venta.fecha_operativa == fecha,
