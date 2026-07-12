@@ -58,8 +58,11 @@ async def registrar_venta(
     
     # 1. Registrar Trago o Servicio base (excluyendo montos de salida manual)
     if tier_precio > 0 or extra_tipo == "VIP":
+        # Evitamos duplicar cobros de VIP 2 en el trago base para que no se sume en la liquidación de la dama
+        extra_para_trago = extra_tipo if extra_tipo not in ["VIP 2", "PRIVADO"] else None
+        
         total_trago, pago_chica_trago, pago_casa_trago = calcular_venta_detallada(
-            tier_precio, extra_tipo, 0, 0
+            tier_precio, extra_para_trago, 0, 0
         )
         
         servicios_lista = []
