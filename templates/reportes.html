@@ -383,12 +383,14 @@
 
             <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                 {% for log in logs %}
-                <div class="flex items-center gap-2 bg-red-500/5 p-2 rounded-xl border border-white/5 text-[10px]">
-                    <div class="text-[9px] font-mono text-zinc-500">{{ log.fecha.strftime('%H:%M:%S') }}</div>
-                    <div class="shrink-0"><span class="text-[9px] font-black text-red-400 uppercase">[{{ log.usuario }}]</span></div>
-                    <div class="text-[10px] text-zinc-300 font-bold uppercase tracking-tight truncate">{{ log.accion }}</div>
+                <div class="flex items-center gap-2 bg-red-500/5 p-2 rounded-xl border border-white/5 text-[10px] cursor-pointer hover:bg-red-500/10 active:scale-[0.99] transition-all"
+                     onclick="abrirAuditoriaDesdeDOM(this)">
+                    <div class="log-hora text-[9px] font-mono text-zinc-500">{{ log.fecha.strftime('%H:%M:%S') }}</div>
+                    <div class="shrink-0"><span class="log-usuario text-[9px] font-black text-red-400 uppercase">[{{ log.usuario }}]</span></div>
+                    <div class="log-accion text-[10px] text-zinc-300 font-bold uppercase tracking-tight truncate">{{ log.accion }}</div>
                 </div>
                 {% endfor %}
+            </div>
 
                 {% if not logs %}
                 <div class="text-center py-6 opacity-20">
@@ -501,7 +503,7 @@
                     <h3 class="text-lg font-black text-purple-400 uppercase italic">Control de Adicionales Anteriores</h3>
                     <p class="text-[9px] text-zinc-500 uppercase font-bold">Historial de VIP 2 y Salidas Pendientes</p>
                 </div>
-                <div class="badge badge-warning badge-sm p-3 font-black text-xs">Total Pendiente: ${{ "{:,.0f}".format(total_privados_pendientes).replace(",", ".") }}</div>
+                <div class="badge badge-warning h-auto py-1.5 px-4 font-black text-xs sm:text-sm text-center shrink-0">Total Pendiente: ${{ "{:,.0f}".format(total_privados_pendientes).replace(",", ".") }}</div>
             </div>
 
             <!-- Buscador Dinámico de Damas de Días Anteriores -->
@@ -869,6 +871,40 @@
             </div>
         </div>
     </dialog>
+    <!-- MODAL DETALLE AUDITORIA -->
+    <dialog id="modal_detalle_auditoria" class="modal">
+        <div class="modal-box bg-zinc-950 border-2 border-red-500 p-6 rounded-[30px] max-w-sm text-center">
+            <h3 class="font-black text-lg text-red-500 uppercase italic mb-4">📋 Detalle de Registro</h3>
+            <div class="space-y-3 text-left bg-black/40 p-4 rounded-2xl border border-white/5 text-xs">
+                <p class="text-zinc-500 font-bold uppercase text-[9px] tracking-wider">Hora del Evento</p>
+                <p id="aud_modal_hora" class="font-mono text-white text-sm font-black"></p>
+                
+                <p class="text-zinc-500 font-bold uppercase text-[9px] tracking-wider mt-2">Usuario Responsable</p>
+                <p id="aud_modal_usuario" class="text-red-400 font-black text-sm uppercase"></p>
+                
+                <p class="text-zinc-500 font-bold uppercase text-[9px] tracking-wider mt-2">Acción Registrada</p>
+                <p id="aud_modal_accion" class="text-zinc-200 font-bold uppercase text-xs break-words leading-relaxed"></p>
+            </div>
+            <div class="modal-action mt-4 justify-center">
+                <form method="dialog">
+                    <button class="btn btn-sm btn-ghost uppercase tracking-wider font-bold">Cerrar</button>
+                </form>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        function abrirAuditoriaDesdeDOM(elemento) {
+            const hora = elemento.querySelector('.log-hora').innerText.trim();
+            const usuario = elemento.querySelector('.log-usuario').innerText.replace('[', '').replace(']', '').trim();
+            const accion = elemento.querySelector('.log-accion').innerText.trim();
+            
+            document.getElementById('aud_modal_hora').innerText = hora;
+            document.getElementById('aud_modal_usuario').innerText = usuario;
+            document.getElementById('aud_modal_accion').innerText = accion;
+            document.getElementById('modal_detalle_auditoria').showModal();
+        }
+    </script>
 </body>
 </html>
 <!-- END OF FILE templates/reportes.html -->

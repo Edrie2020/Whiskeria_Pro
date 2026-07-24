@@ -478,15 +478,16 @@
             <h3 class="text-[10px] font-black text-zinc-500 uppercase mb-4 text-center tracking-widest">Auditoría de Acciones - {{ turno_filtro }}</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {% for log in auditoria %}
-                <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl text-xs border-b border-white/5">
+                <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl text-xs border-b border-white/5 cursor-pointer hover:bg-black/50 active:scale-[0.99] transition-all"
+                     onclick="abrirStockAuditoriaDesdeDOM(this)">
                     <div class="flex gap-2 items-center truncate">
-                        <span class="text-zinc-600 font-mono text-[9px]">{{ log.hora }}</span>
-                        <span class="font-black {% if 'ELIMINADO' in log.tipo %} text-red-500 {% else %} text-white {% endif %} truncate max-w-[125px]">{{ log.nombre }}</span>
-                        <span class="badge badge-outline badge-xs text-[8px] font-bold">{{ log.tipo }}</span>
+                        <span class="st-log-hora text-zinc-600 font-mono text-[9px]">{{ log.hora }}</span>
+                        <span class="st-log-nombre font-black {% if 'ELIMINADO' in log.tipo %} text-red-500 {% else %} text-white {% endif %} truncate max-w-[125px]">{{ log.nombre }}</span>
+                        <span class="st-log-tipo badge badge-outline badge-xs text-[8px] font-bold">{{ log.tipo }}</span>
                     </div>
                     <div class="flex gap-2 items-center">
-                        <span class="text-cyan-500 font-bold uppercase italic text-[10px]">{{ log.usuario }}</span>
-                        <span class="badge badge-info badge-sm font-black">{{ log.cantidad }}</span>
+                        <span class="st-log-usuario text-cyan-500 font-bold uppercase italic text-[10px]">{{ log.usuario }}</span>
+                        <span class="st-log-cantidad badge badge-info badge-sm font-black">{{ log.cantidad }}</span>
                     </div>
                 </div>
                 {% endfor %}
@@ -664,6 +665,50 @@
             const msg = document.getElementById('msg_rinde_cortos');
             const rinde = { '750': 10, '1000': 13, '1500': 20, '2000': 26 };
             msg.innerText = `💡 Rinde aproximadamente ${rinde[vol]} cortos por botella.`;
+        }
+    </script>
+    <!-- MODAL DETALLE AUDITORIA STOCK -->
+    <dialog id="modal_detalle_auditoria_stock" class="modal">
+        <div class="modal-box bg-zinc-950 border-2 border-cyan-400 p-6 rounded-[30px] max-w-sm text-center">
+            <h3 class="font-black text-lg text-cyan-400 uppercase italic mb-4">📋 Detalle de Almacén</h3>
+            <div class="space-y-3 text-left bg-black/40 p-4 rounded-2xl border border-white/5 text-xs">
+                <p class="text-zinc-500 font-bold uppercase text-[9px] tracking-wider">Hora del Registro</p>
+                <p id="st_modal_hora" class="font-mono text-white text-sm font-black"></p>
+                
+                <p class="text-zinc-500 font-bold uppercase text-[9px] tracking-wider mt-2">Bebida / Producto</p>
+                <p id="st_modal_nombre" class="text-white font-black text-sm uppercase"></p>
+                
+                <p class="text-zinc-500 font-bold uppercase text-[9px] tracking-wider mt-2">Tipo de Movimiento</p>
+                <p id="st_modal_tipo" class="text-yellow-500 font-bold uppercase text-xs"></p>
+
+                <p class="text-zinc-500 font-bold uppercase text-[9px] tracking-wider mt-2">Cantidad Movida</p>
+                <p id="st_modal_cantidad" class="text-cyan-400 font-black text-sm"></p>
+
+                <p class="text-zinc-500 font-bold uppercase text-[9px] tracking-wider mt-2">Usuario Operador</p>
+                <p id="st_modal_usuario" class="text-white font-bold uppercase text-xs"></p>
+            </div>
+            <div class="modal-action mt-4 justify-center">
+                <form method="dialog">
+                    <button class="btn btn-sm btn-ghost uppercase tracking-wider font-bold">Cerrar</button>
+                </form>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        function abrirStockAuditoriaDesdeDOM(elemento) {
+            const hora = elemento.querySelector('.st-log-hora').innerText.trim();
+            const nombre = elemento.querySelector('.st-log-nombre').innerText.trim();
+            const tipo = elemento.querySelector('.st-log-tipo').innerText.trim();
+            const usuario = elemento.querySelector('.st-log-usuario').innerText.trim();
+            const cantidad = elemento.querySelector('.st-log-cantidad').innerText.trim();
+            
+            document.getElementById('st_modal_hora').innerText = hora;
+            document.getElementById('st_modal_nombre').innerText = nombre;
+            document.getElementById('st_modal_tipo').innerText = tipo;
+            document.getElementById('st_modal_cantidad').innerText = cantidad + " Unidades";
+            document.getElementById('st_modal_usuario').innerText = usuario;
+            document.getElementById('modal_detalle_auditoria_stock').showModal();
         }
     </script>
 </body>

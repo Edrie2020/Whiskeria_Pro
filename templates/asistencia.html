@@ -44,6 +44,13 @@
         <!-- SECCIÓN AUSENTES -->
         <h2 class="text-[10px] font-black text-zinc-500 uppercase tracking-[4px] mb-6 text-center md:text-left italic">● Damas por Ingresar (Ausentes)</h2>
         
+        <!-- BUSCADOR EN TIEMPO REAL -->
+        <div class="mb-6 max-w-md mx-auto md:mx-0">
+            <input type="text" id="buscadorAsistencia" onkeyup="filtrarAsistencia()" 
+                   placeholder="🔍 BUSCAR DAMA POR NOMBRE..." 
+                   class="input input-bordered w-full bg-black border-zinc-700 font-bold uppercase text-center focus:border-green-400 text-xs h-10 rounded-xl text-white">
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-16">
             {% for dama in ausentes %}
             <div class="card-pro p-4 rounded-[30px] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
@@ -105,6 +112,23 @@
             {% endfor %}
         </div>
     </div>
+    <script>
+        function filtrarAsistencia() {
+            const input = document.getElementById("buscadorAsistencia").value.toUpperCase();
+            const cards = document.querySelectorAll(".card-pro");
+            cards.forEach(card => {
+                const nombreElement = card.querySelector(".nombre-artista");
+                if (nombreElement) {
+                    const nombre = nombreElement.textContent || nombreElement.innerText;
+                    if (nombre.toUpperCase().includes(input)) {
+                        card.style.display = "";
+                    } else {
+                        card.style.display = "none";
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>
 <!-- END OF FILE templates/asistencia.html -->

